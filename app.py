@@ -49,7 +49,8 @@ with st.form("form_vaga", enter_to_submit=False):  # 🚫 Enter não envia o for
                 "Cargo": cargo,
                 "Salário 1": salario1,
                 "Salário 2": salario2,
-                "Recrutador": recrutador
+                "Recrutador": recrutador,
+                "Data de Fechamento": ""  # inicialmente vazio
             })
             st.session_state.vaga_id += 1  # incrementa o ID
             st.success("✅ Vaga cadastrada com sucesso!")
@@ -59,14 +60,14 @@ if st.session_state.vagas:
     st.subheader("📄 Vagas Cadastradas")
 
     # Cabeçalho da "tabela"
-    header_cols = st.columns([1, 2, 2, 2, 2, 2, 2, 1])
-    headers = ["ID", "Status", "Data de Abertura", "Cliente", "Cargo", "Salário 1", "Salário 2", "🗑️"]
+    header_cols = st.columns([1, 2, 2, 2, 2, 2, 2, 2, 1])
+    headers = ["ID", "Status", "Abertura", "Cliente", "Cargo", "Salário 1", "Salário 2", "Fechamento", "🗑️"]
     for col, h in zip(header_cols, headers):
         col.markdown(f"**{h}**")
 
     # Linhas da "tabela"
     for i, vaga in enumerate(st.session_state.vagas):
-        cols = st.columns([1, 2, 2, 2, 2, 2, 2, 1])
+        cols = st.columns([1, 2, 2, 2, 2, 2, 2, 2, 1])
         cols[0].write(vaga["ID"])
         
         # 🔽 Selectbox para alterar status
@@ -78,13 +79,18 @@ if st.session_state.vagas:
         )
         if novo_status != vaga["Status"]:
             st.session_state.vagas[i]["Status"] = novo_status
+            if novo_status == "Fechada":
+                st.session_state.vagas[i]["Data de Fechamento"] = date.today().strftime("%d/%m/%Y")
+            else:
+                st.session_state.vagas[i]["Data de Fechamento"] = ""
 
         cols[2].write(vaga["Data de Abertura"])  # ✅ sempre DD/MM/YYYY
         cols[3].write(vaga["Cliente"])
         cols[4].write(vaga["Cargo"])
         cols[5].write(f"R$ {vaga['Salário 1']:.2f}")
         cols[6].write(f"R$ {vaga['Salário 2']:.2f}")
-        if cols[7].button("🗑️", key=f"del_{vaga['ID']}"):
+        cols[7].write(vaga["Data de Fechamento"] if vaga["Data de Fechamento"] else "-")
+        if cols[8].button("🗑️", key=f"del_{vaga['ID']}"):
             st.session_state.vagas = [v for v in st.session_state.vagas if v["ID"] != vaga["ID"]]
             st.experimental_rerun()
 
