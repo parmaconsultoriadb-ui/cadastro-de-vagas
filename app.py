@@ -71,8 +71,8 @@ st.markdown(
         background-color: royalblue !important;
         color: white !important;
         border-radius: 8px;
-        height: 3em;
-        font-size: 16px;
+        height: 2.2em;
+        font-size: 14px;
         font-weight: bold;
     }
     div.stButton > button:hover {
@@ -85,22 +85,19 @@ st.markdown(
 )
 
 # ==============================
-# Função auxiliar para exibir tabela com botão excluir
+# Função para exibir tabela com opção de excluir
 # ==============================
 def exibir_tabela_com_excluir(df, csv_path, key_prefix):
     if df.empty:
         st.info("Nenhum registro encontrado.")
         return
 
-    df_temp = df.copy()
-
-    # Criar colunas de botões de exclusão
-    for i, row in df_temp.iterrows():
+    for i, row in df.iterrows():
         col1, col2 = st.columns([12, 1])
         with col1:
-            st.dataframe(pd.DataFrame([row]), use_container_width=True, hide_index=True)
+            st.write(row.to_dict())  # mostra os dados como dicionário
         with col2:
-            if st.button("🗑️", key=f"{key_prefix}_{row['ID']}"):
+            if st.button("🗑️", key=f"del_{key_prefix}_{row['ID']}"):
                 df = df[df["ID"] != row["ID"]]
                 save_csv(df, csv_path)
                 st.session_state[f"{key_prefix}_df"] = df
