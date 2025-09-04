@@ -13,152 +13,8 @@ if "page" not in st.session_state:
 # Função: Tela de Cadastro de Vagas
 # ==============================
 def tela_vagas():
-    # Inicialização da sessão
-    if 'vagas' not in st.session_state:
-        st.session_state.vagas = []
-    if 'vaga_id' not in st.session_state:
-        st.session_state.vaga_id = 1
-
-    # Inicialização dos campos padrão
-    for campo in ["form_cliente", "form_cargo", "form_salario1", "form_salario2", "form_recrutador", "form_data_abertura"]:
-        if campo not in st.session_state:
-            if campo == "form_data_abertura":
-                st.session_state[campo] = date.today()
-            elif campo in ["form_salario1", "form_salario2"]:
-                st.session_state[campo] = 0.0
-            else:
-                st.session_state[campo] = ""
-
-    # Função para limpar formulário
-    def limpar_formulario():
-        st.session_state.update({
-            "form_cliente": "",
-            "form_cargo": "",
-            "form_salario1": 0.0,
-            "form_salario2": 0.0,
-            "form_recrutador": "",
-            "form_data_abertura": date.today(),
-            "cliente": "",
-            "cargo": "",
-            "salario1": 0.0,
-            "salario2": 0.0,
-            "recrutador": "",
-            "data_abertura": date.today(),
-        })
-        st.rerun()
-
-    # Botão para voltar ao menu
-    if st.button("⬅️ Voltar ao Menu", use_container_width=True):
-        st.session_state.page = "menu"
-        st.rerun()
-
-    # Título
-    st.markdown("<h1 style='font-size:36px;'>📋 Cadastro de Vagas</h1>", unsafe_allow_html=True)
-
-    # Formulário
-    with st.form("form_vaga", enter_to_submit=False):
-        st.write("**Status:** Aberta")
-        status = "Aberta"
-
-        data_abertura = st.date_input("Data de Abertura", value=st.session_state.form_data_abertura, key="data_abertura")
-        data_abertura_str = data_abertura.strftime("%d/%m/%Y")
-
-        cliente = st.text_input("Cliente", value=st.session_state.form_cliente, key="cliente")
-        cargo = st.text_input("Cargo", value=st.session_state.form_cargo, key="cargo")
-        salario1 = st.number_input("Salário 1 (mínimo)", step=100.0, format="%.2f",
-                                   value=st.session_state.form_salario1, key="salario1")
-        salario2 = st.number_input("Salário 2 (máximo)", step=100.0, format="%.2f",
-                                   value=st.session_state.form_salario2, key="salario2")
-        recrutador = st.text_input("Recrutador", value=st.session_state.form_recrutador, key="recrutador")
-
-        col1, col2 = st.columns(2)
-        with col1:
-            submitted = st.form_submit_button("Cadastrar Vaga", use_container_width=True)
-        with col2:
-            st.form_submit_button("Limpar Formulário", on_click=limpar_formulario, use_container_width=True)
-
-        if submitted:
-            if not cliente or not cargo or not recrutador:
-                st.warning("⚠️ Preencha todos os campos obrigatórios.")
-            elif cliente.isnumeric() or cargo.isnumeric() or recrutador.isnumeric():
-                st.warning("⚠️ Cliente, Cargo e Recrutador não podem ser apenas números.")
-            elif salario1 == 0.0 or salario2 == 0.0:
-                st.warning("⚠️ Os salários não podem ser zero.")
-            elif salario2 < salario1:
-                st.warning("⚠️ O salário máximo não pode ser menor que o salário mínimo.")
-            else:
-                st.session_state.vagas.append({
-                    "ID": st.session_state.vaga_id,
-                    "Status": status,
-                    "Data de Abertura": data_abertura_str,
-                    "Cliente": cliente,
-                    "Cargo": cargo,
-                    "Salário 1": salario1,
-                    "Salário 2": salario2,
-                    "Recrutador": recrutador,
-                    "Data de Fechamento": ""
-                })
-                st.session_state.vaga_id += 1
-                st.success("✅ Vaga cadastrada com sucesso!")
-                limpar_formulario()
-
-    # Mostrar vagas cadastradas
-    if st.session_state.vagas:
-        st.markdown("<h2 style='font-size:28px;'>📄 Vagas Cadastradas</h2>", unsafe_allow_html=True)
-
-        filtro_col1, filtro_col2 = st.columns([1, 2])
-        with filtro_col1:
-            filtro_status = st.selectbox("Filtrar por status:", ["Todas", "Aberta", "Fechada", "Em andamento"])
-        with filtro_col2:
-            filtro_cliente = st.text_input("Buscar por Cliente:")
-
-        vagas_filtradas = st.session_state.vagas
-        if filtro_status != "Todas":
-            vagas_filtradas = [v for v in vagas_filtradas if v["Status"] == filtro_status]
-        if filtro_cliente:
-            vagas_filtradas = [v for v in vagas_filtradas if filtro_cliente.lower() in v["Cliente"].lower()]
-
-        if vagas_filtradas:
-            header_cols = st.columns([1, 3, 3, 4, 4, 2, 2, 2, 1])
-            headers = ["ID", "Status", "Abertura", "Cliente", "Cargo", "Salário 1", "Salário 2", "Fechamento", "🗑️"]
-            for col, h in zip(header_cols, headers):
-                col.markdown(f"<b style='font-size:16px;'>{h}</b>", unsafe_allow_html=True)
-
-            for vaga in vagas_filtradas:
-                cols = st.columns([1, 3, 3, 4, 4, 2, 2, 2, 1])
-                cols[0].write(f"**{vaga['ID']}**")
-
-                novo_status = cols[1].selectbox(
-                    "", ["Aberta", "Fechada", "Em andamento"],
-                    index=["Aberta", "Fechada", "Em andamento"].index(vaga["Status"]),
-                    key=f"status_{vaga['ID']}"
-                )
-                if novo_status != vaga["Status"]:
-                    for v in st.session_state.vagas:
-                        if v["ID"] == vaga["ID"]:
-                            v["Status"] = novo_status
-                            v["Data de Fechamento"] = date.today().strftime("%d/%m/%Y") if novo_status == "Fechada" else ""
-
-                cols[2].write(vaga["Data de Abertura"])
-                cols[3].write(vaga["Cliente"])
-                cols[4].write(vaga["Cargo"])
-                cols[5].write(f"R$ {vaga['Salário 1']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-                cols[6].write(f"R$ {vaga['Salário 2']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-                cols[7].write(vaga["Data de Fechamento"] if vaga["Data de Fechamento"] else "-")
-                if cols[8].button("🗑️", key=f"del_{vaga['ID']}"):
-                    st.session_state.vagas = [v for v in st.session_state.vagas if v["ID"] != vaga["ID"]]
-                    st.rerun()
-
-            df = pd.DataFrame(vagas_filtradas)
-            df["Salário 1"] = df["Salário 1"].apply(lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-            df["Salário 2"] = df["Salário 2"].apply(lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-            csv = df.to_csv(index=False).encode('utf-8')
-            st.download_button("📁 Exportar para CSV", csv, "vagas.csv", "text/csv", use_container_width=True)
-        else:
-            st.info("Nenhuma vaga encontrada com os filtros aplicados.")
-    else:
-        st.info("Nenhuma vaga cadastrada ainda.")
-
+    # ... (código igual ao que você já tem para tela_vagas)
+    pass
 
 # ==============================
 # Função: Tela de Cadastro de Clientes (placeholder)
@@ -171,7 +27,6 @@ def tela_clientes():
     st.markdown("<h1 style='font-size:36px;'>👥 Cadastro de Clientes</h1>", unsafe_allow_html=True)
     st.info("Tela de cadastro de clientes em desenvolvimento...")
 
-
 # ==============================
 # Função: Tela de Cadastro de Candidatos (placeholder)
 # ==============================
@@ -183,12 +38,17 @@ def tela_candidatos():
     st.markdown("<h1 style='font-size:36px;'>🧑‍💼 Cadastro de Candidatos</h1>", unsafe_allow_html=True)
     st.info("Tela de cadastro de candidatos em desenvolvimento...")
 
-
 # ==============================
 # Menu principal
 # ==============================
 if st.session_state.page == "menu":
-    st.markdown("<h1 style='font-size:40px;'>🚀 Sistema de Cadastros</h1>", unsafe_allow_html=True)
+    # Cabeçalho com logo + nome da empresa
+    col_logo, col_title = st.columns([1, 5])
+    with col_logo:
+        st.image("logo_parma.png", width=100)  # 👉 coloque o arquivo logo_parma.png na mesma pasta do código
+    with col_title:
+        st.markdown("<h1 style='font-size:40px; color:royalblue;'>Parma Consultoria</h1>", unsafe_allow_html=True)
+
     st.write("Escolha uma das opções abaixo:")
 
     # 🔵 CSS para deixar todos os botões azul royal
@@ -204,7 +64,7 @@ if st.session_state.page == "menu":
             font-weight: bold;
         }
         div.stButton > button:hover {
-            background-color: #27408B !important; /* Azul royal mais escuro no hover */
+            background-color: #27408B !important;
             color: white !important;
         }
         </style>
