@@ -82,15 +82,6 @@ st.markdown(
         background-color: #27408B !important;
         color: white !important;
     }
-    /* Botões pequenos (editar/excluir) */
-    div[data-testid="stButton"] button.small-btn {
-        width: 25px !important;
-        height: 25px !important;
-        padding: 0 !important;
-        font-size: 14px !important;
-        line-height: 1 !important;
-        text-align: center !important;
-    }
     </style>
     """,
     unsafe_allow_html=True
@@ -154,33 +145,21 @@ def show_table(df, cols, df_name, csv_path):
                 unsafe_allow_html=True
             )
 
-        # Botão Editar
+        # Botão Editar (texto)
         with cols_ui[-2]:
-            st.markdown(f"<div style='background-color:{bg_color}; text-align:center;'>", unsafe_allow_html=True)
-            if st.button("✏️", key=f"edit_{df_name}_{row['ID']}", help="Editar"):
+            if st.button("Editar", key=f"edit_{df_name}_{row['ID']}", use_container_width=True):
                 st.session_state.edit_mode = df_name
                 st.session_state.edit_record = row.to_dict()
                 st.rerun()
-            st.markdown(
-                "<script>document.querySelectorAll('button[kind=\"secondary\"]')?.forEach(btn => btn.classList.add('small-btn'))</script>",
-                unsafe_allow_html=True
-            )
-            st.markdown("</div>", unsafe_allow_html=True)
 
-        # Botão Excluir
+        # Botão Excluir (texto)
         with cols_ui[-1]:
-            st.markdown(f"<div style='background-color:{bg_color}; text-align:center;'>", unsafe_allow_html=True)
-            if st.button("🗑️", key=f"del_{df_name}_{row['ID']}", help="Excluir"):
+            if st.button("Excluir", key=f"del_{df_name}_{row['ID']}", use_container_width=True):
                 df2 = df[df["ID"] != row["ID"]]
                 st.session_state[df_name] = df2
                 save_csv(df2, csv_path)
                 st.success(f"Registro {row['ID']} excluído com sucesso!")
                 st.rerun()
-            st.markdown(
-                "<script>document.querySelectorAll('button[kind=\"secondary\"]')?.forEach(btn => btn.classList.add('small-btn'))</script>",
-                unsafe_allow_html=True
-            )
-            st.markdown("</div>", unsafe_allow_html=True)
 
     st.divider()
 
