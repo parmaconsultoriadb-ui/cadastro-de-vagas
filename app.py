@@ -50,6 +50,8 @@ if "edit_mode" not in st.session_state:
     st.session_state.edit_mode = None
 if "edit_record" not in st.session_state:
     st.session_state.edit_record = {}
+if "delete_confirm" not in st.session_state:
+    st.session_state.delete_confirm = None  # armazena o registro pendente de exclusão
 
 # Definição das colunas
 CLIENTES_COLS = ["ID", "Data", "Nome", "Cliente", "Cidade", "UF", "Telefone", "E-mail"]
@@ -81,6 +83,19 @@ st.markdown(
     div.stButton > button:hover {
         background-color: #27408B !important;
         color: white !important;
+    }
+    /* Botões customizados */
+    .btn-editar {
+        background-color: royalblue !important;
+        color: white !important;
+        border-radius: 6px;
+        font-weight: bold;
+    }
+    .btn-excluir {
+        background-color: crimson !important;
+        color: white !important;
+        border-radius: 6px;
+        font-weight: bold;
     }
     </style>
     """,
@@ -137,7 +152,7 @@ def show_table(df, cols, df_name, csv_path):
 
     # Linhas da tabela (zebrado + centralizado)
     for idx, row in df.iterrows():
-        bg_color = "#ffffff" if idx % 2 == 0 else "#f9f9f9"  # zebra
+        bg_color = "#ffffff" if idx % 2 == 0 else "#f9f9f9"
         cols_ui = st.columns(len(cols) + 2)
         for i, c in enumerate(cols):
             cols_ui[i].markdown(
@@ -145,23 +160,53 @@ def show_table(df, cols, df_name, csv_path):
                 unsafe_allow_html=True
             )
 
-        # Botão Editar (texto)
+        # Botão Editar
         with cols_ui[-2]:
-            if st.button("Editar", key=f"edit_{df_name}_{row['ID']}", use_container_width=True):
+            btn = st.button("Editar", key=f"edit_{df_name}_{row['ID']}", use_container_width=True)
+            if btn:
                 st.session_state.edit_mode = df_name
                 st.session_state.edit_record = row.to_dict()
                 st.rerun()
+            st.markdown(
+                f"<script>document.querySelector('button[key=\"edit_{df_name}_{row['ID']}\"]').classList.add('btn-editar');</script>",
+                unsafe_allow_html=True
+            )
 
-        # Botão Excluir (texto)
+        # Botão Excluir (com confirmação)
         with cols_ui[-1]:
-            if st.button("Excluir", key=f"del_{df_name}_{row['ID']}", use_container_width=True):
-                df2 = df[df["ID"] != row["ID"]]
-                st.session_state[df_name] = df2
-                save_csv(df2, csv_path)
-                st.success(f"Registro {row['ID']} excluído com sucesso!")
+            btn = st.button("Excluir", key=f"del_{df_name}_{row['ID']}", use_container_width=True)
+            if btn:
+                st.session_state.delete_confirm = {
+                    "df_name": df_name,
+                    "csv_path": csv_path,
+                    "id": row["ID"]
+                }
                 st.rerun()
+            st.markdown(
+                f"<script>document.querySelector('button[key=\"del_{df_name}_{row['ID']}\"]').classList.add('btn-excluir');</script>",
+                unsafe_allow_html=True
+            )
 
     st.divider()
+
+    # Se houver exclusão pendente, mostra aviso de confirmação
+    if st.session_state.delete_confirm and st.session_state.delete_confirm["df_name"] == df_name:
+        id_to_delete = st.session_state.delete_confirm["id"]
+        st.warning(f"⚠️ Tem certeza que deseja excluir o registro ID {id_to_delete}? Essa ação não pode ser desfeita.")
+        colA, colB = st.columns(2)
+        with colA:
+            if st.button("✅ Confirmar Exclusão", use_container_width=True, key=f"confirm_{id_to_delete}"):
+                df2 = df[df["ID"] != id_to_delete]
+                st.session_state[df_name] = df2
+                save_csv(df2, csv_path)
+                st.success(f"Registro {id_to_delete} excluído com sucesso!")
+                st.session_state.delete_confirm = None
+                st.rerun()
+        with colB:
+            if st.button("❌ Cancelar", use_container_width=True, key=f"cancel_{id_to_delete}"):
+                st.session_state.delete_confirm = None
+                st.info("Exclusão cancelada.")
+                st.rerun()
 
 def download_button(df, filename, label="⬇️ Baixar CSV"):
     csv = df.to_csv(index=False).encode("utf-8")
