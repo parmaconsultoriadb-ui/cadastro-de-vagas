@@ -193,12 +193,12 @@ if st.session_state.page == "menu":
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        if st.button("📋 Cadastro de Vagas", use_container_width=True, type="primary"):
-            st.session_state.page = "vagas"
+        if st.button("👥 Cadastro de Clientes", use_container_width=True, type="primary"):
+            st.session_state.page = "clientes"
             st.rerun()
     with col2:
-        if st.button("👥 Cadastro de Clientes", use_container_width=True):
-            st.session_state.page = "clientes"
+        if st.button("📋 Cadastro de Vagas", use_container_width=True):
+            st.session_state.page = "vagas"
             st.rerun()
     with col3:
         if st.button("🧑‍💼 Cadastro de Candidatos", use_container_width=True):
