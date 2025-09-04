@@ -31,6 +31,8 @@ with st.form("form_vaga", enter_to_submit=False):  # 🚫 Enter não envia o for
         # Validações
         if not cliente or not cargo or not recrutador:
             st.warning("⚠️ Preencha todos os campos obrigatórios: Cliente, Cargo e Recrutador.")
+        elif cliente.isnumeric() or cargo.isnumeric() or recrutador.isnumeric():
+            st.warning("⚠️ Os campos Cliente, Cargo e Recrutador não podem ser apenas números.")
         elif salario1 == 0.0 or salario2 == 0.0:
             st.warning("⚠️ Os campos de salário não podem ser zero.")
         elif salario2 < salario1:
