@@ -13,7 +13,12 @@ st.title("📋 Cadastro de Vagas")
 
 with st.form("form_vaga", enter_to_submit=False):  # 🚫 Enter não envia o formulário
     status = st.selectbox("Status", ['Aberta', 'Fechada', 'Em andamento'])
+
+    # Entrada de data (sempre objeto date)
     data_abertura = st.date_input("Data de Abertura", value=date.today())
+    # Converter para string no formato brasileiro
+    data_abertura_str = data_abertura.strftime("%d/%m/%Y")
+
     cliente = st.text_input("Cliente")
     cargo = st.text_input("Cargo")
     salario1 = st.number_input("Salário 1 (mínimo)", step=100.0, format="%.2f")
@@ -35,7 +40,7 @@ with st.form("form_vaga", enter_to_submit=False):  # 🚫 Enter não envia o for
             st.session_state.vagas.append({
                 "ID": st.session_state.vaga_id,  # chave primária
                 "Status": status,
-                "Data de Abertura": data_abertura.strftime('%d/%m/%Y'),  # ✅ formato BR
+                "Data de Abertura": data_abertura_str,  # ✅ formato DD/MM/YYYY
                 "Cliente": cliente,
                 "Cargo": cargo,
                 "Salário 1": salario1,
@@ -60,7 +65,7 @@ if st.session_state.vagas:
         cols = st.columns([1, 2, 2, 2, 2, 2, 2, 1])
         cols[0].write(vaga["ID"])
         cols[1].write(vaga["Status"])
-        cols[2].write(vaga["Data de Abertura"])  # ✅ já está no formato DD/MM/YYYY
+        cols[2].write(vaga["Data de Abertura"])  # ✅ sempre DD/MM/YYYY
         cols[3].write(vaga["Cliente"])
         cols[4].write(vaga["Cargo"])
         cols[5].write(f"R$ {vaga['Salário 1']:.2f}")
@@ -71,7 +76,6 @@ if st.session_state.vagas:
 
     # Exportar CSV (mantendo formato da data)
     df = pd.DataFrame(st.session_state.vagas)
-    df["Data de Abertura"] = pd.to_datetime(df["Data de Abertura"], format="%d/%m/%Y").dt.strftime("%d/%m/%Y")
     csv = df.to_csv(index=False).encode('utf-8')
     st.download_button("📁 Exportar para CSV", csv, "vagas.csv", "text/csv")
 
