@@ -12,6 +12,26 @@ if 'vagas' not in st.session_state:
 if 'vaga_id' not in st.session_state:  # contador de IDs
     st.session_state.vaga_id = 1
 
+# Inicialização dos campos (garante que existam na sessão)
+for campo in ["cliente", "cargo", "salario1", "salario2", "recrutador", "data_abertura"]:
+    if campo not in st.session_state:
+        if campo == "data_abertura":
+            st.session_state[campo] = date.today()
+        elif campo in ["salario1", "salario2"]:
+            st.session_state[campo] = 0.0
+        else:
+            st.session_state[campo] = ""
+
+# Função para limpar os campos
+def limpar_formulario():
+    st.session_state.cliente = ""
+    st.session_state.cargo = ""
+    st.session_state.salario1 = 0.0
+    st.session_state.salario2 = 0.0
+    st.session_state.recrutador = ""
+    st.session_state.data_abertura = date.today()
+    st.experimental_rerun()
+
 # Título maior
 st.markdown("<h1 style='font-size:36px;'>📋 Cadastro de Vagas</h1>", unsafe_allow_html=True)
 
@@ -19,16 +39,20 @@ with st.form("form_vaga", enter_to_submit=False):
     st.write("**Status:** Aberta")
     status = "Aberta"
 
-    data_abertura = st.date_input("Data de Abertura", value=date.today())
+    data_abertura = st.date_input("Data de Abertura", value=st.session_state.data_abertura, key="data_abertura")
     data_abertura_str = data_abertura.strftime("%d/%m/%Y")
 
-    cliente = st.text_input("Cliente")
-    cargo = st.text_input("Cargo")
-    salario1 = st.number_input("Salário 1 (mínimo)", step=100.0, format="%.2f")
-    salario2 = st.number_input("Salário 2 (máximo)", step=100.0, format="%.2f")
-    recrutador = st.text_input("Recrutador")
+    cliente = st.text_input("Cliente", value=st.session_state.cliente, key="cliente")
+    cargo = st.text_input("Cargo", value=st.session_state.cargo, key="cargo")
+    salario1 = st.number_input("Salário 1 (mínimo)", step=100.0, format="%.2f", value=st.session_state.salario1, key="salario1")
+    salario2 = st.number_input("Salário 2 (máximo)", step=100.0, format="%.2f", value=st.session_state.salario2, key="salario2")
+    recrutador = st.text_input("Recrutador", value=st.session_state.recrutador, key="recrutador")
 
-    submitted = st.form_submit_button("Cadastrar Vaga", use_container_width=True)
+    col1, col2 = st.columns([2,1])
+    with col1:
+        submitted = st.form_submit_button("✅ Cadastrar Vaga", use_container_width=True)
+    with col2:
+        limpar = st.form_submit_button("🧹 Limpar Formulário", use_container_width=True)
 
     if submitted:
         if not cliente or not cargo or not recrutador:
@@ -53,6 +77,10 @@ with st.form("form_vaga", enter_to_submit=False):
             })
             st.session_state.vaga_id += 1
             st.success("✅ Vaga cadastrada com sucesso!")
+            limpar_formulario()
+
+    if limpar:
+        limpar_formulario()
 
 # Mostrar vagas cadastradas
 if st.session_state.vagas:
@@ -71,7 +99,6 @@ if st.session_state.vagas:
         vagas_filtradas = [v for v in vagas_filtradas if filtro_cliente.lower() in v["Cliente"].lower()]
 
     if vagas_filtradas:
-        # Layout ajustado -> mais espaço e colunas largas
         header_cols = st.columns([1, 3, 3, 4, 4, 2, 2, 2, 1])
         headers = ["ID", "Status", "Abertura", "Cliente", "Cargo", "Salário 1", "Salário 2", "Fechamento", "🗑️"]
         for col, h in zip(header_cols, headers):
@@ -103,7 +130,6 @@ if st.session_state.vagas:
                 st.experimental_rerun()
 
         df = pd.DataFrame(vagas_filtradas)
-        # Formatar salários no CSV também
         df["Salário 1"] = df["Salário 1"].apply(lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
         df["Salário 2"] = df["Salário 2"].apply(lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
         csv = df.to_csv(index=False).encode('utf-8')
