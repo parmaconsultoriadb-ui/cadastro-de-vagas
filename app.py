@@ -418,4 +418,46 @@ def tela_candidatos():
         # Cabeçalho
         header_cols = st.columns([1, 3, 3, 3, 2, 2, 1])
         headers = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "🗑️"]
-        for col, h in zip(header_cols_
+        for col, h in zip(header_cols, headers):
+            col.markdown(f"<b style='font-size:16px;'>{h}</b>", unsafe_allow_html=True)
+
+        for _, row in df.iterrows():
+            cols = st.columns([1, 3, 3, 3, 2, 2, 1])
+            cols[0].write(f"**{row['ID']}**")
+            cols[1].write(row["Cliente"])
+            cols[2].write(row["Cargo"])
+            cols[3].write(row["Nome"])
+            cols[4].write(row["Telefone"])
+            cols[5].write(row["Recrutador"])
+            if cols[6].button("🗑️", key=f"del_cand_{row['ID']}"):
+                st.session_state.candidatos_df = st.session_state.candidatos_df[st.session_state.candidatos_df["ID"] != row["ID"]]
+                save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
+                st.rerun()
+
+# ==============================
+# Menu principal
+# ==============================
+if st.session_state.page == "menu":
+    st.markdown("<h1 style='font-size:40px; color:royalblue;'>Parma Consultoria</h1>", unsafe_allow_html=True)
+    st.write("Escolha uma das opções abaixo:")
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("👥 Cadastro de Clientes", use_container_width=True):
+            st.session_state.page = "clientes"
+            st.rerun()
+    with col2:
+        if st.button("📋 Cadastro de Vagas", use_container_width=True):
+            st.session_state.page = "vagas"
+            st.rerun()
+    with col3:
+        if st.button("🧑‍💼 Cadastro de Candidatos", use_container_width=True):
+            st.session_state.page = "candidatos"
+            st.rerun()
+
+elif st.session_state.page == "clientes":
+    tela_clientes()
+elif st.session_state.page == "vagas":
+    tela_vagas()
+elif st.session_state.page == "candidatos":
+    tela_candidatos()
