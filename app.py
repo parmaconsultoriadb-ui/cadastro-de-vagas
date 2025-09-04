@@ -186,12 +186,8 @@ def tela_candidatos():
 # Menu principal
 # ==============================
 if st.session_state.page == "menu":
-    # Cabeçalho com logo + nome da empresa
-    col_logo, col_title = st.columns([1, 5])
-    with col_logo:
-        st.image("logo_parma.png", width=100)  # 👉 coloque o arquivo logo_parma.png na mesma pasta do código
-    with col_title:
-        st.markdown("<h1 style='font-size:40px; color:royalblue;'>Parma Consultoria</h1>", unsafe_allow_html=True)
+    # Cabeçalho apenas com título
+    st.markdown("<h1 style='font-size:40px; color:royalblue;'>Parma Consultoria</h1>", unsafe_allow_html=True)
 
     st.write("Escolha uma das opções abaixo:")
 
