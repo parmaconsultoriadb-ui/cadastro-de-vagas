@@ -82,6 +82,15 @@ st.markdown(
         background-color: #27408B !important;
         color: white !important;
     }
+    /* Botões pequenos (editar/excluir) */
+    div[data-testid="stButton"] button.small-btn {
+        width: 25px !important;
+        height: 25px !important;
+        padding: 0 !important;
+        font-size: 14px !important;
+        line-height: 1 !important;
+        text-align: center !important;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -141,24 +150,36 @@ def show_table(df, cols, df_name, csv_path):
         cols_ui = st.columns(len(cols) + 2)
         for i, c in enumerate(cols):
             cols_ui[i].markdown(
-                f"<div style='background-color:{bg_color}; padding:6px; text-align:center;'>{row[c]}</div>",
+                f"<div style='background-color:{bg_color}; padding:6px; text-align:center; color:black;'>{row[c]}</div>",
                 unsafe_allow_html=True
             )
+
+        # Botão Editar
         with cols_ui[-2]:
             st.markdown(f"<div style='background-color:{bg_color}; text-align:center;'>", unsafe_allow_html=True)
-            if st.button("✏️", key=f"edit_{df_name}_{row['ID']}"):
+            if st.button("✏️", key=f"edit_{df_name}_{row['ID']}", help="Editar"):
                 st.session_state.edit_mode = df_name
                 st.session_state.edit_record = row.to_dict()
                 st.rerun()
+            st.markdown(
+                "<script>document.querySelectorAll('button[kind=\"secondary\"]')?.forEach(btn => btn.classList.add('small-btn'))</script>",
+                unsafe_allow_html=True
+            )
             st.markdown("</div>", unsafe_allow_html=True)
+
+        # Botão Excluir
         with cols_ui[-1]:
             st.markdown(f"<div style='background-color:{bg_color}; text-align:center;'>", unsafe_allow_html=True)
-            if st.button("🗑️", key=f"del_{df_name}_{row['ID']}"):
+            if st.button("🗑️", key=f"del_{df_name}_{row['ID']}", help="Excluir"):
                 df2 = df[df["ID"] != row["ID"]]
                 st.session_state[df_name] = df2
                 save_csv(df2, csv_path)
                 st.success(f"Registro {row['ID']} excluído com sucesso!")
                 st.rerun()
+            st.markdown(
+                "<script>document.querySelectorAll('button[kind=\"secondary\"]')?.forEach(btn => btn.classList.add('small-btn'))</script>",
+                unsafe_allow_html=True
+            )
             st.markdown("</div>", unsafe_allow_html=True)
 
     st.divider()
