@@ -5,20 +5,23 @@ from datetime import date
 # Configuração inicial da página (modo wide)
 st.set_page_config(page_title="Parma Consultoria", layout="wide")
 
-# Controle de navegação
+# ==============================
+# Inicialização global da sessão (fica fora da tela de vagas)
+# ==============================
 if "page" not in st.session_state:
     st.session_state.page = "menu"
+
+if "vagas" not in st.session_state:
+    st.session_state.vagas = []
+
+if "vaga_id" not in st.session_state:
+    st.session_state.vaga_id = 1
+
 
 # ==============================
 # Função: Tela de Cadastro de Vagas
 # ==============================
 def tela_vagas():
-    # Inicialização da sessão
-    if 'vagas' not in st.session_state:
-        st.session_state.vagas = []
-    if 'vaga_id' not in st.session_state:
-        st.session_state.vaga_id = 1
-
     # Inicialização dos campos padrão
     for campo in ["form_cliente", "form_cargo", "form_salario1", "form_salario2", "form_recrutador", "form_data_abertura"]:
         if campo not in st.session_state:
@@ -100,7 +103,7 @@ def tela_vagas():
                 st.success("✅ Vaga cadastrada com sucesso!")
                 limpar_formulario()
 
-    # Mostrar vagas cadastradas
+    # Mostrar vagas cadastradas (sempre aparece, mesmo após atualizar)
     if st.session_state.vagas:
         st.markdown("<h2 style='font-size:28px;'>📄 Vagas Cadastradas</h2>", unsafe_allow_html=True)
 
