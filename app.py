@@ -435,4 +435,60 @@ def tela_candidatos():
                 st.session_state.candidatos_df = pd.concat(
                     [st.session_state.candidatos_df, novo], ignore_index=True
                 )
-                save_csv(st.session
+                save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
+                st.success(f"✅ Candidato cadastrado com sucesso! ID: {prox_id}")
+                st.rerun()
+
+    st.subheader("📄 Candidatos Cadastrados")
+    df = st.session_state.candidatos_df
+    if df.empty:
+        st.info("Nenhum candidato cadastrado.")
+    else:
+        col1, col2, col3 = st.columns(3)
+        filtro_cliente = col1.text_input("🔎 Buscar por Cliente")
+        filtro_cargo = col2.text_input("🔎 Buscar por Cargo")
+        filtro_recrutador = col3.text_input("🔎 Buscar por Recrutador")
+
+        df_filtrado = df
+        if filtro_cliente:
+            df_filtrado = df_filtrado[
+                df_filtrado["Cliente"].str.contains(filtro_cliente, case=False, na=False)
+            ]
+        if filtro_cargo:
+            df_filtrado = df_filtrado[
+                df_filtrado["Cargo"].str.contains(filtro_cargo, case=False, na=False)
+            ]
+        if filtro_recrutador:
+            df_filtrado = df_filtrado[
+                df_filtrado["Recrutador"].str.contains(filtro_recrutador, case=False, na=False)
+            ]
+
+        download_button(df_filtrado, "candidatos.csv", "⬇️ Baixar Candidatos")
+        show_table(df_filtrado, CANDIDATOS_COLS, "candidatos_df", CANDIDATOS_CSV)
+
+
+# ==============================
+# MENU
+# ==============================
+if st.session_state.page == "menu":
+    st.title("📌 Parma Consultoria")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("👥 Cadastro de Clientes", use_container_width=True):
+            st.session_state.page = "clientes"
+            st.rerun()
+    with col2:
+        if st.button("📋 Cadastro de Vagas", use_container_width=True):
+            st.session_state.page = "vagas"
+            st.rerun()
+    with col3:
+        if st.button("🧑‍💼 Cadastro de Candidatos", use_container_width=True):
+            st.session_state.page = "candidatos"
+            st.rerun()
+
+elif st.session_state.page == "clientes":
+    tela_clientes()
+elif st.session_state.page == "vagas":
+    tela_vagas()
+elif st.session_state.page == "candidatos":
+    tela_candidatos()
