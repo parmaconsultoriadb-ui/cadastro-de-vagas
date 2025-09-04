@@ -47,7 +47,7 @@ if "page" not in st.session_state:
     st.session_state.page = "menu"
 
 # Clientes
-CLIENTES_COLS = ["ID", "Data", "Cliente", "Cidade", "UF", "Telefone", "E-mail"]
+CLIENTES_COLS = ["ID", "Data", "Cliente", "Cidade", "UF", "Telefone", "E-mail","Nome"]
 if "clientes_df" not in st.session_state:
     st.session_state.clientes_df = load_csv(CLIENTES_CSV, CLIENTES_COLS)
 
