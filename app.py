@@ -1,22 +1,42 @@
 import streamlit as st
 import pandas as pd
 from datetime import date
+import os
 
 # Configuração inicial da página (modo wide)
 st.set_page_config(page_title="Parma Consultoria", layout="wide")
 
+# Arquivo CSV para persistir os dados
+ARQUIVO_VAGAS = "vagas.csv"
+
 # ==============================
-# Inicialização global da sessão (fica fora da tela de vagas)
+# Funções auxiliares
+# ==============================
+def carregar_vagas():
+    """Carrega as vagas do CSV para session_state."""
+    if os.path.exists(ARQUIVO_VAGAS):
+        df = pd.read_csv(ARQUIVO_VAGAS, dtype={"ID": int})
+        return df.to_dict(orient="records")
+    return []
+
+def salvar_vagas():
+    """Salva as vagas do session_state no CSV."""
+    if st.session_state.vagas:
+        df = pd.DataFrame(st.session_state.vagas)
+        df.to_csv(ARQUIVO_VAGAS, index=False)
+
+# ==============================
+# Inicialização global
 # ==============================
 if "page" not in st.session_state:
     st.session_state.page = "menu"
 
 if "vagas" not in st.session_state:
-    st.session_state.vagas = []
+    st.session_state.vagas = carregar_vagas()
 
 if "vaga_id" not in st.session_state:
-    st.session_state.vaga_id = 1
-
+    # Se já existir vagas, o próximo ID é o último + 1
+    st.session_state.vaga_id = max([v["ID"] for v in st.session_state.vagas], default=0) + 1
 
 # ==============================
 # Função: Tela de Cadastro de Vagas
@@ -100,10 +120,11 @@ def tela_vagas():
                     "Data de Fechamento": ""
                 })
                 st.session_state.vaga_id += 1
+                salvar_vagas()
                 st.success("✅ Vaga cadastrada com sucesso!")
                 limpar_formulario()
 
-    # Mostrar vagas cadastradas (sempre aparece, mesmo após atualizar)
+    # Mostrar vagas cadastradas (sempre aparece)
     if st.session_state.vagas:
         st.markdown("<h2 style='font-size:28px;'>📄 Vagas Cadastradas</h2>", unsafe_allow_html=True)
 
@@ -139,6 +160,7 @@ def tela_vagas():
                         if v["ID"] == vaga["ID"]:
                             v["Status"] = novo_status
                             v["Data de Fechamento"] = date.today().strftime("%d/%m/%Y") if novo_status == "Fechada" else ""
+                    salvar_vagas()
 
                 cols[2].write(vaga["Data de Abertura"])
                 cols[3].write(vaga["Cliente"])
@@ -148,6 +170,7 @@ def tela_vagas():
                 cols[7].write(vaga["Data de Fechamento"] if vaga["Data de Fechamento"] else "-")
                 if cols[8].button("🗑️", key=f"del_{vaga['ID']}"):
                     st.session_state.vagas = [v for v in st.session_state.vagas if v["ID"] != vaga["ID"]]
+                    salvar_vagas()
                     st.rerun()
 
             df = pd.DataFrame(vagas_filtradas)
@@ -189,12 +212,10 @@ def tela_candidatos():
 # Menu principal
 # ==============================
 if st.session_state.page == "menu":
-    # Cabeçalho apenas com título
     st.markdown("<h1 style='font-size:40px; color:royalblue;'>Parma Consultoria</h1>", unsafe_allow_html=True)
-
     st.write("Escolha uma das opções abaixo:")
 
-    # 🔵 CSS para deixar todos os botões azul royal
+    # 🔵 CSS para botões azul royal
     st.markdown(
         """
         <style>
@@ -207,7 +228,7 @@ if st.session_state.page == "menu":
             font-weight: bold;
         }
         div.stButton > button:hover {
-            background-color: #27408B !important; /* Azul royal mais escuro no hover */
+            background-color: #27408B !important;
             color: white !important;
         }
         </style>
