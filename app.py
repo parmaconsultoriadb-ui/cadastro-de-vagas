@@ -49,12 +49,26 @@ with st.form("form_vaga", enter_to_submit=False):  # 🚫 Enter não envia o for
 if st.session_state.vagas:
     st.subheader("📄 Vagas Cadastradas")
     df = pd.DataFrame(st.session_state.vagas)
-    # garantir que ID fique como primeira coluna
     cols = ["ID"] + [c for c in df.columns if c != "ID"]
     df = df[cols]
-    st.dataframe(df)
+    st.dataframe(df, use_container_width=True)
 
+    # Opções de exclusão
+    st.subheader("🗑️ Excluir Vagas")
+    for vaga in st.session_state.vagas:
+        col1, col2, col3 = st.columns([6, 3, 1])
+        with col1:
+            st.write(f"**{vaga['ID']} - {vaga['Cargo']} ({vaga['Cliente']})**")
+        with col2:
+            st.write(f"Status: {vaga['Status']}")
+        with col3:
+            if st.button("Excluir", key=f"delete_{vaga['ID']}"):
+                st.session_state.vagas = [v for v in st.session_state.vagas if v["ID"] != vaga["ID"]]
+                st.experimental_rerun()
+
+    # Exportar CSV
     csv = df.to_csv(index=False).encode('utf-8')
     st.download_button("📁 Exportar para CSV", csv, "vagas.csv", "text/csv")
+
 else:
     st.info("Nenhuma vaga cadastrada ainda.")
