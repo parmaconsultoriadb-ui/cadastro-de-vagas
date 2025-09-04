@@ -146,6 +146,26 @@ def show_edit_form(df_name, cols, csv_path):
                     df.loc[idx, c] = new_data[c]
             st.session_state[df_name] = df
             save_csv(df, csv_path)
+
+            # ==============================
+            # NOVA LÓGICA:
+            # Se for candidato e o status for "Validado" -> atualizar vaga
+            # ==============================
+            if df_name == "candidatos_df" and new_data.get("Status") == "Validado":
+                cliente = new_data.get("Cliente")
+                cargo = new_data.get("Cargo")
+
+                vagas_df = st.session_state.vagas_df
+                idx_vaga = vagas_df[
+                    (vagas_df["Cliente"] == cliente) & (vagas_df["Cargo"] == cargo)
+                ].index
+
+                if not idx_vaga.empty:
+                    vagas_df.loc[idx_vaga, "Status"] = "Ag. Inicio"
+                    st.session_state.vagas_df = vagas_df
+                    save_csv(vagas_df, VAGAS_CSV)
+                    st.success("🔄 A vaga vinculada foi atualizada automaticamente para 'Ag. Inicio'!")
+
             st.success("✅ Registro atualizado com sucesso!")
             st.session_state.edit_mode = None
             st.session_state.edit_record = {}
