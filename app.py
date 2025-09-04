@@ -14,7 +14,6 @@ st.set_page_config(page_title="Parma Consultoria", layout="wide")
 CLIENTES_CSV = "clientes.csv"
 VAGAS_CSV = "vagas.csv"
 CANDIDATOS_CSV = "candidatos.csv"
-CARGOS_CSV = "cargos.csv"  # NOVO: lista de cargos
 
 def load_csv(path, expected_cols):
     if os.path.exists(path):
@@ -64,11 +63,6 @@ if "vagas_df" not in st.session_state:
     st.session_state.vagas_df = load_csv(VAGAS_CSV, VAGAS_COLS)
 if "candidatos_df" not in st.session_state:
     st.session_state.candidatos_df = load_csv(CANDIDATOS_CSV, CANDIDATOS_COLS)
-if "cargos_df" not in st.session_state:
-    if os.path.exists(CARGOS_CSV):
-        st.session_state.cargos_df = pd.read_csv(CARGOS_CSV, header=None, names=["Cargo"], dtype=str)
-    else:
-        st.session_state.cargos_df = pd.DataFrame(columns=["Cargo"])
 
 # ==============================
 # Estilo
@@ -97,7 +91,6 @@ st.markdown(
 # Funções auxiliares
 # ==============================
 def show_edit_form(df_name, cols, csv_path):
-    """Exibe formulário de edição para um registro"""
     record = st.session_state.edit_record
     with st.form("edit_form", enter_to_submit=False):
         new_data = {}
@@ -126,7 +119,6 @@ def show_edit_form(df_name, cols, csv_path):
         st.rerun()
 
 def show_table(df, cols, df_name, csv_path):
-    """Mostra tabela com botões Editar e Excluir"""
     for _, row in df.iterrows():
         cols_ui = st.columns(len(cols) + 2)
         for i, c in enumerate(cols):
@@ -144,7 +136,6 @@ def show_table(df, cols, df_name, csv_path):
     st.divider()
 
 def download_button(df, filename, label="⬇️ Baixar CSV"):
-    """Botão para exportar CSV"""
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button(
         label=label,
@@ -223,14 +214,9 @@ def tela_vagas():
     data_abertura = date.today().strftime("%d/%m/%Y")
 
     with st.form("form_vaga", enter_to_submit=False):
-        # Cliente puxado do cadastro de clientes
         lista_clientes = st.session_state.clientes_df["Cliente"].dropna().unique().tolist()
         cliente = st.selectbox("Cliente * (digite para buscar)", options=lista_clientes) if lista_clientes else st.text_input("Cliente *")
-
-        # Cargo puxado do CSV de cargos
-        lista_cargos = st.session_state.cargos_df["Cargo"].dropna().unique().tolist()
-        cargo = st.selectbox("Cargo * (digite para buscar)", options=lista_cargos) if lista_cargos else st.text_input("Cargo *")
-
+        cargo = st.text_input("Cargo *")
         salario1 = st.text_input("Salário 1")
         salario2 = st.text_input("Salário 2")
         recrutador = st.text_input("Recrutador *")
@@ -289,16 +275,15 @@ def tela_candidatos():
         st.rerun()
 
     st.header("🧑‍💼 Cadastro de Candidatos")
-    if st.session_state.clientes_df.empty:
-        st.warning("⚠️ Cadastre um Cliente antes de cadastrar Candidatos.")
+    if st.session_state.vagas_df.empty:
+        st.warning("⚠️ Cadastre uma Vaga antes de cadastrar Candidatos.")
         return
 
     with st.form("form_candidatos", enter_to_submit=False):
-        lista_clientes = st.session_state.clientes_df["Cliente"].dropna().unique().tolist()
-        cliente_sel = st.selectbox("Cliente *", options=lista_clientes)
+        clientes_com_vagas = st.session_state.vagas_df["Cliente"].dropna().unique().tolist()
+        cliente_sel = st.selectbox("Cliente *", options=clientes_com_vagas) if clientes_com_vagas else st.text_input("Cliente *")
 
-        # Cargo puxado do CSV de cargos
-        lista_cargos = st.session_state.cargos_df["Cargo"].dropna().unique().tolist()
+        lista_cargos = st.session_state.vagas_df["Cargo"].dropna().unique().tolist()
         cargo = st.selectbox("Cargo * (digite para buscar)", options=lista_cargos) if lista_cargos else st.text_input("Cargo *")
 
         nome = st.text_input("Nome *")
