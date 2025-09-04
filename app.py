@@ -119,14 +119,23 @@ def show_edit_form(df_name, cols, csv_path):
         st.rerun()
 
 def show_table(df, cols, df_name, csv_path):
-    # Cabeçalho
+    # Cabeçalho estilizado
     cols_ui = st.columns(len(cols) + 2)
     for i, c in enumerate(cols):
-        cols_ui[i].markdown(f"**{c}**")
-    cols_ui[-2].markdown("**Editar**")
-    cols_ui[-1].markdown("**Excluir**")
+        cols_ui[i].markdown(
+            f"<div style='background-color:#f0f0f0; padding:6px; font-weight:bold; color:black; border-radius:4px; text-align:center;'>{c}</div>",
+            unsafe_allow_html=True
+        )
+    cols_ui[-2].markdown(
+        "<div style='background-color:#f0f0f0; padding:6px; font-weight:bold; color:black; border-radius:4px; text-align:center;'>Editar</div>",
+        unsafe_allow_html=True
+    )
+    cols_ui[-1].markdown(
+        "<div style='background-color:#f0f0f0; padding:6px; font-weight:bold; color:black; border-radius:4px; text-align:center;'>Excluir</div>",
+        unsafe_allow_html=True
+    )
 
-    # Linhas
+    # Linhas da tabela
     for _, row in df.iterrows():
         cols_ui = st.columns(len(cols) + 2)
         for i, c in enumerate(cols):
