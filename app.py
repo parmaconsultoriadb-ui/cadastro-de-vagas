@@ -14,6 +14,7 @@ st.set_page_config(page_title="Parma Consultoria", layout="wide")
 CLIENTES_CSV = "clientes.csv"
 VAGAS_CSV = "vagas.csv"
 CANDIDATOS_CSV = "candidatos.csv"
+CARGOS_CSV = r"C:\Users\Windows\Documents\CSV\cargos.csv"  # CSV de cargos externos
 
 def load_csv(path, expected_cols):
     if os.path.exists(path):
@@ -63,6 +64,17 @@ if "vagas_df" not in st.session_state:
     st.session_state.vagas_df = load_csv(VAGAS_CSV, VAGAS_COLS)
 if "candidatos_df" not in st.session_state:
     st.session_state.candidatos_df = load_csv(CANDIDATOS_CSV, CANDIDATOS_COLS)
+
+# Carregar CSV de cargos (primeira coluna é a lista de cargos)
+if "cargos_lista" not in st.session_state:
+    if os.path.exists(CARGOS_CSV):
+        try:
+            cargos_df = pd.read_csv(CARGOS_CSV, dtype=str).dropna()
+            st.session_state.cargos_lista = cargos_df.iloc[:, 0].unique().tolist()
+        except Exception:
+            st.session_state.cargos_lista = []
+    else:
+        st.session_state.cargos_lista = []
 
 # ==============================
 # Estilo
@@ -216,7 +228,13 @@ def tela_vagas():
     with st.form("form_vaga", enter_to_submit=False):
         lista_clientes = st.session_state.clientes_df["Cliente"].dropna().unique().tolist()
         cliente = st.selectbox("Cliente * (digite para buscar)", options=lista_clientes) if lista_clientes else st.text_input("Cliente *")
-        cargo = st.text_input("Cargo *")
+
+        # Campo de Cargo agora sugere cargos do CSV
+        if st.session_state.cargos_lista:
+            cargo = st.selectbox("Cargo * (digite para buscar)", options=st.session_state.cargos_lista)
+        else:
+            cargo = st.text_input("Cargo *")
+
         salario1 = st.text_input("Salário 1")
         salario2 = st.text_input("Salário 2")
         recrutador = st.text_input("Recrutador *")
