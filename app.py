@@ -137,6 +137,17 @@ def show_table(df, cols, df_name, csv_path):
             st.rerun()
     st.divider()
 
+def download_button(df, filename, label="⬇️ Baixar CSV"):
+    """Botão para exportar CSV"""
+    csv = df.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        label=label,
+        data=csv,
+        file_name=filename,
+        mime="text/csv",
+        use_container_width=True
+    )
+
 # ==============================
 # Telas
 # ==============================
@@ -189,6 +200,7 @@ def tela_clientes():
     else:
         filtro = st.text_input("🔎 Buscar por Cliente")
         df_filtrado = df[df["Cliente"].str.contains(filtro, case=False, na=False)] if filtro else df
+        download_button(df_filtrado, "clientes.csv", "⬇️ Baixar Clientes")
         show_table(df_filtrado, CLIENTES_COLS, "clientes_df", CLIENTES_CSV)
 
 def tela_vagas():
@@ -251,6 +263,7 @@ def tela_vagas():
         if filtro_cargo:
             df_filtrado = df_filtrado[df_filtrado["Cargo"].str.contains(filtro_cargo, case=False, na=False)]
 
+        download_button(df_filtrado, "vagas.csv", "⬇️ Baixar Vagas")
         show_table(df_filtrado, VAGAS_COLS, "vagas_df", VAGAS_CSV)
 
 def tela_candidatos():
@@ -313,6 +326,7 @@ def tela_candidatos():
         if filtro_recrutador:
             df_filtrado = df_filtrado[df_filtrado["Recrutador"].str.contains(filtro_recrutador, case=False, na=False)]
 
+        download_button(df_filtrado, "candidatos.csv", "⬇️ Baixar Candidatos")
         show_table(df_filtrado, CANDIDATOS_COLS, "candidatos_df", CANDIDATOS_CSV)
 
 # ==============================
