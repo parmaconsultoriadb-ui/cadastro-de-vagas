@@ -67,14 +67,14 @@ if st.session_state.vagas:
         vagas_filtradas = [v for v in vagas_filtradas if filtro_cliente.lower() in v["Cliente"].lower()]
 
     if vagas_filtradas:
-        # Layout ajustado para melhor leitura do Status
-        header_cols = st.columns([1, 3, 2, 2, 2, 2, 2, 2, 1])
+        # Layout ajustado -> mais espaço para Abertura, Cliente e Cargo
+        header_cols = st.columns([1, 3, 3, 4, 4, 2, 2, 2, 1])
         headers = ["ID", "Status", "Abertura", "Cliente", "Cargo", "Salário 1", "Salário 2", "Fechamento", "🗑️"]
         for col, h in zip(header_cols, headers):
             col.markdown(f"**{h}**")
 
         for vaga in vagas_filtradas:
-            cols = st.columns([1, 3, 2, 2, 2, 2, 2, 2, 1])
+            cols = st.columns([1, 3, 3, 4, 4, 2, 2, 2, 1])
             cols[0].write(vaga["ID"])
 
             novo_status = cols[1].selectbox(
