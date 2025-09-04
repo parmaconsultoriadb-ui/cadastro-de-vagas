@@ -67,14 +67,14 @@ if st.session_state.vagas:
         vagas_filtradas = [v for v in vagas_filtradas if filtro_cliente.lower() in v["Cliente"].lower()]
 
     if vagas_filtradas:
-        # Layout mais compacto
-        header_cols = st.columns([1, 2, 2, 2, 2, 2, 2, 2, 1])
+        # Layout ajustado para melhor leitura do Status
+        header_cols = st.columns([1, 3, 2, 2, 2, 2, 2, 2, 1])
         headers = ["ID", "Status", "Abertura", "Cliente", "Cargo", "Salário 1", "Salário 2", "Fechamento", "🗑️"]
         for col, h in zip(header_cols, headers):
             col.markdown(f"**{h}**")
 
         for vaga in vagas_filtradas:
-            cols = st.columns([1, 2, 2, 2, 2, 2, 2, 2, 1])
+            cols = st.columns([1, 3, 2, 2, 2, 2, 2, 2, 1])
             cols[0].write(vaga["ID"])
 
             novo_status = cols[1].selectbox(
@@ -91,7 +91,7 @@ if st.session_state.vagas:
             cols[2].write(vaga["Data de Abertura"])
             cols[3].write(vaga["Cliente"])
             cols[4].write(vaga["Cargo"])
-            cols[5].write(f"{vaga['Salário 1']:.0f}")  # mais compacto
+            cols[5].write(f"{vaga['Salário 1']:.0f}")
             cols[6].write(f"{vaga['Salário 2']:.0f}")
             cols[7].write(vaga["Data de Fechamento"] if vaga["Data de Fechamento"] else "-")
             if cols[8].button("🗑️", key=f"del_{vaga['ID']}"):
