@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import date
 
 # Configuração inicial da página (modo wide)
-st.set_page_config(page_title="Sistema de Cadastros", layout="wide")
+st.set_page_config(page_title="Parma Consultoria", layout="wide")
 
 # Controle de navegação
 if "page" not in st.session_state:
