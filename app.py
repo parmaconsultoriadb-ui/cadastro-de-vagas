@@ -6,68 +6,60 @@ import os
 # Configuração inicial da página (modo wide)
 st.set_page_config(page_title="Parma Consultoria", layout="wide")
 
-# Arquivo CSV para persistir os dados
-ARQUIVO_VAGAS = "vagas.csv"
+# Controle de navegação
+if "page" not in st.session_state:
+    st.session_state.page = "menu"
+
+CSV_FILE = "vagas.csv"
 
 # ==============================
 # Funções auxiliares
 # ==============================
 def carregar_vagas():
-    """Carrega as vagas do CSV para session_state."""
-    if os.path.exists(ARQUIVO_VAGAS):
-        df = pd.read_csv(ARQUIVO_VAGAS, dtype={"ID": int})
+    """Carrega vagas do CSV (se existir)"""
+    if os.path.exists(CSV_FILE):
+        df = pd.read_csv(CSV_FILE)
         return df.to_dict(orient="records")
     return []
 
 def salvar_vagas():
-    """Salva as vagas do session_state no CSV."""
-    if st.session_state.vagas:
+    """Salva vagas no CSV"""
+    if "vagas" in st.session_state:
         df = pd.DataFrame(st.session_state.vagas)
-        df.to_csv(ARQUIVO_VAGAS, index=False)
-
-# ==============================
-# Inicialização global
-# ==============================
-if "page" not in st.session_state:
-    st.session_state.page = "menu"
-
-if "vagas" not in st.session_state:
-    st.session_state.vagas = carregar_vagas()
-
-if "vaga_id" not in st.session_state:
-    # Se já existir vagas, o próximo ID é o último + 1
-    st.session_state.vaga_id = max([v["ID"] for v in st.session_state.vagas], default=0) + 1
+        df.to_csv(CSV_FILE, index=False, encoding="utf-8")
 
 # ==============================
 # Função: Tela de Cadastro de Vagas
 # ==============================
 def tela_vagas():
-    # Inicialização dos campos padrão
-    for campo in ["form_cliente", "form_cargo", "form_salario1", "form_salario2", "form_recrutador", "form_data_abertura"]:
-        if campo not in st.session_state:
-            if campo == "form_data_abertura":
-                st.session_state[campo] = date.today()
-            elif campo in ["form_salario1", "form_salario2"]:
-                st.session_state[campo] = 0.0
-            else:
-                st.session_state[campo] = ""
+    # Inicialização da sessão
+    if "vagas" not in st.session_state:
+        st.session_state.vagas = carregar_vagas()
+    if "vaga_id" not in st.session_state:
+        st.session_state.vaga_id = len(st.session_state.vagas) + 1
+
+    # Inicialização dos campos padrão do formulário
+    if "form_cliente" not in st.session_state:
+        st.session_state.form_cliente = ""
+    if "form_cargo" not in st.session_state:
+        st.session_state.form_cargo = ""
+    if "form_salario1" not in st.session_state:
+        st.session_state.form_salario1 = 0.0
+    if "form_salario2" not in st.session_state:
+        st.session_state.form_salario2 = 0.0
+    if "form_recrutador" not in st.session_state:
+        st.session_state.form_recrutador = ""
+    if "form_data_abertura" not in st.session_state:
+        st.session_state.form_data_abertura = date.today()
 
     # Função para limpar formulário
     def limpar_formulario():
-        st.session_state.update({
-            "form_cliente": "",
-            "form_cargo": "",
-            "form_salario1": 0.0,
-            "form_salario2": 0.0,
-            "form_recrutador": "",
-            "form_data_abertura": date.today(),
-            "cliente": "",
-            "cargo": "",
-            "salario1": 0.0,
-            "salario2": 0.0,
-            "recrutador": "",
-            "data_abertura": date.today(),
-        })
+        st.session_state.form_cliente = ""
+        st.session_state.form_cargo = ""
+        st.session_state.form_salario1 = 0.0
+        st.session_state.form_salario2 = 0.0
+        st.session_state.form_recrutador = ""
+        st.session_state.form_data_abertura = date.today()
         st.rerun()
 
     # Botão para voltar ao menu
@@ -124,10 +116,10 @@ def tela_vagas():
                 st.success("✅ Vaga cadastrada com sucesso!")
                 limpar_formulario()
 
-    # Mostrar vagas cadastradas (sempre aparece)
-    if st.session_state.vagas:
-        st.markdown("<h2 style='font-size:28px;'>📄 Vagas Cadastradas</h2>", unsafe_allow_html=True)
+    # Mostrar vagas cadastradas
+    st.markdown("<h2 style='font-size:28px;'>📄 Vagas Cadastradas</h2>", unsafe_allow_html=True)
 
+    if st.session_state.vagas:
         filtro_col1, filtro_col2 = st.columns([1, 2])
         with filtro_col1:
             filtro_status = st.selectbox("Filtrar por status:", ["Todas", "Aberta", "Fechada", "Em andamento"])
@@ -183,30 +175,22 @@ def tela_vagas():
     else:
         st.info("Nenhuma vaga cadastrada ainda.")
 
-
 # ==============================
-# Função: Tela de Cadastro de Clientes (placeholder)
+# Funções de outras telas
 # ==============================
 def tela_clientes():
     if st.button("⬅️ Voltar ao Menu", use_container_width=True):
         st.session_state.page = "menu"
         st.rerun()
-
     st.markdown("<h1 style='font-size:36px;'>👥 Cadastro de Clientes</h1>", unsafe_allow_html=True)
     st.info("Tela de cadastro de clientes em desenvolvimento...")
 
-
-# ==============================
-# Função: Tela de Cadastro de Candidatos (placeholder)
-# ==============================
 def tela_candidatos():
     if st.button("⬅️ Voltar ao Menu", use_container_width=True):
         st.session_state.page = "menu"
         st.rerun()
-
     st.markdown("<h1 style='font-size:36px;'>🧑‍💼 Cadastro de Candidatos</h1>", unsafe_allow_html=True)
     st.info("Tela de cadastro de candidatos em desenvolvimento...")
-
 
 # ==============================
 # Menu principal
