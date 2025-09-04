@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 from datetime import date
@@ -14,16 +13,18 @@ with st.form("form_vaga"):
     data_abertura = st.date_input("Data de Abertura", value=date.today())
     cliente = st.text_input("Cliente")
     cargo = st.text_input("Cargo")
-    salario1 = st.number_input("Salário 1 (mínimo)", step=100.0)
-    salario2 = st.number_input("Salário 2 (máximo)", step=100.0)
+    salario1 = st.number_input("Salário 1 (mínimo)", step=100.0, format="%.2f")
+    salario2 = st.number_input("Salário 2 (máximo)", step=100.0, format="%.2f")
     recrutador = st.text_input("Recrutador")
 
     submitted = st.form_submit_button("Cadastrar Vaga")
 
     if submitted:
-        # Validação de campos obrigatórios
+        # Validações
         if not cliente or not cargo or not recrutador:
             st.warning("⚠️ Preencha todos os campos obrigatórios: Cliente, Cargo e Recrutador.")
+        elif salario1 == 0.0 or salario2 == 0.0:
+            st.warning("⚠️ Os campos de salário não podem ser zero.")
         elif salario2 < salario1:
             st.warning("⚠️ O salário máximo não pode ser menor que o salário mínimo.")
         else:
