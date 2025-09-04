@@ -59,45 +59,62 @@ with st.form("form_vaga", enter_to_submit=False):  # 🚫 Enter não envia o for
 if st.session_state.vagas:
     st.subheader("📄 Vagas Cadastradas")
 
-    # Cabeçalho da "tabela"
-    header_cols = st.columns([1, 2, 2, 2, 2, 2, 2, 2, 1])
-    headers = ["ID", "Status", "Abertura", "Cliente", "Cargo", "Salário 1", "Salário 2", "Fechamento", "🗑️"]
-    for col, h in zip(header_cols, headers):
-        col.markdown(f"**{h}**")
+    # 🔽 Filtro de status
+    filtro_status = st.selectbox(
+        "Filtrar por status:",
+        ["Todas", "Aberta", "Fechada", "Em andamento"]
+    )
 
-    # Linhas da "tabela"
-    for i, vaga in enumerate(st.session_state.vagas):
-        cols = st.columns([1, 2, 2, 2, 2, 2, 2, 2, 1])
-        cols[0].write(vaga["ID"])
-        
-        # 🔽 Selectbox para alterar status
-        novo_status = cols[1].selectbox(
-            "",
-            ["Aberta", "Fechada", "Em andamento"],
-            index=["Aberta", "Fechada", "Em andamento"].index(vaga["Status"]),
-            key=f"status_{vaga['ID']}"
-        )
-        if novo_status != vaga["Status"]:
-            st.session_state.vagas[i]["Status"] = novo_status
-            if novo_status == "Fechada":
-                st.session_state.vagas[i]["Data de Fechamento"] = date.today().strftime("%d/%m/%Y")
-            else:
-                st.session_state.vagas[i]["Data de Fechamento"] = ""
+    # Aplicar filtro
+    if filtro_status != "Todas":
+        vagas_filtradas = [v for v in st.session_state.vagas if v["Status"] == filtro_status]
+    else:
+        vagas_filtradas = st.session_state.vagas
 
-        cols[2].write(vaga["Data de Abertura"])  # ✅ sempre DD/MM/YYYY
-        cols[3].write(vaga["Cliente"])
-        cols[4].write(vaga["Cargo"])
-        cols[5].write(f"R$ {vaga['Salário 1']:.2f}")
-        cols[6].write(f"R$ {vaga['Salário 2']:.2f}")
-        cols[7].write(vaga["Data de Fechamento"] if vaga["Data de Fechamento"] else "-")
-        if cols[8].button("🗑️", key=f"del_{vaga['ID']}"):
-            st.session_state.vagas = [v for v in st.session_state.vagas if v["ID"] != vaga["ID"]]
-            st.experimental_rerun()
+    if vagas_filtradas:
+        # Cabeçalho da "tabela"
+        header_cols = st.columns([1, 2, 2, 2, 2, 2, 2, 2, 1])
+        headers = ["ID", "Status", "Abertura", "Cliente", "Cargo", "Salário 1", "Salário 2", "Fechamento", "🗑️"]
+        for col, h in zip(header_cols, headers):
+            col.markdown(f"**{h}**")
 
-    # Exportar CSV (mantendo formato da data e status atualizado)
-    df = pd.DataFrame(st.session_state.vagas)
-    csv = df.to_csv(index=False).encode('utf-8')
-    st.download_button("📁 Exportar para CSV", csv, "vagas.csv", "text/csv")
+        # Linhas da "tabela"
+        for i, vaga in enumerate(vagas_filtradas):
+            cols = st.columns([1, 2, 2, 2, 2, 2, 2, 2, 1])
+            cols[0].write(vaga["ID"])
+            
+            # 🔽 Selectbox para alterar status
+            novo_status = cols[1].selectbox(
+                "",
+                ["Aberta", "Fechada", "Em andamento"],
+                index=["Aberta", "Fechada", "Em andamento"].index(vaga["Status"]),
+                key=f"status_{vaga['ID']}"
+            )
+            if novo_status != vaga["Status"]:
+                # Atualiza status na lista principal
+                for v in st.session_state.vagas:
+                    if v["ID"] == vaga["ID"]:
+                        v["Status"] = novo_status
+                        if novo_status == "Fechada":
+                            v["Data de Fechamento"] = date.today().strftime("%d/%m/%Y")
+                        else:
+                            v["Data de Fechamento"] = ""
 
+            cols[2].write(vaga["Data de Abertura"])
+            cols[3].write(vaga["Cliente"])
+            cols[4].write(vaga["Cargo"])
+            cols[5].write(f"R$ {vaga['Salário 1']:.2f}")
+            cols[6].write(f"R$ {vaga['Salário 2']:.2f}")
+            cols[7].write(vaga["Data de Fechamento"] if vaga["Data de Fechamento"] else "-")
+            if cols[8].button("🗑️", key=f"del_{vaga['ID']}"):
+                st.session_state.vagas = [v for v in st.session_state.vagas if v["ID"] != vaga["ID"]]
+                st.experimental_rerun()
+
+        # Exportar CSV (mantendo formato da data e status atualizado)
+        df = pd.DataFrame(vagas_filtradas)
+        csv = df.to_csv(index=False).encode('utf-8')
+        st.download_button("📁 Exportar para CSV", csv, "vagas.csv", "text/csv")
+    else:
+        st.info(f"Nenhuma vaga encontrada com status **{filtro_status}**.")
 else:
     st.info("Nenhuma vaga cadastrada ainda.")
