@@ -50,6 +50,8 @@ if "edit_mode" not in st.session_state:
     st.session_state.edit_mode = None
 if "edit_record" not in st.session_state:
     st.session_state.edit_record = {}
+if "confirm_delete" not in st.session_state:
+    st.session_state.confirm_delete = {"df_name": None, "row_id": None}
 
 # Definição das colunas
 CLIENTES_COLS = ["ID", "Data", "Nome", "Cliente", "Cidade", "UF", "Telefone", "E-mail"]
@@ -145,20 +147,35 @@ def show_table(df, cols, df_name, csv_path):
                 unsafe_allow_html=True
             )
 
-        # Botão Editar (texto)
+        # Botão Editar
         with cols_ui[-2]:
             if st.button("Editar", key=f"edit_{df_name}_{row['ID']}", use_container_width=True):
                 st.session_state.edit_mode = df_name
                 st.session_state.edit_record = row.to_dict()
                 st.rerun()
 
-        # Botão Excluir (texto)
+        # Botão Excluir (confirmação)
         with cols_ui[-1]:
             if st.button("Excluir", key=f"del_{df_name}_{row['ID']}", use_container_width=True):
-                df2 = df[df["ID"] != row["ID"]]
+                st.session_state.confirm_delete = {"df_name": df_name, "row_id": row["ID"]}
+                st.rerun()
+
+    # Se existir confirmação pendente
+    if st.session_state.confirm_delete["df_name"] == df_name:
+        row_id = st.session_state.confirm_delete["row_id"]
+        st.warning(f"Deseja realmente excluir o registro **ID {row_id}**?")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("✅ Sim, quero excluir"):
+                df2 = df[df["ID"] != row_id]
                 st.session_state[df_name] = df2
                 save_csv(df2, csv_path)
-                st.success(f"Registro {row['ID']} excluído com sucesso!")
+                st.success(f"Registro {row_id} excluído com sucesso!")
+                st.session_state.confirm_delete = {"df_name": None, "row_id": None}
+                st.rerun()
+        with col2:
+            if st.button("❌ Cancelar"):
+                st.session_state.confirm_delete = {"df_name": None, "row_id": None}
                 st.rerun()
 
     st.divider()
