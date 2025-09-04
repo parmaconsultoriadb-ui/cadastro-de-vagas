@@ -65,10 +65,20 @@ if st.session_state.vagas:
         col.markdown(f"**{h}**")
 
     # Linhas da "tabela"
-    for vaga in st.session_state.vagas:
+    for i, vaga in enumerate(st.session_state.vagas):
         cols = st.columns([1, 2, 2, 2, 2, 2, 2, 1])
         cols[0].write(vaga["ID"])
-        cols[1].write(vaga["Status"])
+        
+        # 🔽 Selectbox para alterar status
+        novo_status = cols[1].selectbox(
+            "",
+            ["Aberta", "Fechada", "Em andamento"],
+            index=["Aberta", "Fechada", "Em andamento"].index(vaga["Status"]),
+            key=f"status_{vaga['ID']}"
+        )
+        if novo_status != vaga["Status"]:
+            st.session_state.vagas[i]["Status"] = novo_status
+
         cols[2].write(vaga["Data de Abertura"])  # ✅ sempre DD/MM/YYYY
         cols[3].write(vaga["Cliente"])
         cols[4].write(vaga["Cargo"])
@@ -78,7 +88,7 @@ if st.session_state.vagas:
             st.session_state.vagas = [v for v in st.session_state.vagas if v["ID"] != vaga["ID"]]
             st.experimental_rerun()
 
-    # Exportar CSV (mantendo formato da data)
+    # Exportar CSV (mantendo formato da data e status atualizado)
     df = pd.DataFrame(st.session_state.vagas)
     csv = df.to_csv(index=False).encode('utf-8')
     st.download_button("📁 Exportar para CSV", csv, "vagas.csv", "text/csv")
