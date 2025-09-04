@@ -160,13 +160,14 @@ def show_table(df, cols, df_name, csv_path):
                 st.session_state.confirm_delete = {"df_name": df_name, "row_id": row["ID"]}
                 st.rerun()
 
-    # Se existir confirmação pendente
+    # Área fixa de confirmação na parte inferior
     if st.session_state.confirm_delete["df_name"] == df_name:
         row_id = st.session_state.confirm_delete["row_id"]
         st.warning(f"Deseja realmente excluir o registro **ID {row_id}**?")
-        col1, col2 = st.columns(2)
+
+        col_spacer1, col1, col2, col_spacer2 = st.columns([2, 1, 1, 2])
         with col1:
-            if st.button("✅ Sim, quero excluir"):
+            if st.button("✅ Sim, quero excluir", key=f"confirm_{df_name}_{row_id}"):
                 df2 = df[df["ID"] != row_id]
                 st.session_state[df_name] = df2
                 save_csv(df2, csv_path)
@@ -174,7 +175,7 @@ def show_table(df, cols, df_name, csv_path):
                 st.session_state.confirm_delete = {"df_name": None, "row_id": None}
                 st.rerun()
         with col2:
-            if st.button("❌ Cancelar"):
+            if st.button("❌ Cancelar", key=f"cancel_{df_name}_{row_id}"):
                 st.session_state.confirm_delete = {"df_name": None, "row_id": None}
                 st.rerun()
 
