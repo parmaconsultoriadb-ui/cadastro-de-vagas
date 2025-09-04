@@ -119,11 +119,11 @@ def tela_clientes():
             limpar = st.form_submit_button("Limpar Formulário", use_container_width=True)
 
         if limpar:
-            st.session_state["cli_cliente"] = ""
-            st.session_state["cli_cidade"] = ""
-            st.session_state["cli_uf"] = ""
-            st.session_state["cli_tel"] = ""
-            st.session_state["cli_email"] = ""
+            st.session_state.pop("cli_cliente", None)
+            st.session_state.pop("cli_cidade", None)
+            st.session_state.pop("cli_uf", None)
+            st.session_state.pop("cli_tel", None)
+            st.session_state.pop("cli_email", None)
             st.rerun()
 
         if submitted:
@@ -164,6 +164,7 @@ def tela_vagas():
     # --------- FORM DE CADASTRO ---------
     with st.form("form_vaga", enter_to_submit=False):
         st.write("**Status:** Aberta")
+        st.text_input("Data de Abertura", value=data_abertura, disabled=True)
         cliente = st.text_input("Cliente *", key="vaga_cliente")
         cargo = st.text_input("Cargo *", key="vaga_cargo")
         salario1 = st.number_input("Salário 1", step=100.0, format="%.2f", value=0.0, key="vaga_sal1")
@@ -193,12 +194,9 @@ def tela_vagas():
 
     # --------- BOTÃO LIMPAR (FORA DO FORM) ---------
     if st.button("Limpar Formulário", use_container_width=True):
-        # Reset seguro (fora do form evita a exceção do Streamlit)
-        st.session_state["vaga_cliente"] = ""
-        st.session_state["vaga_cargo"] = ""
-        st.session_state["vaga_sal1"] = 0.0
-        st.session_state["vaga_sal2"] = 0.0
-        st.session_state["vaga_recrutador"] = ""
+        # Remoção das chaves evita conflito com widgets; na próxima execução, voltam aos valores padrão
+        for k in ("vaga_cliente", "vaga_cargo", "vaga_sal1", "vaga_sal2", "vaga_recrutador"):
+            st.session_state.pop(k, None)
         st.rerun()
 
     # --------- LISTA DE VAGAS ---------
@@ -238,11 +236,11 @@ def tela_candidatos():
             limpar = st.form_submit_button("Limpar Formulário", use_container_width=True)
 
         if limpar:
-            st.session_state["cand_cliente"] = lista_clientes[0] if lista_clientes else ""
-            st.session_state["cand_cargo"] = ""
-            st.session_state["cand_nome"] = ""
-            st.session_state["cand_tel"] = ""
-            st.session_state["cand_recrutador"] = ""
+            st.session_state.pop("cand_cliente", None)
+            st.session_state.pop("cand_cargo", None)
+            st.session_state.pop("cand_nome", None)
+            st.session_state.pop("cand_tel", None)
+            st.session_state.pop("cand_recrutador", None)
             st.rerun()
 
         if submitted:
