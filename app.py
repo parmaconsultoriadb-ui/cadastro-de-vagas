@@ -12,12 +12,12 @@ if 'vagas' not in st.session_state:
 if 'vaga_id' not in st.session_state:  # contador de IDs
     st.session_state.vaga_id = 1
 
-# Inicialização dos campos (garante que existam na sessão)
-for campo in ["cliente", "cargo", "salario1", "salario2", "recrutador", "data_abertura"]:
+# Inicialização dos campos padrão (não conflitam com os widgets)
+for campo in ["form_cliente", "form_cargo", "form_salario1", "form_salario2", "form_recrutador", "form_data_abertura"]:
     if campo not in st.session_state:
-        if campo == "data_abertura":
+        if campo == "form_data_abertura":
             st.session_state[campo] = date.today()
-        elif campo in ["salario1", "salario2"]:
+        elif campo in ["form_salario1", "form_salario2"]:
             st.session_state[campo] = 0.0
         else:
             st.session_state[campo] = ""
@@ -29,14 +29,14 @@ with st.form("form_vaga", enter_to_submit=False):
     st.write("**Status:** Aberta")
     status = "Aberta"
 
-    data_abertura = st.date_input("Data de Abertura", value=st.session_state.data_abertura, key="data_abertura")
+    data_abertura = st.date_input("Data de Abertura", value=st.session_state.form_data_abertura, key="data_abertura")
     data_abertura_str = data_abertura.strftime("%d/%m/%Y")
 
-    cliente = st.text_input("Cliente", value=st.session_state.cliente, key="cliente")
-    cargo = st.text_input("Cargo", value=st.session_state.cargo, key="cargo")
-    salario1 = st.number_input("Salário 1 (mínimo)", step=100.0, format="%.2f", value=st.session_state.salario1, key="salario1")
-    salario2 = st.number_input("Salário 2 (máximo)", step=100.0, format="%.2f", value=st.session_state.salario2, key="salario2")
-    recrutador = st.text_input("Recrutador", value=st.session_state.recrutador, key="recrutador")
+    cliente = st.text_input("Cliente", value=st.session_state.form_cliente, key="cliente")
+    cargo = st.text_input("Cargo", value=st.session_state.form_cargo, key="cargo")
+    salario1 = st.number_input("Salário 1 (mínimo)", step=100.0, format="%.2f", value=st.session_state.form_salario1, key="salario1")
+    salario2 = st.number_input("Salário 2 (máximo)", step=100.0, format="%.2f", value=st.session_state.form_salario2, key="salario2")
+    recrutador = st.text_input("Recrutador", value=st.session_state.form_recrutador, key="recrutador")
 
     submitted = st.form_submit_button("Cadastrar Vaga", use_container_width=True)
 
@@ -64,68 +64,11 @@ with st.form("form_vaga", enter_to_submit=False):
             st.session_state.vaga_id += 1
             st.success("✅ Vaga cadastrada com sucesso!")
 
-            # 🔄 Resetar os campos após cadastro
-            st.session_state.cliente = ""
-            st.session_state.cargo = ""
-            st.session_state.salario1 = 0.0
-            st.session_state.salario2 = 0.0
-            st.session_state.recrutador = ""
-            st.session_state.data_abertura = date.today()
-            st.experimental_rerun()  # força atualizar a tela com campos limpos
-
-# Mostrar vagas cadastradas
-if st.session_state.vagas:
-    st.markdown("<h2 style='font-size:28px;'>📄 Vagas Cadastradas</h2>", unsafe_allow_html=True)
-
-    filtro_col1, filtro_col2 = st.columns([1, 2])
-    with filtro_col1:
-        filtro_status = st.selectbox("Filtrar por status:", ["Todas", "Aberta", "Fechada", "Em andamento"])
-    with filtro_col2:
-        filtro_cliente = st.text_input("Buscar por Cliente:")
-
-    vagas_filtradas = st.session_state.vagas
-    if filtro_status != "Todas":
-        vagas_filtradas = [v for v in vagas_filtradas if v["Status"] == filtro_status]
-    if filtro_cliente:
-        vagas_filtradas = [v for v in vagas_filtradas if filtro_cliente.lower() in v["Cliente"].lower()]
-
-    if vagas_filtradas:
-        header_cols = st.columns([1, 3, 3, 4, 4, 2, 2, 2, 1])
-        headers = ["ID", "Status", "Abertura", "Cliente", "Cargo", "Salário 1", "Salário 2", "Fechamento", "🗑️"]
-        for col, h in zip(header_cols, headers):
-            col.markdown(f"<b style='font-size:16px;'>{h}</b>", unsafe_allow_html=True)
-
-        for vaga in vagas_filtradas:
-            cols = st.columns([1, 3, 3, 4, 4, 2, 2, 2, 1])
-            cols[0].write(f"**{vaga['ID']}**")
-
-            novo_status = cols[1].selectbox(
-                "", ["Aberta", "Fechada", "Em andamento"],
-                index=["Aberta", "Fechada", "Em andamento"].index(vaga["Status"]),
-                key=f"status_{vaga['ID']}"
-            )
-            if novo_status != vaga["Status"]:
-                for v in st.session_state.vagas:
-                    if v["ID"] == vaga["ID"]:
-                        v["Status"] = novo_status
-                        v["Data de Fechamento"] = date.today().strftime("%d/%m/%Y") if novo_status == "Fechada" else ""
-
-            cols[2].write(vaga["Data de Abertura"])
-            cols[3].write(vaga["Cliente"])
-            cols[4].write(vaga["Cargo"])
-            cols[5].write(f"R$ {vaga['Salário 1']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-            cols[6].write(f"R$ {vaga['Salário 2']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-            cols[7].write(vaga["Data de Fechamento"] if vaga["Data de Fechamento"] else "-")
-            if cols[8].button("🗑️", key=f"del_{vaga['ID']}"):
-                st.session_state.vagas = [v for v in st.session_state.vagas if v["ID"] != vaga["ID"]]
-                st.experimental_rerun()
-
-        df = pd.DataFrame(vagas_filtradas)
-        df["Salário 1"] = df["Salário 1"].apply(lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-        df["Salário 2"] = df["Salário 2"].apply(lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-        csv = df.to_csv(index=False).encode('utf-8')
-        st.download_button("📁 Exportar para CSV", csv, "vagas.csv", "text/csv", use_container_width=True)
-    else:
-        st.info("Nenhuma vaga encontrada com os filtros aplicados.")
-else:
-    st.info("Nenhuma vaga cadastrada ainda.")
+            # 🔄 Resetar campos default (sem conflito com widgets)
+            st.session_state.form_cliente = ""
+            st.session_state.form_cargo = ""
+            st.session_state.form_salario1 = 0.0
+            st.session_state.form_salario2 = 0.0
+            st.session_state.form_recrutador = ""
+            st.session_state.form_data_abertura = date.today()
+            st.experimental_rerun()  # recarregar tela com campos limpos
