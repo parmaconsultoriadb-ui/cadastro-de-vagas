@@ -217,7 +217,10 @@ def tela_vagas():
     data_abertura = date.today().strftime("%d/%m/%Y")
 
     with st.form("form_vaga", enter_to_submit=False):
-        cliente = st.text_input("Cliente *")
+        # Agora o campo Cliente busca da aba de Clientes
+        lista_clientes = st.session_state.clientes_df["Cliente"].dropna().unique().tolist()
+        cliente = st.selectbox("Cliente * (digite para buscar)", options=lista_clientes) if lista_clientes else st.text_input("Cliente *")
+
         cargo = st.text_input("Cargo *")
         salario1 = st.text_input("Salário 1")
         salario2 = st.text_input("Salário 2")
