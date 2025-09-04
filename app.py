@@ -219,6 +219,10 @@ def tela_clientes():
         if submitted:
             if not all([nome, cliente, cidade, uf, telefone, email]):
                 st.warning("⚠️ Preencha todos os campos obrigatórios.")
+            elif not telefone.isdigit() or len(telefone) < 8:
+                st.warning("⚠️ O telefone deve conter apenas números e ter pelo menos 8 dígitos.")
+            elif "@" not in email:
+                st.warning("⚠️ O e-mail deve conter o caractere '@'.")
             else:
                 prox_id = next_id(st.session_state.clientes_df, "ID")
                 novo = pd.DataFrame([{
@@ -340,6 +344,8 @@ def tela_candidatos():
         if submitted:
             if not all([cliente_sel, cargo, nome, telefone, recrutador]):
                 st.warning("⚠️ Preencha todos os campos obrigatórios.")
+            elif not telefone.isdigit() or len(telefone) < 8:
+                st.warning("⚠️ O telefone deve conter apenas números e ter pelo menos 8 dígitos.")
             else:
                 prox_id = next_id(st.session_state.candidatos_df, "ID")
                 novo = pd.DataFrame([{
