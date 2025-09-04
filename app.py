@@ -135,21 +135,32 @@ def show_table(df, cols, df_name, csv_path):
         unsafe_allow_html=True
     )
 
-    # Linhas da tabela
-    for _, row in df.iterrows():
+    # Linhas da tabela (zebrado + centralizado)
+    for idx, row in df.iterrows():
+        bg_color = "#ffffff" if idx % 2 == 0 else "#f9f9f9"  # zebra
         cols_ui = st.columns(len(cols) + 2)
         for i, c in enumerate(cols):
-            cols_ui[i].write(row[c])
-        if cols_ui[-2].button("✏️", key=f"edit_{df_name}_{row['ID']}"):
-            st.session_state.edit_mode = df_name
-            st.session_state.edit_record = row.to_dict()
-            st.rerun()
-        if cols_ui[-1].button("🗑️", key=f"del_{df_name}_{row['ID']}"):
-            df2 = df[df["ID"] != row["ID"]]
-            st.session_state[df_name] = df2
-            save_csv(df2, csv_path)
-            st.success(f"Registro {row['ID']} excluído com sucesso!")
-            st.rerun()
+            cols_ui[i].markdown(
+                f"<div style='background-color:{bg_color}; padding:6px; text-align:center;'>{row[c]}</div>",
+                unsafe_allow_html=True
+            )
+        with cols_ui[-2]:
+            st.markdown(f"<div style='background-color:{bg_color}; text-align:center;'>", unsafe_allow_html=True)
+            if st.button("✏️", key=f"edit_{df_name}_{row['ID']}"):
+                st.session_state.edit_mode = df_name
+                st.session_state.edit_record = row.to_dict()
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
+        with cols_ui[-1]:
+            st.markdown(f"<div style='background-color:{bg_color}; text-align:center;'>", unsafe_allow_html=True)
+            if st.button("🗑️", key=f"del_{df_name}_{row['ID']}"):
+                df2 = df[df["ID"] != row["ID"]]
+                st.session_state[df_name] = df2
+                save_csv(df2, csv_path)
+                st.success(f"Registro {row['ID']} excluído com sucesso!")
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
+
     st.divider()
 
 def download_button(df, filename, label="⬇️ Baixar CSV"):
