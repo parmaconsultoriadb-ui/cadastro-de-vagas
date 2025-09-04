@@ -43,7 +43,7 @@ def next_id(df, id_col="ID"):
 # ==============================
 # Arquivo de Cargos
 # ==============================
-CARGOS_CSV = r"C:\Users\Windows\Documents\cargos_brasil_2025\cargos_brasil_2025.csv"
+CARGOS_CSV = r"C:\Users\Windows\Documents\cargos_brasil_2025
 
 try:
     df_cargos = pd.read_csv(CARGOS_CSV, header=None, names=["Cargo"])
