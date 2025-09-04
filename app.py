@@ -71,8 +71,8 @@ st.markdown(
         background-color: royalblue !important;
         color: white !important;
         border-radius: 8px;
-        height: 2.2em;
-        font-size: 14px;
+        height: 3em;
+        font-size: 16px;
         font-weight: bold;
     }
     div.stButton > button:hover {
@@ -83,25 +83,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
-# ==============================
-# Função para exibir tabela com opção de excluir
-# ==============================
-def exibir_tabela_com_excluir(df, csv_path, key_prefix):
-    if df.empty:
-        st.info("Nenhum registro encontrado.")
-        return
-
-    for i, row in df.iterrows():
-        col1, col2 = st.columns([12, 1])
-        with col1:
-            st.write(row.to_dict())  # mostra os dados como dicionário
-        with col2:
-            if st.button("🗑️", key=f"del_{key_prefix}_{row['ID']}"):
-                df = df[df["ID"] != row["ID"]]
-                save_csv(df, csv_path)
-                st.session_state[f"{key_prefix}_df"] = df
-                st.rerun()
 
 # ==============================
 # Tela de Clientes
@@ -154,12 +135,14 @@ def tela_clientes():
                 st.rerun()
 
     st.markdown("<h2 style='font-size:28px;'>📄 Clientes Cadastrados</h2>", unsafe_allow_html=True)
-    filtro_cliente = st.text_input("🔎 Buscar por Cliente")
-    df_filtrado = st.session_state.clientes_df
-    if filtro_cliente:
-        df_filtrado = df_filtrado[df_filtrado["Cliente"].str.contains(filtro_cliente, case=False, na=False)]
-
-    exibir_tabela_com_excluir(df_filtrado, CLIENTES_CSV, "clientes")
+    if st.session_state.clientes_df.empty:
+        st.info("Nenhum cliente cadastrado ainda.")
+    else:
+        filtro_cliente = st.text_input("🔎 Buscar por Cliente")
+        df_filtrado = st.session_state.clientes_df
+        if filtro_cliente:
+            df_filtrado = df_filtrado[df_filtrado["Cliente"].str.contains(filtro_cliente, case=False, na=False)]
+        st.dataframe(df_filtrado, use_container_width=True)
 
 # ==============================
 # Tela de Vagas
@@ -206,23 +189,26 @@ def tela_vagas():
                 st.rerun()
 
     st.markdown("<h2 style='font-size:28px;'>📄 Vagas Cadastradas</h2>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        filtro_status = st.text_input("🔎 Buscar por Status")
-    with col2:
-        filtro_cliente = st.text_input("🔎 Buscar por Cliente")
-    with col3:
-        filtro_cargo = st.text_input("🔎 Buscar por Cargo")
+    if st.session_state.vagas_df.empty:
+        st.info("Nenhuma vaga cadastrada ainda.")
+    else:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            filtro_status = st.text_input("🔎 Buscar por Status")
+        with col2:
+            filtro_cliente = st.text_input("🔎 Buscar por Cliente")
+        with col3:
+            filtro_cargo = st.text_input("🔎 Buscar por Cargo")
 
-    df_filtrado = st.session_state.vagas_df
-    if filtro_status:
-        df_filtrado = df_filtrado[df_filtrado["Status"].str.contains(filtro_status, case=False, na=False)]
-    if filtro_cliente:
-        df_filtrado = df_filtrado[df_filtrado["Cliente"].str.contains(filtro_cliente, case=False, na=False)]
-    if filtro_cargo:
-        df_filtrado = df_filtrado[df_filtrado["Cargo"].str.contains(filtro_cargo, case=False, na=False)]
+        df_filtrado = st.session_state.vagas_df
+        if filtro_status:
+            df_filtrado = df_filtrado[df_filtrado["Status"].str.contains(filtro_status, case=False, na=False)]
+        if filtro_cliente:
+            df_filtrado = df_filtrado[df_filtrado["Cliente"].str.contains(filtro_cliente, case=False, na=False)]
+        if filtro_cargo:
+            df_filtrado = df_filtrado[df_filtrado["Cargo"].str.contains(filtro_cargo, case=False, na=False)]
 
-    exibir_tabela_com_excluir(df_filtrado, VAGAS_CSV, "vagas")
+        st.dataframe(df_filtrado, use_container_width=True)
 
 # ==============================
 # Tela de Candidatos
@@ -267,23 +253,26 @@ def tela_candidatos():
                 st.rerun()
 
     st.markdown("<h2 style='font-size:28px;'>📄 Candidatos Cadastrados</h2>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        filtro_cliente = st.text_input("🔎 Buscar por Cliente")
-    with col2:
-        filtro_cargo = st.text_input("🔎 Buscar por Cargo")
-    with col3:
-        filtro_recrutador = st.text_input("🔎 Buscar por Recrutador")
+    if st.session_state.candidatos_df.empty:
+        st.info("Nenhum candidato cadastrado ainda.")
+    else:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            filtro_cliente = st.text_input("🔎 Buscar por Cliente")
+        with col2:
+            filtro_cargo = st.text_input("🔎 Buscar por Cargo")
+        with col3:
+            filtro_recrutador = st.text_input("🔎 Buscar por Recrutador")
 
-    df_filtrado = st.session_state.candidatos_df
-    if filtro_cliente:
-        df_filtrado = df_filtrado[df_filtrado["Cliente"].str.contains(filtro_cliente, case=False, na=False)]
-    if filtro_cargo:
-        df_filtrado = df_filtrado[df_filtrado["Cargo"].str.contains(filtro_cargo, case=False, na=False)]
-    if filtro_recrutador:
-        df_filtrado = df_filtrado[df_filtrado["Recrutador"].str.contains(filtro_recrutador, case=False, na=False)]
+        df_filtrado = st.session_state.candidatos_df
+        if filtro_cliente:
+            df_filtrado = df_filtrado[df_filtrado["Cliente"].str.contains(filtro_cliente, case=False, na=False)]
+        if filtro_cargo:
+            df_filtrado = df_filtrado[df_filtrado["Cargo"].str.contains(filtro_cargo, case=False, na=False)]
+        if filtro_recrutador:
+            df_filtrado = df_filtrado[df_filtrado["Recrutador"].str.contains(filtro_recrutador, case=False, na=False)]
 
-    exibir_tabela_com_excluir(df_filtrado, CANDIDATOS_CSV, "candidatos")
+        st.dataframe(df_filtrado, use_container_width=True)
 
 # ==============================
 # Menu principal
