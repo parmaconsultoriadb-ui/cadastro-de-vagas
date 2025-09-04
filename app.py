@@ -138,7 +138,11 @@ def tela_clientes():
     if st.session_state.clientes_df.empty:
         st.info("Nenhum cliente cadastrado ainda.")
     else:
-        st.dataframe(st.session_state.clientes_df, use_container_width=True)
+        filtro_cliente = st.text_input("🔎 Buscar por Cliente")
+        df_filtrado = st.session_state.clientes_df
+        if filtro_cliente:
+            df_filtrado = df_filtrado[df_filtrado["Cliente"].str.contains(filtro_cliente, case=False, na=False)]
+        st.dataframe(df_filtrado, use_container_width=True)
 
 # ==============================
 # Tela de Vagas
@@ -188,7 +192,23 @@ def tela_vagas():
     if st.session_state.vagas_df.empty:
         st.info("Nenhuma vaga cadastrada ainda.")
     else:
-        st.dataframe(st.session_state.vagas_df, use_container_width=True)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            filtro_status = st.text_input("🔎 Buscar por Status")
+        with col2:
+            filtro_cliente = st.text_input("🔎 Buscar por Cliente")
+        with col3:
+            filtro_cargo = st.text_input("🔎 Buscar por Cargo")
+
+        df_filtrado = st.session_state.vagas_df
+        if filtro_status:
+            df_filtrado = df_filtrado[df_filtrado["Status"].str.contains(filtro_status, case=False, na=False)]
+        if filtro_cliente:
+            df_filtrado = df_filtrado[df_filtrado["Cliente"].str.contains(filtro_cliente, case=False, na=False)]
+        if filtro_cargo:
+            df_filtrado = df_filtrado[df_filtrado["Cargo"].str.contains(filtro_cargo, case=False, na=False)]
+
+        st.dataframe(df_filtrado, use_container_width=True)
 
 # ==============================
 # Tela de Candidatos
@@ -236,7 +256,23 @@ def tela_candidatos():
     if st.session_state.candidatos_df.empty:
         st.info("Nenhum candidato cadastrado ainda.")
     else:
-        st.dataframe(st.session_state.candidatos_df, use_container_width=True)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            filtro_cliente = st.text_input("🔎 Buscar por Cliente")
+        with col2:
+            filtro_cargo = st.text_input("🔎 Buscar por Cargo")
+        with col3:
+            filtro_recrutador = st.text_input("🔎 Buscar por Recrutador")
+
+        df_filtrado = st.session_state.candidatos_df
+        if filtro_cliente:
+            df_filtrado = df_filtrado[df_filtrado["Cliente"].str.contains(filtro_cliente, case=False, na=False)]
+        if filtro_cargo:
+            df_filtrado = df_filtrado[df_filtrado["Cargo"].str.contains(filtro_cargo, case=False, na=False)]
+        if filtro_recrutador:
+            df_filtrado = df_filtrado[df_filtrado["Recrutador"].str.contains(filtro_recrutador, case=False, na=False)]
+
+        st.dataframe(df_filtrado, use_container_width=True)
 
 # ==============================
 # Menu principal
