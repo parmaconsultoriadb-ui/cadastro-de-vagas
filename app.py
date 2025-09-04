@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 from datetime import date
@@ -16,20 +17,27 @@ with st.form("form_vaga"):
     salario1 = st.number_input("Salário 1 (mínimo)", step=100.0)
     salario2 = st.number_input("Salário 2 (máximo)", step=100.0)
     recrutador = st.text_input("Recrutador")
-    
+
     submitted = st.form_submit_button("Cadastrar Vaga")
-    
+
     if submitted:
-        st.session_state.vagas.append({
-            "Status": status,
-            "Data de Abertura": data_abertura.strftime('%Y-%m-%d'),
-            "Cliente": cliente,
-            "Cargo": cargo,
-            "Salário 1": salario1,
-            "Salário 2": salario2,
-            "Recrutador": recrutador
-        })
-        st.success("✅ Vaga cadastrada com sucesso!")
+        # Validação de campos obrigatórios
+        if not cliente or not cargo or not recrutador:
+            st.warning("⚠️ Preencha todos os campos obrigatórios: Cliente, Cargo e Recrutador.")
+        elif salario2 < salario1:
+            st.warning("⚠️ O salário máximo não pode ser menor que o salário mínimo.")
+        else:
+            # Adiciona a vaga
+            st.session_state.vagas.append({
+                "Status": status,
+                "Data de Abertura": data_abertura.strftime('%Y-%m-%d'),
+                "Cliente": cliente,
+                "Cargo": cargo,
+                "Salário 1": salario1,
+                "Salário 2": salario2,
+                "Recrutador": recrutador
+            })
+            st.success("✅ Vaga cadastrada com sucesso!")
 
 # Mostrar vagas cadastradas
 if st.session_state.vagas:
