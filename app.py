@@ -56,7 +56,7 @@ if "confirm_delete" not in st.session_state:
 # Definição das colunas
 CLIENTES_COLS = ["ID", "Data", "Nome", "Cliente", "Cidade", "UF", "Telefone", "E-mail"]
 VAGAS_COLS = ["ID", "Status", "Data de Abertura", "Cliente", "Cargo", "Salário 1", "Salário 2", "Recrutador", "Data de Fechamento"]
-CANDIDATOS_COLS = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador"]
+CANDIDATOS_COLS = ["ID", "Status", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador"]
 
 # Carregar CSVs
 if "clientes_df" not in st.session_state:
@@ -99,6 +99,9 @@ def show_edit_form(df_name, cols, csv_path):
         for c in cols:
             if c == "ID":
                 new_data[c] = st.text_input(c, value=record[c], disabled=True)
+            elif df_name == "candidatos_df" and c == "Status":
+                opcoes = ["Enviado", "Não entrevistado", "Validado", "Não validado", "Desistência"]
+                new_data[c] = st.selectbox(c, opcoes, index=opcoes.index(record[c]) if record[c] in opcoes else 0)
             else:
                 new_data[c] = st.text_input(c, value=record[c])
         submitted = st.form_submit_button("Salvar Alterações", use_container_width=True)
@@ -273,7 +276,6 @@ def tela_vagas():
             if not cliente or not cargo or not recrutador:
                 st.warning("⚠️ Preencha todos os campos obrigatórios.")
             else:
-                # Função de validação e formatação monetária
                 def formatar_salario(valor):
                     if not valor:
                         return ""
@@ -365,6 +367,7 @@ def tela_candidatos():
                 prox_id = next_id(st.session_state.candidatos_df, "ID")
                 novo = pd.DataFrame([{
                     "ID": str(prox_id),
+                    "Status": "Não entrevistado",
                     "Cliente": cliente_sel,
                     "Cargo": cargo,
                     "Nome": nome,
@@ -389,37 +392,4 @@ def tela_candidatos():
         df_filtrado = df
         if filtro_cliente:
             df_filtrado = df_filtrado[df_filtrado["Cliente"].str.contains(filtro_cliente, case=False, na=False)]
-        if filtro_cargo:
-            df_filtrado = df_filtrado[df_filtrado["Cargo"].str.contains(filtro_cargo, case=False, na=False)]
-        if filtro_recrutador:
-            df_filtrado = df_filtrado[df_filtrado["Recrutador"].str.contains(filtro_recrutador, case=False, na=False)]
-
-        download_button(df_filtrado, "candidatos.csv", "⬇️ Baixar Candidatos")
-        show_table(df_filtrado, CANDIDATOS_COLS, "candidatos_df", CANDIDATOS_CSV)
-
-# ==============================
-# MENU
-# ==============================
-if st.session_state.page == "menu":
-    st.title("📌 Parma Consultoria")
-
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if st.button("👥 Cadastro de Clientes", use_container_width=True):
-            st.session_state.page = "clientes"
-            st.rerun()
-    with col2:
-        if st.button("📋 Cadastro de Vagas", use_container_width=True):
-            st.session_state.page = "vagas"
-            st.rerun()
-    with col3:
-        if st.button("🧑‍💼 Cadastro de Candidatos", use_container_width=True):
-            st.session_state.page = "candidatos"
-            st.rerun()
-
-elif st.session_state.page == "clientes":
-    tela_clientes()
-elif st.session_state.page == "vagas":
-    tela_vagas()
-elif st.session_state.page == "candidatos":
-    tela_candidatos()
+        if filtro_c
