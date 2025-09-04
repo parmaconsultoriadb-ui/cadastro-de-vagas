@@ -119,15 +119,23 @@ def show_edit_form(df_name, cols, csv_path):
         st.rerun()
 
 def show_table(df, cols, df_name, csv_path):
+    # Cabeçalho
+    cols_ui = st.columns(len(cols) + 2)
+    for i, c in enumerate(cols):
+        cols_ui[i].markdown(f"**{c}**")
+    cols_ui[-2].markdown("**Editar**")
+    cols_ui[-1].markdown("**Excluir**")
+
+    # Linhas
     for _, row in df.iterrows():
         cols_ui = st.columns(len(cols) + 2)
         for i, c in enumerate(cols):
             cols_ui[i].write(row[c])
-        if cols_ui[-2].button("✏️ Editar", key=f"edit_{df_name}_{row['ID']}"):
+        if cols_ui[-2].button("✏️", key=f"edit_{df_name}_{row['ID']}"):
             st.session_state.edit_mode = df_name
             st.session_state.edit_record = row.to_dict()
             st.rerun()
-        if cols_ui[-1].button("🗑️ Excluir", key=f"del_{df_name}_{row['ID']}"):
+        if cols_ui[-1].button("🗑️", key=f"del_{df_name}_{row['ID']}"):
             df2 = df[df["ID"] != row["ID"]]
             st.session_state[df_name] = df2
             save_csv(df2, csv_path)
