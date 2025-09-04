@@ -22,20 +22,30 @@ for campo in ["form_cliente", "form_cargo", "form_salario1", "form_salario2", "f
         else:
             st.session_state[campo] = ""
 
-# Função para limpar formulário
+# Função para limpar formulário (zera widgets e defaults)
 def limpar_formulario():
-    st.session_state.form_cliente = ""
-    st.session_state.form_cargo = ""
-    st.session_state.form_salario1 = 0.0
-    st.session_state.form_salario2 = 0.0
-    st.session_state.form_recrutador = ""
-    st.session_state.form_data_abertura = date.today()
+    st.session_state.update({
+        # defaults
+        "form_cliente": "",
+        "form_cargo": "",
+        "form_salario1": 0.0,
+        "form_salario2": 0.0,
+        "form_recrutador": "",
+        "form_data_abertura": date.today(),
+        # widgets
+        "cliente": "",
+        "cargo": "",
+        "salario1": 0.0,
+        "salario2": 0.0,
+        "recrutador": "",
+        "data_abertura": date.today(),
+    })
     st.rerun()
 
 # Título maior
 st.markdown("<h1 style='font-size:36px;'>📋 Cadastro de Vagas</h1>", unsafe_allow_html=True)
 
-with st.form("form_vaga", enter_to_submit=False):  
+with st.form("form_vaga", enter_to_submit=False):
     st.write("**Status:** Aberta")
     status = "Aberta"
 
@@ -52,7 +62,7 @@ with st.form("form_vaga", enter_to_submit=False):
     with col1:
         submitted = st.form_submit_button("Cadastrar Vaga", use_container_width=True)
     with col2:
-        limpar = st.form_submit_button("Limpar Formulário", use_container_width=True)
+        st.form_submit_button("Limpar Formulário", on_click=limpar_formulario, use_container_width=True)
 
     if submitted:
         if not cliente or not cargo or not recrutador:
@@ -77,11 +87,7 @@ with st.form("form_vaga", enter_to_submit=False):
             })
             st.session_state.vaga_id += 1
             st.success("✅ Vaga cadastrada com sucesso!")
-
-            limpar_formulario()  # limpa os campos após cadastro
-
-    if limpar:  # botão manual para limpar sem cadastrar
-        limpar_formulario()
+            limpar_formulario()  # limpa após cadastrar
 
 # Mostrar vagas cadastradas
 if st.session_state.vagas:
