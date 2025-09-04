@@ -22,16 +22,6 @@ for campo in ["cliente", "cargo", "salario1", "salario2", "recrutador", "data_ab
         else:
             st.session_state[campo] = ""
 
-# Função para limpar os campos
-def limpar_formulario():
-    st.session_state.cliente = ""
-    st.session_state.cargo = ""
-    st.session_state.salario1 = 0.0
-    st.session_state.salario2 = 0.0
-    st.session_state.recrutador = ""
-    st.session_state.data_abertura = date.today()
-    st.experimental_rerun()
-
 # Título maior
 st.markdown("<h1 style='font-size:36px;'>📋 Cadastro de Vagas</h1>", unsafe_allow_html=True)
 
@@ -48,11 +38,7 @@ with st.form("form_vaga", enter_to_submit=False):
     salario2 = st.number_input("Salário 2 (máximo)", step=100.0, format="%.2f", value=st.session_state.salario2, key="salario2")
     recrutador = st.text_input("Recrutador", value=st.session_state.recrutador, key="recrutador")
 
-    col1, col2 = st.columns([2,1])
-    with col1:
-        submitted = st.form_submit_button("✅ Cadastrar Vaga", use_container_width=True)
-    with col2:
-        limpar = st.form_submit_button("🧹 Limpar Formulário", use_container_width=True)
+    submitted = st.form_submit_button("Cadastrar Vaga", use_container_width=True)
 
     if submitted:
         if not cliente or not cargo or not recrutador:
@@ -77,10 +63,15 @@ with st.form("form_vaga", enter_to_submit=False):
             })
             st.session_state.vaga_id += 1
             st.success("✅ Vaga cadastrada com sucesso!")
-            limpar_formulario()
 
-    if limpar:
-        limpar_formulario()
+            # 🔄 Resetar os campos após cadastro
+            st.session_state.cliente = ""
+            st.session_state.cargo = ""
+            st.session_state.salario1 = 0.0
+            st.session_state.salario2 = 0.0
+            st.session_state.recrutador = ""
+            st.session_state.data_abertura = date.today()
+            st.experimental_rerun()  # força atualizar a tela com campos limpos
 
 # Mostrar vagas cadastradas
 if st.session_state.vagas:
