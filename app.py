@@ -35,7 +35,7 @@ with st.form("form_vaga", enter_to_submit=False):  # 🚫 Enter não envia o for
             st.session_state.vagas.append({
                 "ID": st.session_state.vaga_id,  # chave primária
                 "Status": status,
-                "Data de Abertura": data_abertura.strftime('%d/%m/%Y'),  # ✅ formato BR
+                "Data de Abertura": data_abertura.strftime('%Y-%m-%d'),
                 "Cliente": cliente,
                 "Cargo": cargo,
                 "Salário 1": salario1,
