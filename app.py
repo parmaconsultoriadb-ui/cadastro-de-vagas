@@ -188,33 +188,12 @@ def tela_candidatos():
 # Menu principal
 # ==============================
 if st.session_state.page == "menu":
-    st.markdown("<h1 style='font-size:40px;'>🚀 Sistema de Cadastros</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='font-size:40px;'>🚀 Parma Consultoria</h1>", unsafe_allow_html=True)
     st.write("Escolha uma das opções abaixo:")
-
-    # 🔵 CSS para deixar todos os botões azul royal
-    st.markdown(
-        """
-        <style>
-        div.stButton > button {
-            background-color: royalblue !important;
-            color: white !important;
-            border-radius: 8px;
-            height: 3em;
-            font-size: 16px;
-            font-weight: bold;
-        }
-        div.stButton > button:hover {
-            background-color: #27408B !important; /* Azul royal mais escuro no hover */
-            color: white !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        if st.button("👥 Cadastro de Clientes", use_container_width=True):
+        if st.button("👥 Cadastro de Clientes", use_container_width=True, type="primary"):
             st.session_state.page = "clientes"
             st.rerun()
     with col2:
