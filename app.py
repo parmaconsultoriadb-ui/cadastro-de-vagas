@@ -188,32 +188,35 @@ def show_table(df, cols, df_name, csv_path):
     # Modal de confirmação
     if st.session_state.delete_confirm and st.session_state.delete_confirm["df_name"] == df_name:
         id_to_delete = st.session_state.delete_confirm["id"]
-        st.markdown(
-            f"""
-            <div class="modal">
-                <div class="modal-content">
-                    <h3>⚠️ Confirmar Exclusão</h3>
-                    <p>Tem certeza que deseja excluir o registro <b>ID {id_to_delete}</b>?</p>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
 
-        colA, colB = st.columns(2)
-        with colA:
-            if st.button("✅ Confirmar Exclusão", key=f"confirm_{id_to_delete}", use_container_width=True):
-                df2 = df[df["ID"] != id_to_delete]
-                st.session_state[df_name] = df2
-                save_csv(df2, csv_path)
-                st.success(f"Registro {id_to_delete} excluído com sucesso!")
-                st.session_state.delete_confirm = None
-                st.rerun()
-        with colB:
-            if st.button("❌ Cancelar", key=f"cancel_{id_to_delete}", use_container_width=True):
-                st.session_state.delete_confirm = None
-                st.info("Exclusão cancelada.")
-                st.rerun()
+        # Renderiza o modal
+        with st.container():
+            st.markdown(
+                f"""
+                <div class="modal">
+                    <div class="modal-content">
+                        <h3>⚠️ Confirmar Exclusão</h3>
+                        <p>Tem certeza que deseja excluir o registro <b>ID {id_to_delete}</b>?</p>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            colA, colB = st.columns(2)
+            with colA:
+                if st.button("✅ Confirmar Exclusão", key=f"confirm_{id_to_delete}", use_container_width=True):
+                    df2 = df[df["ID"] != id_to_delete]
+                    st.session_state[df_name] = df2
+                    save_csv(df2, csv_path)
+                    st.success(f"Registro {id_to_delete} excluído com sucesso!")
+                    st.session_state.delete_confirm = None
+                    st.rerun()
+            with colB:
+                if st.button("❌ Cancelar", key=f"cancel_{id_to_delete}", use_container_width=True):
+                    st.session_state.delete_confirm = None
+                    st.info("Exclusão cancelada.")
+                    st.rerun()
 
 def download_button(df, filename, label="⬇️ Baixar CSV"):
     csv = df.to_csv(index=False).encode("utf-8")
@@ -335,11 +338,11 @@ if st.session_state.page == "menu":
     st.title("📌 Sistema de Cadastro - Parma Consultoria")
     st.markdown("Selecione uma opção abaixo:")
     col1, col2, col3 = st.columns(3)
-    with col1:
+    with col1: 
         if st.button("👥 Cadastro de Clientes", use_container_width=True): st.session_state.page = "clientes"; st.rerun()
-    with col2:
+    with col2: 
         if st.button("📋 Cadastro de Vagas", use_container_width=True): st.session_state.page = "vagas"; st.rerun()
-    with col3:
+    with col3: 
         if st.button("🧑‍💼 Cadastro de Candidatos", use_container_width=True): st.session_state.page = "candidatos"; st.rerun()
 
 elif st.session_state.page == "clientes": tela_clientes()
