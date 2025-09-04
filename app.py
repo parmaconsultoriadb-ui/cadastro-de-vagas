@@ -92,21 +92,21 @@ if "candidatos_df" not in st.session_state:
 # ==============================
 st.markdown(
     """
-<style>
-div.stButton > button {
-    background-color: royalblue !important;
-    color: white !important;
-    border-radius: 8px;
-    height: 2.5em;
-    font-size: 15px;
-    font-weight: bold;
-}
-div.stButton > button:hover {
-    background-color: #27408B !important;
-    color: white !important;
-}
-</style>
-""",
+    <style>
+    div.stButton > button {
+        background-color: royalblue !important;
+        color: white !important;
+        border-radius: 8px;
+        height: 2.5em;
+        font-size: 15px;
+        font-weight: bold;
+    }
+    div.stButton > button:hover {
+        background-color: #27408B !important;
+        color: white !important;
+    }
+    </style>
+    """,
     unsafe_allow_html=True,
 )
 
@@ -144,31 +144,27 @@ def show_edit_form(df_name, cols, csv_path):
             if not idx.empty:
                 for c in cols:
                     df.loc[idx, c] = new_data[c]
-                st.session_state[df_name] = df
-                save_csv(df, csv_path)
+            st.session_state[df_name] = df
+            save_csv(df, csv_path)
 
             # ==============================
             # NOVA LÓGICA:
-            # Se for candidato e o status for "Validado" -> atualizar apenas UMA vaga
+            # Se for candidato e o status for "Validado" -> atualizar vaga
             # ==============================
             if df_name == "candidatos_df" and new_data.get("Status") == "Validado":
                 cliente = new_data.get("Cliente")
                 cargo = new_data.get("Cargo")
-                vagas_df = st.session_state.vagas_df
 
+                vagas_df = st.session_state.vagas_df
                 idx_vaga = vagas_df[
                     (vagas_df["Cliente"] == cliente) & (vagas_df["Cargo"] == cargo)
                 ].index
 
                 if not idx_vaga.empty:
-                    # Atualizar apenas a PRIMEIRA vaga encontrada
-                    idx_primeira_vaga = idx_vaga[0]
-                    vagas_df.loc[idx_primeira_vaga, "Status"] = "Ag. Inicio"
-
+                    vagas_df.loc[idx_vaga, "Status"] = "Ag. Inicio"
                     st.session_state.vagas_df = vagas_df
                     save_csv(vagas_df, VAGAS_CSV)
-
-                    st.success("🔄 Apenas UMA vaga vinculada foi atualizada automaticamente para 'Ag. Inicio'!")
+                    st.success("🔄 A vaga vinculada foi atualizada automaticamente para 'Ag. Inicio'!")
 
             st.success("✅ Registro atualizado com sucesso!")
             st.session_state.edit_mode = None
@@ -243,11 +239,7 @@ def show_table(df, cols, df_name, csv_path):
 def download_button(df, filename, label="⬇️ Baixar CSV"):
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button(
-        label=label,
-        data=csv,
-        file_name=filename,
-        mime="text/csv",
-        use_container_width=True,
+        label=label, data=csv, file_name=filename, mime="text/csv", use_container_width=True
     )
 
 
@@ -274,8 +266,8 @@ def tela_clientes():
         uf = st.text_input("UF *", max_chars=2)
         telefone = st.text_input("Telefone *")
         email = st.text_input("E-mail *")
-        submitted = st.form_submit_button("Cadastrar Cliente", use_container_width=True)
 
+        submitted = st.form_submit_button("Cadastrar Cliente", use_container_width=True)
         if submitted:
             if not all([nome, cliente, cidade, uf, telefone, email]):
                 st.warning("⚠️ Preencha todos os campos obrigatórios.")
@@ -369,7 +361,7 @@ def tela_vagas():
                         [
                             {
                                 "ID": str(prox_id),
-                                "Status": "Aberta",
+                                "Status": "Aberta",   # <- sempre fixo no cadastro
                                 "Data de Abertura": data_abertura,
                                 "Cliente": cliente,
                                 "Cargo": cargo,
@@ -426,7 +418,6 @@ def tela_candidatos():
         st.rerun()
 
     st.header("🧑‍💼 Cadastro de Candidatos")
-
     if st.session_state.vagas_df.empty:
         st.warning("⚠️ Cadastre uma Vaga antes de cadastrar Candidatos.")
         return
@@ -522,6 +513,7 @@ if st.session_state.page == "menu":
         if st.button("🧑‍💼 Cadastro de Candidatos", use_container_width=True):
             st.session_state.page = "candidatos"
             st.rerun()
+
 elif st.session_state.page == "clientes":
     tela_clientes()
 elif st.session_state.page == "vagas":
