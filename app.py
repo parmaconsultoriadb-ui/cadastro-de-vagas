@@ -105,6 +105,7 @@ def tela_clientes():
 
         col1, col2 = st.columns(2)
         with col1:
+            nome = st.text_input("Nome *", key="cli_nome")   # <-- Novo campo
             cliente = st.text_input("Cliente *", key="cli_cliente")
             cidade = st.text_input("Cidade *", key="cli_cidade")
             uf = st.text_input("UF *", max_chars=2, key="cli_uf")
@@ -119,6 +120,7 @@ def tela_clientes():
             limpar = st.form_submit_button("Limpar Formulário", use_container_width=True)
 
         if limpar:
+            st.session_state.pop("cli_nome", None)
             st.session_state.pop("cli_cliente", None)
             st.session_state.pop("cli_cidade", None)
             st.session_state.pop("cli_uf", None)
@@ -127,12 +129,13 @@ def tela_clientes():
             st.rerun()
 
         if submitted:
-            if not all([cliente.strip(), cidade.strip(), uf.strip(), telefone.strip(), email.strip()]):
+            if not all([nome.strip(), cliente.strip(), cidade.strip(), uf.strip(), telefone.strip(), email.strip()]):
                 st.warning("⚠️ Preencha todos os campos obrigatórios.")
             else:
                 novo = pd.DataFrame([{
                     "ID": str(prox_id),
                     "Data": data_hoje,
+                    "Nome": nome.strip(),       # <-- Salva o campo Nome
                     "Cliente": cliente.strip(),
                     "Cidade": cidade.strip(),
                     "UF": uf.strip().upper(),
