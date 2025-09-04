@@ -149,22 +149,26 @@ def show_edit_form(df_name, cols, csv_path):
 
             # ==============================
             # NOVA LÓGICA:
-            # Se for candidato e o status for "Validado" -> atualizar vaga
+            # Se for candidato e o status for "Validado" -> atualizar apenas UMA vaga
             # ==============================
             if df_name == "candidatos_df" and new_data.get("Status") == "Validado":
                 cliente = new_data.get("Cliente")
                 cargo = new_data.get("Cargo")
 
                 vagas_df = st.session_state.vagas_df
-                idx_vaga = vagas_df[
+                idx_vagas = vagas_df[
                     (vagas_df["Cliente"] == cliente) & (vagas_df["Cargo"] == cargo)
                 ].index
 
-                if not idx_vaga.empty:
-                    vagas_df.loc[idx_vaga, "Status"] = "Ag. Inicio"
+                if not idx_vagas.empty:
+                    # Atualiza apenas a primeira vaga encontrada
+                    idx_vaga = idx_vagas[0]
+                    vagas_df.at[idx_vaga, "Status"] = "Ag. Inicio"
                     st.session_state.vagas_df = vagas_df
                     save_csv(vagas_df, VAGAS_CSV)
-                    st.success("🔄 A vaga vinculada foi atualizada automaticamente para 'Ag. Inicio'!")
+                    st.success(
+                        f"🔄 A vaga vinculada (ID {vagas_df.at[idx_vaga, 'ID']}) foi atualizada automaticamente para 'Ag. Inicio'!"
+                    )
 
             st.success("✅ Registro atualizado com sucesso!")
             st.session_state.edit_mode = None
@@ -361,7 +365,7 @@ def tela_vagas():
                         [
                             {
                                 "ID": str(prox_id),
-                                "Status": "Aberta",   # <- sempre fixo no cadastro
+                                "Status": "Aberta",
                                 "Data de Abertura": data_abertura,
                                 "Cliente": cliente,
                                 "Cargo": cargo,
@@ -439,84 +443,4 @@ def tela_candidatos():
         telefone = st.text_input("Telefone *")
         recrutador = st.text_input("Recrutador *")
 
-        submitted = st.form_submit_button("Cadastrar Candidato", use_container_width=True)
-        if submitted:
-            if not all([cliente_sel, cargo, nome, telefone, recrutador]):
-                st.warning("⚠️ Preencha todos os campos obrigatórios.")
-            elif not telefone.isdigit() or len(telefone) < 8:
-                st.warning("⚠️ O telefone deve conter apenas números e ter pelo menos 8 dígitos.")
-            else:
-                prox_id = next_id(st.session_state.candidatos_df, "ID")
-                novo = pd.DataFrame(
-                    [
-                        {
-                            "ID": str(prox_id),
-                            "Status": "Enviado",
-                            "Cliente": cliente_sel,
-                            "Cargo": cargo,
-                            "Nome": nome,
-                            "Telefone": telefone,
-                            "Recrutador": recrutador,
-                        }
-                    ]
-                )
-                st.session_state.candidatos_df = pd.concat(
-                    [st.session_state.candidatos_df, novo], ignore_index=True
-                )
-                save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
-                st.success(f"✅ Candidato cadastrado com sucesso! ID: {prox_id}")
-                st.rerun()
-
-    st.subheader("📄 Candidatos Cadastrados")
-    df = st.session_state.candidatos_df
-    if df.empty:
-        st.info("Nenhum candidato cadastrado.")
-    else:
-        col1, col2, col3 = st.columns(3)
-        filtro_cliente = col1.text_input("🔎 Buscar por Cliente")
-        filtro_cargo = col2.text_input("🔎 Buscar por Cargo")
-        filtro_recrutador = col3.text_input("🔎 Buscar por Recrutador")
-
-        df_filtrado = df
-        if filtro_cliente:
-            df_filtrado = df_filtrado[
-                df_filtrado["Cliente"].str.contains(filtro_cliente, case=False, na=False)
-            ]
-        if filtro_cargo:
-            df_filtrado = df_filtrado[
-                df_filtrado["Cargo"].str.contains(filtro_cargo, case=False, na=False)
-            ]
-        if filtro_recrutador:
-            df_filtrado = df_filtrado[
-                df_filtrado["Recrutador"].str.contains(filtro_recrutador, case=False, na=False)
-            ]
-
-        download_button(df_filtrado, "candidatos.csv", "⬇️ Baixar Candidatos")
-        show_table(df_filtrado, CANDIDATOS_COLS, "candidatos_df", CANDIDATOS_CSV)
-
-
-# ==============================
-# Menu Principal
-# ==============================
-if st.session_state.page == "menu":
-    st.title("📌 Parma Consultoria")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if st.button("👥 Cadastro de Clientes", use_container_width=True):
-            st.session_state.page = "clientes"
-            st.rerun()
-    with col2:
-        if st.button("📋 Cadastro de Vagas", use_container_width=True):
-            st.session_state.page = "vagas"
-            st.rerun()
-    with col3:
-        if st.button("🧑‍💼 Cadastro de Candidatos", use_container_width=True):
-            st.session_state.page = "candidatos"
-            st.rerun()
-
-elif st.session_state.page == "clientes":
-    tela_clientes()
-elif st.session_state.page == "vagas":
-    tela_vagas()
-elif st.session_state.page == "candidatos":
-    tela_candidatos()
+       
