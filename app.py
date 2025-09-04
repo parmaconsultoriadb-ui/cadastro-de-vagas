@@ -41,6 +41,17 @@ def next_id(df, id_col="ID"):
         return 1
 
 # ==============================
+# Arquivo de Cargos
+# ==============================
+CARGOS_CSV = r"C:\Users\Windows\Documents\cargos_brasil_2025\cargos_brasil_2025.csv"
+
+try:
+    df_cargos = pd.read_csv(CARGOS_CSV, header=None, names=["Cargo"])
+    lista_cargos = df_cargos["Cargo"].dropna().unique().tolist()
+except Exception:
+    lista_cargos = []
+
+# ==============================
 # Inicialização do estado
 # ==============================
 if "page" not in st.session_state:
@@ -218,7 +229,7 @@ def tela_vagas():
 
     with st.form("form_vaga", enter_to_submit=False):
         cliente = st.text_input("Cliente *")
-        cargo = st.text_input("Cargo *")
+        cargo = st.selectbox("Cargo * (digite para buscar)", options=lista_cargos) if lista_cargos else st.text_input("Cargo *")
         salario1 = st.text_input("Salário 1")
         salario2 = st.text_input("Salário 2")
         recrutador = st.text_input("Recrutador *")
@@ -284,7 +295,7 @@ def tela_candidatos():
     with st.form("form_candidatos", enter_to_submit=False):
         lista_clientes = st.session_state.clientes_df["Cliente"].dropna().unique().tolist()
         cliente_sel = st.selectbox("Cliente *", options=lista_clientes)
-        cargo = st.text_input("Cargo *")
+        cargo = st.selectbox("Cargo * (digite para buscar)", options=lista_cargos) if lista_cargos else st.text_input("Cargo *")
         nome = st.text_input("Nome *")
         telefone = st.text_input("Telefone *")
         recrutador = st.text_input("Recrutador *")
