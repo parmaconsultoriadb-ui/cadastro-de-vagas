@@ -161,6 +161,7 @@ def tela_vagas():
     prox_id = next_id(st.session_state.vagas_df, "ID")
     data_abertura = date.today().strftime("%d/%m/%Y")
 
+    # --------- FORM DE CADASTRO ---------
     with st.form("form_vaga", enter_to_submit=False):
         st.write("**Status:** Aberta")
         cliente = st.text_input("Cliente *", key="vaga_cliente")
@@ -169,19 +170,7 @@ def tela_vagas():
         salario2 = st.number_input("Salário 2", step=100.0, format="%.2f", value=0.0, key="vaga_sal2")
         recrutador = st.text_input("Recrutador *", key="vaga_recrutador")
 
-        c1, c2 = st.columns(2)
-        with c1:
-            submitted = st.form_submit_button("Cadastrar Vaga", use_container_width=True)
-        with c2:
-            limpar = st.form_submit_button("Limpar Formulário", use_container_width=True)
-
-        if limpar:
-            st.session_state["vaga_cliente"] = ""
-            st.session_state["vaga_cargo"] = ""
-            st.session_state["vaga_sal1"] = 0.0
-            st.session_state["vaga_sal2"] = 0.0
-            st.session_state["vaga_recrutador"] = ""
-            st.rerun()
+        submitted = st.form_submit_button("Cadastrar Vaga", use_container_width=True)
 
         if submitted:
             if not cliente or not cargo or not recrutador:
@@ -202,6 +191,17 @@ def tela_vagas():
                 save_csv(st.session_state.vagas_df, VAGAS_CSV)
                 st.success("✅ Vaga cadastrada com sucesso!")
 
+    # --------- BOTÃO LIMPAR (FORA DO FORM) ---------
+    if st.button("Limpar Formulário", use_container_width=True):
+        # Reset seguro (fora do form evita a exceção do Streamlit)
+        st.session_state["vaga_cliente"] = ""
+        st.session_state["vaga_cargo"] = ""
+        st.session_state["vaga_sal1"] = 0.0
+        st.session_state["vaga_sal2"] = 0.0
+        st.session_state["vaga_recrutador"] = ""
+        st.rerun()
+
+    # --------- LISTA DE VAGAS ---------
     st.markdown("<h2 style='font-size:28px;'>📄 Vagas Cadastradas</h2>", unsafe_allow_html=True)
     if st.session_state.vagas_df.empty:
         st.info("Nenhuma vaga cadastrada ainda.")
