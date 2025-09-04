@@ -8,28 +8,7 @@ if 'vagas' not in st.session_state:
 
 st.title("📋 Cadastro de Vagas")
 
-# 🔁 Insere JavaScript para pular para o próximo campo ao apertar Enter
-st.markdown("""
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const inputs = Array.from(document.querySelectorAll("input, select, textarea"));
-
-    inputs.forEach((input, index) => {
-        input.addEventListener("keydown", function (e) {
-            if (e.key === "Enter") {
-                e.preventDefault();  // Impede envio do formulário
-                const nextInput = inputs[index + 1];
-                if (nextInput) {
-                    nextInput.focus();
-                }
-            }
-        });
-    });
-});
-</script>
-""", unsafe_allow_html=True)
-
-with st.form("form_vaga"):
+with st.form("form_vaga", enter_to_submit=False):  # 🚫 Enter não envia o formulário
     status = st.selectbox("Status", ['Aberta', 'Fechada', 'Em andamento'])
     data_abertura = st.date_input("Data de Abertura", value=date.today())
     cliente = st.text_input("Cliente")
@@ -41,6 +20,7 @@ with st.form("form_vaga"):
     submitted = st.form_submit_button("Cadastrar Vaga")
 
     if submitted:
+        # Validações
         if not cliente or not cargo or not recrutador:
             st.warning("⚠️ Preencha todos os campos obrigatórios: Cliente, Cargo e Recrutador.")
         elif salario1 == 0.0 or salario2 == 0.0:
@@ -48,6 +28,7 @@ with st.form("form_vaga"):
         elif salario2 < salario1:
             st.warning("⚠️ O salário máximo não pode ser menor que o salário mínimo.")
         else:
+            # Adiciona a vaga
             st.session_state.vagas.append({
                 "Status": status,
                 "Data de Abertura": data_abertura.strftime('%Y-%m-%d'),
