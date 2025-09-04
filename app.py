@@ -6,6 +6,9 @@ from datetime import date
 if 'vagas' not in st.session_state:
     st.session_state.vagas = []
 
+if 'vaga_id' not in st.session_state:  # contador de IDs
+    st.session_state.vaga_id = 1
+
 st.title("📋 Cadastro de Vagas")
 
 with st.form("form_vaga", enter_to_submit=False):  # 🚫 Enter não envia o formulário
@@ -28,8 +31,9 @@ with st.form("form_vaga", enter_to_submit=False):  # 🚫 Enter não envia o for
         elif salario2 < salario1:
             st.warning("⚠️ O salário máximo não pode ser menor que o salário mínimo.")
         else:
-            # Adiciona a vaga
+            # Adiciona a vaga com ID
             st.session_state.vagas.append({
+                "ID": st.session_state.vaga_id,  # chave primária
                 "Status": status,
                 "Data de Abertura": data_abertura.strftime('%Y-%m-%d'),
                 "Cliente": cliente,
@@ -38,12 +42,16 @@ with st.form("form_vaga", enter_to_submit=False):  # 🚫 Enter não envia o for
                 "Salário 2": salario2,
                 "Recrutador": recrutador
             })
+            st.session_state.vaga_id += 1  # incrementa o ID
             st.success("✅ Vaga cadastrada com sucesso!")
 
 # Mostrar vagas cadastradas
 if st.session_state.vagas:
     st.subheader("📄 Vagas Cadastradas")
     df = pd.DataFrame(st.session_state.vagas)
+    # garantir que ID fique como primeira coluna
+    cols = ["ID"] + [c for c in df.columns if c != "ID"]
+    df = df[cols]
     st.dataframe(df)
 
     csv = df.to_csv(index=False).encode('utf-8')
