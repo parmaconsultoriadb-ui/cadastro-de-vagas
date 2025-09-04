@@ -121,18 +121,10 @@ def show_edit_form(df_name, cols, csv_path):
             if c == "ID":
                 new_data[c] = st.text_input(c, value=record[c], disabled=True)
             elif c == "Status" and df_name == "candidatos_df":
-                opcoes_candidatos = ["Enviado", "Não entrevistado", "Validado", "Não validado", "Desistência"]
                 new_data[c] = st.selectbox(
                     c,
-                    options=opcoes_candidatos,
-                    index=opcoes_candidatos.index(record[c]) if record[c] in opcoes_candidatos else 0,
-                )
-            elif c == "Status" and df_name == "vagas_df":
-                opcoes_vagas = ["Aberta", "Ag. Inicio", "Cancelada", "Fechada", "Reaberta", "Pausada"]
-                new_data[c] = st.selectbox(
-                    c,
-                    options=opcoes_vagas,
-                    index=opcoes_vagas.index(record[c]) if record[c] in opcoes_vagas else 0,
+                    options=["Enviado", "Não entrevistado", "Validado", "Não validado", "Desistência"],
+                    index=["Enviado", "Não entrevistado", "Validado", "Não validado", "Desistência"].index(record[c]) if record[c] in ["Enviado", "Não entrevistado", "Validado", "Não validado", "Desistência"] else 0,
                 )
             else:
                 new_data[c] = st.text_input(c, value=record[c])
@@ -341,7 +333,7 @@ def tela_vagas():
                         [
                             {
                                 "ID": str(prox_id),
-                                "Status": "Aberta",   # <- sempre fixo no cadastro
+                                "Status": "Aberta",
                                 "Data de Abertura": data_abertura,
                                 "Cliente": cliente,
                                 "Cargo": cargo,
@@ -476,7 +468,7 @@ def tela_candidatos():
 
 
 # ==============================
-# Menu Principal
+# MENU
 # ==============================
 if st.session_state.page == "menu":
     st.title("📌 Parma Consultoria")
