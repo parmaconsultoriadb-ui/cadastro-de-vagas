@@ -57,10 +57,10 @@ if "confirm_delete" not in st.session_state:
     st.session_state.confirm_delete = {"df_name": None, "row_id": None}
 
 # Definição das colunas
-CLIENTES_COLS = ["ID", "Data", "Nome", "Cliente", "Cidade", "UF", "Telefone", "E-mail"]
+CLIENTES_COLS = ["ID", "Data", "Cliente", "Nome", "Cidade", "UF", "Telefone", "E-mail"]
 VAGAS_COLS = [
     "ID",
-    "ClienteID",
+    "ClienteID",  # mantemos no CSV mas não exibimos na tabela
     "Status",
     "Data de Abertura",
     "Cargo",
@@ -153,12 +153,9 @@ def show_edit_form(df_name, cols, csv_path):
                 idx_vaga = vagas_df[vagas_df["ID"] == vaga_id].index
 
                 if not idx_vaga.empty:
-                    # Caso 1: mudou para "Validado" → vaga vai para "Ag. Inicio"
                     if new_data.get("Status") == "Validado":
                         vagas_df.loc[idx_vaga, "Status"] = "Ag. Inicio"
                         st.success("🔄 A vaga vinculada foi atualizada automaticamente para 'Ag. Inicio'!")
-
-                    # Caso 2: candidato estava "Validado" e mudou para outro → vaga volta para "Aberta"
                     elif record.get("Status") == "Validado" and new_data.get("Status") != "Validado":
                         vagas_df.loc[idx_vaga, "Status"] = "Aberta"
                         st.info("🔄 A vaga vinculada foi reaberta automaticamente!")
@@ -178,7 +175,6 @@ def show_edit_form(df_name, cols, csv_path):
 
 
 def show_table(df, cols, df_name, csv_path):
-    # Cabeçalho
     cols_ui = st.columns(len(cols) + 2)
     for i, c in enumerate(cols):
         cols_ui[i].markdown(
@@ -188,7 +184,6 @@ def show_table(df, cols, df_name, csv_path):
     cols_ui[-2].markdown("<div style='background-color:#f0f0f0; padding:6px; font-weight:bold; color:black; border-radius:4px; text-align:center;'>Editar</div>", unsafe_allow_html=True)
     cols_ui[-1].markdown("<div style='background-color:#f0f0f0; padding:6px; font-weight:bold; color:black; border-radius:4px; text-align:center;'>Excluir</div>", unsafe_allow_html=True)
 
-    # Linhas
     for idx, row in df.iterrows():
         bg_color = "#ffffff" if idx % 2 == 0 else "#f9f9f9"
         cols_ui = st.columns(len(cols) + 2)
@@ -205,7 +200,6 @@ def show_table(df, cols, df_name, csv_path):
                 st.session_state.confirm_delete = {"df_name": df_name, "row_id": row["ID"]}
                 st.rerun()
 
-    # Confirmação de exclusão
     if st.session_state.confirm_delete["df_name"] == df_name:
         row_id = st.session_state.confirm_delete["row_id"]
         st.warning(f"Deseja realmente excluir o registro **ID {row_id}**?")
@@ -265,8 +259,8 @@ def tela_clientes():
                     [{
                         "ID": str(prox_id),
                         "Data": data_hoje,
-                        "Nome": nome,
                         "Cliente": cliente,
+                        "Nome": nome,
                         "Cidade": cidade,
                         "UF": uf.upper(),
                         "Telefone": telefone,
@@ -342,8 +336,14 @@ def tela_vagas():
     if df.empty:
         st.info("Nenhuma vaga cadastrada.")
     else:
-        download_button(df, "vagas.csv", "⬇️ Baixar Vagas")
-        show_table(df, VAGAS_COLS, "vagas_df", VAGAS_CSV)
+        # 🔄 Substituir ClienteID pelo nome do cliente
+        clientes_map = st.session_state.clientes_df.set_index("ID")["Cliente"].to_dict()
+        df["Cliente"] = df["ClienteID"].map(lambda cid: clientes_map.get(cid, "Cliente não encontrado"))
+
+        cols_show = ["ID", "Cliente", "Status", "Data de Abertura", "Cargo", "Salário 1", "Salário 2", "Recrutador", "Data de Fechamento"]
+
+        download_button(df[cols_show], "vagas.csv", "⬇️ Baixar Vagas")
+        show_table(df, cols_show, "vagas_df", VAGAS_CSV)
 
 
 def tela_candidatos():
@@ -364,7 +364,6 @@ def tela_candidatos():
 
     clientes = st.session_state.clientes_df.set_index("ID")
 
-    # Formulário
     with st.form("form_candidatos", enter_to_submit=False):
         vagas_opcoes = vagas.apply(
             lambda x: f"{x['ID']} - {clientes.loc[x['ClienteID'], 'Cliente']} - {x['Cargo']}", axis=1
@@ -400,14 +399,12 @@ def tela_candidatos():
     if df.empty:
         st.info("Nenhum candidato cadastrado.")
     else:
-        # 🔄 Enriquecer dados com Cliente + Cargo
         vagas_map = vagas.set_index("ID")[["Cargo", "ClienteID"]].to_dict("index")
         df["Vaga (Cliente - Cargo)"] = df["VagaID"].map(
             lambda vid: f"{clientes.loc[vagas_map[vid]['ClienteID'], 'Cliente']} - {vagas_map[vid]['Cargo']}"
             if vid in vagas_map else "Vaga não encontrada"
         )
 
-        # Reordenar colunas para mostrar a nova no lugar de VagaID
         cols_show = ["ID", "Vaga (Cliente - Cargo)", "Status", "Nome", "Telefone", "Recrutador"]
 
         download_button(df[cols_show], "candidatos.csv", "⬇️ Baixar Candidatos")
