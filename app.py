@@ -78,7 +78,7 @@ def carregar_logs():
 # Inicialização do estado
 # ==============================
 if "page" not in st.session_state:
-    st.session_state.page = "login"   # começa na tela de login
+    st.session_state.page = "login"
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "usuario" not in st.session_state:
@@ -198,6 +198,15 @@ def show_edit_form(df_name, cols, csv_path):
                     options=opcoes_vagas,
                     index=opcoes_vagas.index(record.get(c, "")) if record.get(c, "") in opcoes_vagas else 0,
                 )
+            elif c == "Data de Fechamento" and df_name == "vagas_df":
+                if record.get(c):
+                    try:
+                        data_fechamento_obj = datetime.strptime(record.get(c), "%d/%m/%Y").date()
+                    except ValueError:
+                        data_fechamento_obj = None
+                else:
+                    data_fechamento_obj = None
+                new_data[c] = st.date_input(c, value=data_fechamento_obj, format="DD/MM/YYYY")
             else:
                 new_data[c] = st.text_input(c, value=record.get(c, ""))
 
@@ -206,6 +215,12 @@ def show_edit_form(df_name, cols, csv_path):
             df = st.session_state[df_name].copy()
             idx = df[df["ID"] == record["ID"]].index
             if not idx.empty:
+                # Tratar a data para que seja salva como string no formato desejado
+                if df_name == "vagas_df" and "Data de Fechamento" in new_data and new_data["Data de Fechamento"]:
+                    new_data["Data de Fechamento"] = new_data["Data de Fechamento"].strftime("%d/%m/%Y")
+                else:
+                    new_data["Data de Fechamento"] = ""
+
                 # Log de alterações campo a campo
                 for c in cols:
                     antigo = df.loc[idx[0], c]
@@ -432,7 +447,7 @@ def tela_clientes():
 
                 # Logs de criação (campo a campo)
                 for campo, valor in novo.iloc[0].items():
-                    if campo == "ID":  # ainda assim registra, mas pode pular se quiser
+                    if campo == "ID":
                         registrar_log("Clientes", "Criar", item_id=prox_id, campo=campo, valor_novo=valor, detalhe=f"Cliente criado (ID {prox_id}).")
                     else:
                         registrar_log("Clientes", "Criar", item_id=prox_id, campo=campo, valor_novo=valor, detalhe=f"Cliente criado (ID {prox_id}).")
