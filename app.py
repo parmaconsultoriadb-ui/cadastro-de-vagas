@@ -78,7 +78,7 @@ def carregar_logs():
 # Inicialização do estado
 # ==============================
 if "page" not in st.session_state:
-    st.session_state.page = "login"
+    st.session_state.page = "login"   # começa na tela de login
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "usuario" not in st.session_state:
@@ -101,7 +101,7 @@ VAGAS_COLS = [
     "Salário 1",
     "Salário 2",
     "Recrutador",
-    "Data de Início",
+    "Data de Fechamento",
 ]
 CANDIDATOS_COLS = [
     "ID",
@@ -198,15 +198,6 @@ def show_edit_form(df_name, cols, csv_path):
                     options=opcoes_vagas,
                     index=opcoes_vagas.index(record.get(c, "")) if record.get(c, "") in opcoes_vagas else 0,
                 )
-            elif c == "Data de Início" and df_name == "vagas_df":
-                if record.get(c):
-                    try:
-                        data_inicio_obj = datetime.strptime(record.get(c), "%d/%m/%Y").date()
-                    except ValueError:
-                        data_inicio_obj = None
-                else:
-                    data_inicio_obj = None
-                new_data[c] = st.date_input(c, value=data_inicio_obj, format="DD/MM/YYYY")
             else:
                 new_data[c] = st.text_input(c, value=record.get(c, ""))
 
@@ -215,12 +206,6 @@ def show_edit_form(df_name, cols, csv_path):
             df = st.session_state[df_name].copy()
             idx = df[df["ID"] == record["ID"]].index
             if not idx.empty:
-                # Tratar a data para que seja salva como string no formato desejado
-                if df_name == "vagas_df" and "Data de Início" in new_data and new_data["Data de Início"]:
-                    new_data["Data de Início"] = new_data["Data de Início"].strftime("%d/%m/%Y")
-                else:
-                    new_data["Data de Início"] = ""
-
                 # Log de alterações campo a campo
                 for c in cols:
                     antigo = df.loc[idx[0], c]
@@ -447,7 +432,7 @@ def tela_clientes():
 
                 # Logs de criação (campo a campo)
                 for campo, valor in novo.iloc[0].items():
-                    if campo == "ID":
+                    if campo == "ID":  # ainda assim registra, mas pode pular se quiser
                         registrar_log("Clientes", "Criar", item_id=prox_id, campo=campo, valor_novo=valor, detalhe=f"Cliente criado (ID {prox_id}).")
                     else:
                         registrar_log("Clientes", "Criar", item_id=prox_id, campo=campo, valor_novo=valor, detalhe=f"Cliente criado (ID {prox_id}).")
@@ -512,7 +497,7 @@ def tela_vagas():
                     "Salário 1": salario1,
                     "Salário 2": salario2,
                     "Recrutador": recrutador,
-                    "Data de Início": "",
+                    "Data de Fechamento": "",
                 }])
                 st.session_state.vagas_df = pd.concat([st.session_state.vagas_df, nova], ignore_index=True)
                 save_csv(st.session_state.vagas_df, VAGAS_CSV)
@@ -532,7 +517,7 @@ def tela_vagas():
         # coluna calculada Cliente (somente para exibição)
         clientes_map = st.session_state.clientes_df.set_index("ID")["Cliente"].to_dict()
         df["Cliente"] = df["ClienteID"].map(lambda cid: clientes_map.get(cid, "Cliente não encontrado"))
-        cols_show = ["ID", "Cliente", "Status", "Data de Abertura", "Cargo", "Salário 1", "Salário 2", "Recrutador", "Data de Início"]
+        cols_show = ["ID", "Cliente", "Status", "Data de Abertura", "Cargo", "Salário 1", "Salário 2", "Recrutador", "Data de Fechamento"]
         download_button(df[cols_show], "vagas.csv", "⬇️ Baixar Vagas")
         show_table(df, cols_show, "vagas_df", VAGAS_CSV)
 
