@@ -199,29 +199,27 @@ def show_edit_form(df_name, cols, csv_path):
                     index=opcoes_vagas.index(record.get(c, "")) if record.get(c, "") in opcoes_vagas else 0,
                 )
             elif c == "Data de Início" and df_name == "vagas_df":
-                if record.get(c):
-                    try:
-                        data_inicio_obj = datetime.strptime(record.get(c), "%d/%m/%Y").date()
-                    except ValueError:
-                        data_inicio_obj = None
-                else:
-                    data_inicio_obj = None
-                new_data[c] = st.date_input(c, value=data_inicio_obj, format="DD/MM/YYYY")
+                new_data[c] = st.text_input(c, value=record.get(c, ""), help="Formato: DD/MM/YYYY")
             else:
                 new_data[c] = st.text_input(c, value=record.get(c, ""))
 
         submitted = st.form_submit_button("Salvar Alterações", use_container_width=True)
         if submitted:
+            if df_name == "vagas_df" and "Data de Início" in new_data and new_data["Data de Início"]:
+                try:
+                    datetime.strptime(new_data["Data de Início"], "%d/%m/%Y")
+                except ValueError:
+                    st.error("❌ Formato de data inválido. Use DD/MM/YYYY.")
+                    return
+
             df = st.session_state[df_name].copy()
             idx = df[df["ID"] == record["ID"]].index
             if not idx.empty:
-                # Tratar a data para que seja salva como string no formato desejado
                 if df_name == "vagas_df" and "Data de Início" in new_data and new_data["Data de Início"]:
-                    new_data["Data de Início"] = new_data["Data de Início"].strftime("%d/%m/%Y")
+                    pass
                 else:
                     new_data["Data de Início"] = ""
 
-                # Log de alterações campo a campo
                 for c in cols:
                     antigo = df.loc[idx[0], c]
                     novo = new_data[c]
@@ -240,13 +238,11 @@ def show_edit_form(df_name, cols, csv_path):
             st.session_state[df_name] = df
             save_csv(df, csv_path)
 
-            # Regras especiais ao editar CANDIDATOS
             if df_name == "candidatos_df":
                 vaga_id = record.get("VagaID")
                 vagas_df = st.session_state.vagas_df.copy()
                 idx_vaga = vagas_df[vagas_df["ID"] == vaga_id].index
                 if not idx_vaga.empty:
-                    # Se status do candidato mudou para Validado -> Vaga "Ag. Inicio"
                     if new_data.get("Status") == "Validado":
                         antigo_status_vaga = vagas_df.loc[idx_vaga[0], "Status"]
                         vagas_df.loc[idx_vaga, "Status"] = "Ag. Inicio"
@@ -261,7 +257,6 @@ def show_edit_form(df_name, cols, csv_path):
                                 valor_novo="Ag. Inicio",
                                 detalhe=f"Vaga alterada automaticamente ao validar candidato {record['ID']}."
                             )
-                    # Se antes era Validado e agora não é -> Vaga "Aberta"
                     elif record.get("Status") == "Validado" and new_data.get("Status") != "Validado":
                         antigo_status_vaga = vagas_df.loc[idx_vaga[0], "Status"]
                         vagas_df.loc[idx_vaga, "Status"] = "Aberta"
@@ -445,7 +440,6 @@ def tela_clientes():
                 st.session_state.clientes_df = pd.concat([st.session_state.clientes_df, novo], ignore_index=True)
                 save_csv(st.session_state.clientes_df, CLIENTES_CSV)
 
-                # Logs de criação (campo a campo)
                 for campo, valor in novo.iloc[0].items():
                     if campo == "ID":
                         registrar_log("Clientes", "Criar", item_id=prox_id, campo=campo, valor_novo=valor, detalhe=f"Cliente criado (ID {prox_id}).")
@@ -517,7 +511,6 @@ def tela_vagas():
                 st.session_state.vagas_df = pd.concat([st.session_state.vagas_df, nova], ignore_index=True)
                 save_csv(st.session_state.vagas_df, VAGAS_CSV)
 
-                # Logs de criação (campo a campo)
                 for campo, valor in nova.iloc[0].items():
                     registrar_log("Vagas", "Criar", item_id=prox_id, campo=campo, valor_novo=valor, detalhe=f"Vaga criada (ID {prox_id}).")
 
@@ -529,7 +522,6 @@ def tela_vagas():
     if df.empty:
         st.info("Nenhuma vaga cadastrada.")
     else:
-        # coluna calculada Cliente (somente para exibição)
         clientes_map = st.session_state.clientes_df.set_index("ID")["Cliente"].to_dict()
         df["Cliente"] = df["ClienteID"].map(lambda cid: clientes_map.get(cid, "Cliente não encontrado"))
         cols_show = ["ID", "Cliente", "Status", "Data de Abertura", "Cargo", "Salário 1", "Salário 2", "Recrutador", "Data de Início"]
@@ -579,7 +571,6 @@ def tela_candidatos():
                 st.session_state.candidatos_df = pd.concat([st.session_state.candidatos_df, novo], ignore_index=True)
                 save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
 
-                # Logs de criação (campo a campo)
                 for campo, valor in novo.iloc[0].items():
                     registrar_log("Candidatos", "Criar", item_id=prox_id, campo=campo, valor_novo=valor, detalhe=f"Candidato criado (ID {prox_id}).")
 
@@ -596,7 +587,6 @@ def tela_candidatos():
         )
         vagas_map = vagas_df.set_index("ID")[["Cliente", "Cargo"]].to_dict(orient="index")
 
-        # colunas calculadas para exibição
         df["Cliente"] = df["VagaID"].map(lambda vid: vagas_map.get(vid, {}).get("Cliente", "Cliente não encontrado"))
         df["Cargo"] = df["VagaID"].map(lambda vid: vagas_map.get(vid, {}).get("Cargo", "Cargo não encontrado"))
 
@@ -611,7 +601,6 @@ def tela_logs():
     if df_logs.empty:
         st.info("Nenhum log registrado ainda.")
     else:
-        # Filtros básicos
         col1, col2, col3 = st.columns(3)
         with col1:
             aba_f = st.selectbox("Filtrar por Aba", options=["(todas)"] + sorted(df_logs["Aba"].dropna().unique().tolist()))
