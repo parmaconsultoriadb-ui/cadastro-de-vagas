@@ -101,7 +101,7 @@ VAGAS_COLS = [
     "Salário 1",
     "Salário 2",
     "Recrutador",
-    "Data de Inicio",
+    "Data de Fechamento",
 ]
 CANDIDATOS_COLS = [
     "ID",
