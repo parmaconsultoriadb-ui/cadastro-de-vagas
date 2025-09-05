@@ -357,26 +357,36 @@ def tela_candidatos():
     vagas = st.session_state.vagas_df
     vagas_abertas = vagas[vagas["Status"] == "Aberta"]
 
-    if vagas_abertas.empty:
-        st.warning("⚠️ Não há vagas abertas disponíveis para cadastro de candidatos.")
-        return
-
     clientes = st.session_state.clientes_df.set_index("ID")
 
     with st.form("form_candidatos", enter_to_submit=False):
-        vagas_opcoes = vagas_abertas.apply(
-            lambda x: f"{x['ID']} - {clientes.loc[x['ClienteID'], 'Cliente']} - {x['Cargo']}", axis=1
+        if vagas_abertas.empty:
+            st.warning("⚠️ Não há vagas abertas disponíveis no momento.")
+            vagas_opcoes = []
+        else:
+            vagas_opcoes = vagas_abertas.apply(
+                lambda x: f"{x['ID']} - {clientes.loc[x['ClienteID'], 'Cliente']} - {x['Cargo']}", axis=1
+            )
+
+        vaga_sel = st.selectbox(
+            "Vaga *",
+            options=vagas_opcoes,
+            placeholder="Nenhuma vaga disponível" if vagas_abertas.empty else "Selecione uma vaga"
         )
-        vaga_sel = st.selectbox("Vaga *", options=vagas_opcoes)
-        vaga_id = vaga_sel.split(" - ")[0]
+        vaga_id = vaga_sel.split(" - ")[0] if vaga_sel else ""
 
         nome = st.text_input("Nome *")
         telefone = st.text_input("Telefone *")
         recrutador = st.text_input("Recrutador *")
 
-        submitted = st.form_submit_button("Cadastrar Candidato", use_container_width=True)
+        submitted = st.form_submit_button(
+            "Cadastrar Candidato",
+            use_container_width=True,
+            disabled=vagas_abertas.empty  # 🔒 desabilita se não houver vagas abertas
+        )
+
         if submitted:
-            if not nome or not telefone or not recrutador:
+            if not nome or not telefone or not recrutador or not vaga_id:
                 st.warning("⚠️ Preencha todos os campos obrigatórios.")
             else:
                 prox_id = next_id(st.session_state.candidatos_df, "ID")
@@ -388,7 +398,9 @@ def tela_candidatos():
                     "Telefone": telefone,
                     "Recrutador": recrutador,
                 }])
-                st.session_state.candidatos_df = pd.concat([st.session_state.candidatos_df, novo], ignore_index=True)
+                st.session_state.candidatos_df = pd.concat(
+                    [st.session_state.candidatos_df, novo], ignore_index=True
+                )
                 save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
                 st.success(f"✅ Candidato cadastrado com sucesso! ID: {prox_id}")
                 st.rerun()
@@ -408,27 +420,26 @@ def tela_candidatos():
         show_table(df, cols_show, "candidatos_df", CANDIDATOS_CSV)
 
 
+def tela_menu():
+    st.title("📊 Sistema Parma Consultoria")
+    st.subheader("Escolha uma opção:")
+    st.divider()
+    if st.button("👥 Clientes", use_container_width=True):
+        st.session_state.page = "clientes"
+        st.rerun()
+    if st.button("📋 Vagas", use_container_width=True):
+        st.session_state.page = "vagas"
+        st.rerun()
+    if st.button("🧑‍💼 Candidatos", use_container_width=True):
+        st.session_state.page = "candidatos"
+        st.rerun()
+
+
 # ==============================
-# Menu principal
+# Roteamento
 # ==============================
 if st.session_state.page == "menu":
-    st.title("📊 Sistema de Recrutamento - Parma Consultoria")
-    st.markdown("Escolha uma opção abaixo:")
-
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if st.button("👥 Clientes", use_container_width=True):
-            st.session_state.page = "clientes"
-            st.rerun()
-    with col2:
-        if st.button("📋 Vagas", use_container_width=True):
-            st.session_state.page = "vagas"
-            st.rerun()
-    with col3:
-        if st.button("🧑‍💼 Candidatos", use_container_width=True):
-            st.session_state.page = "candidatos"
-            st.rerun()
-
+    tela_menu()
 elif st.session_state.page == "clientes":
     tela_clientes()
 elif st.session_state.page == "vagas":
