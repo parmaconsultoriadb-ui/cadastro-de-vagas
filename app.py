@@ -167,7 +167,6 @@ def show_edit_form(df_name, cols, csv_path):
             st.session_state[df_name] = df
             save_csv(df, csv_path)
 
-            # 🔄 Regras automáticas
             if df_name == "candidatos_df":
                 vaga_id = record.get("VagaID")
                 vagas_df = st.session_state.vagas_df
@@ -218,7 +217,6 @@ def show_table(df, cols, df_name, csv_path):
                 st.session_state.confirm_delete = {"df_name": df_name, "row_id": row["ID"]}
                 st.rerun()
 
-    # Confirmação e exclusão com integridade
     if st.session_state.confirm_delete["df_name"] == df_name:
         row_id = st.session_state.confirm_delete["row_id"]
         st.warning(f"Deseja realmente excluir o registro **ID {row_id}**?")
@@ -229,7 +227,6 @@ def show_table(df, cols, df_name, csv_path):
                 st.session_state[df_name] = df2
                 save_csv(df2, csv_path)
 
-                # 🔗 Cascata
                 if df_name == "clientes_df":
                     vagas_ids = st.session_state.vagas_df.loc[
                         st.session_state.vagas_df["ClienteID"] == row_id, "ID"
@@ -442,11 +439,17 @@ def tela_candidatos():
         st.info("Nenhum candidato cadastrado.")
     else:
         vagas_map = vagas.set_index("ID")[["Cargo", "ClienteID"]].to_dict("index")
-        df["Vaga (Cliente - Cargo)"] = df["VagaID"].map(
-            lambda vid: f"{clientes.loc[vagas_map[vid]['ClienteID'], 'Cliente']} - {vagas_map[vid]['Cargo']}"
-            if vid in vagas_map else "Vaga não encontrada"
+
+        df["Cliente"] = df["VagaID"].map(
+            lambda vid: clientes.loc[vagas_map[vid]["ClienteID"], "Cliente"]
+            if vid in vagas_map else "Cliente não encontrado"
         )
-        cols_show = ["ID", "Vaga (Cliente - Cargo)", "Status", "Nome", "Telefone", "Recrutador"]
+        df["Cargo"] = df["VagaID"].map(
+            lambda vid: vagas_map[vid]["Cargo"] if vid in vagas_map else "Cargo não encontrado"
+        )
+
+        cols_show = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "Status"]
+
         download_button(df[cols_show], "candidatos.csv", "⬇️ Baixar Candidatos")
         show_table(df, cols_show, "candidatos_df", CANDIDATOS_CSV)
 
