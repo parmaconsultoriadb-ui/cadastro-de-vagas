@@ -274,7 +274,7 @@ def tela_login():
         submitted = st.form_submit_button("Entrar")
 
         if submitted:
-            if usuario == "admin123456" and senha == "admin123456":
+            if usuario == "admin" and senha == "Parma!123@":
                 st.session_state.logged_in = True
                 st.session_state.page = "menu"
                 st.success("✅ Login realizado com sucesso!")
