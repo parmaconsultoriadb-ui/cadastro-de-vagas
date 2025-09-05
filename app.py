@@ -205,27 +205,27 @@ def show_edit_form(df_name, cols, csv_path):
 
         submitted = st.form_submit_button("Salvar Alterações", use_container_width=True)
         if submitted:
-            if df_name == "vagas_df" and "Data de Início" in new_data and new_data["Data de Início"]:
-                try:
-                    datetime.strptime(new_data["Data de Início"], "%d/%m/%Y")
-                    
-                    # Se a data de início for preenchida, altera o status para "Fechada"
-                    if new_data["Data de Início"].strip() != "":
+            if df_name == "vagas_df":
+                # Get the old status from the original record before editing
+                old_status = st.session_state.vagas_df.loc[st.session_state.vagas_df["ID"] == record["ID"], "Status"].iloc[0]
+                
+                if "Data de Início" in new_data and new_data["Data de Início"].strip() != "":
+                    try:
+                        datetime.strptime(new_data["Data de Início"], "%d/%m/%Y")
+                        # If a valid start date is entered, change status to "Fechada"
                         new_data["Status"] = "Fechada"
                         st.success("🔄 Vaga atualizada para 'Fechada' devido ao preenchimento da data de início!")
-
-                except ValueError:
-                    st.error("❌ Formato de data inválido. Use DD/MM/YYYY.")
-                    return
+                    except ValueError:
+                        st.error("❌ Formato de data inválido. Use DD/MM/YYYY.")
+                        return
+                else:
+                    # If the start date is empty, revert to the old status
+                    new_data["Data de Início"] = ""
+                    new_data["Status"] = old_status
 
             df = st.session_state[df_name].copy()
             idx = df[df["ID"] == record["ID"]].index
             if not idx.empty:
-                if df_name == "vagas_df" and "Data de Início" in new_data and new_data["Data de Início"]:
-                    pass
-                else:
-                    new_data["Data de Início"] = ""
-
                 for c in cols:
                     antigo = df.loc[idx[0], c]
                     novo = new_data[c]
