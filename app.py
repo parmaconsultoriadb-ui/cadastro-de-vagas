@@ -15,7 +15,6 @@ CLIENTES_CSV = "clientes.csv"
 VAGAS_CSV = "vagas.csv"
 CANDIDATOS_CSV = "candidatos.csv"
 
-
 def load_csv(path, expected_cols):
     if os.path.exists(path):
         try:
@@ -29,10 +28,8 @@ def load_csv(path, expected_cols):
             return pd.DataFrame(columns=expected_cols)
     return pd.DataFrame(columns=expected_cols)
 
-
 def save_csv(df, path):
     df.to_csv(path, index=False, encoding="utf-8")
-
 
 def next_id(df, id_col="ID"):
     if df.empty or df[id_col].isna().all():
@@ -42,7 +39,6 @@ def next_id(df, id_col="ID"):
         return int(vals.max()) + 1
     except Exception:
         return 1
-
 
 # ==============================
 # Inicialização do estado
@@ -78,13 +74,25 @@ CANDIDATOS_COLS = [
     "Recrutador",
 ]
 
-# Carregar CSVs
+# Carregar CSVs locais
 if "clientes_df" not in st.session_state:
     st.session_state.clientes_df = load_csv(CLIENTES_CSV, CLIENTES_COLS)
 if "vagas_df" not in st.session_state:
     st.session_state.vagas_df = load_csv(VAGAS_CSV, VAGAS_COLS)
 if "candidatos_df" not in st.session_state:
     st.session_state.candidatos_df = load_csv(CANDIDATOS_CSV, CANDIDATOS_COLS)
+
+# ==============================
+# Carregar lista de Cargos (do GitHub)
+# ==============================
+CARGOS_URL = "https://raw.githubusercontent.com/parmaconsultoriadb-ui/cadastro-de-vagas/refs/heads/main/cargos.csv.csv"
+
+try:
+    cargos_df = pd.read_csv(CARGOS_URL, dtype=str)
+    LISTA_CARGOS = cargos_df.iloc[:, 0].dropna().unique().tolist()
+except Exception as e:
+    st.warning(f"⚠️ Não foi possível carregar os cargos do GitHub: {e}")
+    LISTA_CARGOS = []
 
 # ==============================
 # Estilo
@@ -171,7 +179,6 @@ def show_edit_form(df_name, cols, csv_path):
         st.session_state.edit_record = {}
         st.rerun()
 
-
 def show_table(df, cols, df_name, csv_path):
     cols_ui = st.columns(len(cols) + 2)
     for i, c in enumerate(cols):
@@ -217,11 +224,9 @@ def show_table(df, cols, df_name, csv_path):
 
     st.divider()
 
-
 def download_button(df, filename, label="⬇️ Baixar CSV"):
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button(label=label, data=csv, file_name=filename, mime="text/csv", use_container_width=True)
-
 
 # ==============================
 # Telas
@@ -280,7 +285,6 @@ def tela_clientes():
         download_button(df_filtrado, "clientes.csv", "⬇️ Baixar Clientes")
         show_table(df_filtrado, CLIENTES_COLS, "clientes_df", CLIENTES_CSV)
 
-
 def tela_vagas():
     if st.session_state.edit_mode == "vagas_df":
         st.markdown("### ✏️ Editar Vaga")
@@ -302,7 +306,14 @@ def tela_vagas():
         cliente_sel = st.selectbox("Cliente *", options=clientes.apply(lambda x: f"{x['ID']} - {x['Cliente']}", axis=1))
         cliente_id = cliente_sel.split(" - ")[0]
 
-        cargo = st.text_input("Cargo *")
+        # 🔄 Campo de cargo agora com sugestões do CSV
+        cargo = st.selectbox(
+            "Cargo *",
+            options=[""] + LISTA_CARGOS,
+            index=0,
+            placeholder="Digite ou selecione um cargo"
+        )
+
         salario1 = st.text_input("Salário 1 (R$)")
         salario2 = st.text_input("Salário 2 (R$)")
         recrutador = st.text_input("Recrutador *")
@@ -339,7 +350,6 @@ def tela_vagas():
         cols_show = ["ID", "Cliente", "Status", "Data de Abertura", "Cargo", "Salário 1", "Salário 2", "Recrutador", "Data de Fechamento"]
         download_button(df[cols_show], "vagas.csv", "⬇️ Baixar Vagas")
         show_table(df, cols_show, "vagas_df", VAGAS_CSV)
-
 
 def tela_candidatos():
     if st.session_state.edit_mode == "candidatos_df":
@@ -382,7 +392,7 @@ def tela_candidatos():
         submitted = st.form_submit_button(
             "Cadastrar Candidato",
             use_container_width=True,
-            disabled=vagas_abertas.empty  # 🔒 desabilita se não houver vagas abertas
+            disabled=vagas_abertas.empty
         )
 
         if submitted:
@@ -419,7 +429,9 @@ def tela_candidatos():
         download_button(df[cols_show], "candidatos.csv", "⬇️ Baixar Candidatos")
         show_table(df, cols_show, "candidatos_df", CANDIDATOS_CSV)
 
-
+# ==============================
+# Menu principal
+# ==============================
 def tela_menu():
     st.title("📊 Sistema Parma Consultoria")
     st.subheader("Escolha uma opção:")
@@ -433,7 +445,6 @@ def tela_menu():
     if st.button("🧑‍💼 Candidatos", use_container_width=True):
         st.session_state.page = "candidatos"
         st.rerun()
-
 
 # ==============================
 # Roteamento
