@@ -110,6 +110,7 @@ CANDIDATOS_COLS = [
     "Nome",
     "Telefone",
     "Recrutador",
+    "Data de Início",  # Nova coluna para Candidatos
 ]
 
 ABA_MAP = {
@@ -198,14 +199,16 @@ def show_edit_form(df_name, cols, csv_path):
                     options=opcoes_vagas,
                     index=opcoes_vagas.index(record.get(c, "")) if record.get(c, "") in opcoes_vagas else 0,
                 )
-            elif c == "Data de Início" and df_name == "vagas_df":
+            elif (c == "Data de Início" and df_name == "vagas_df") or \
+                 (c == "Data de Início" and df_name == "candidatos_df"):
                 new_data[c] = st.text_input(c, value=record.get(c, ""), help="Formato: DD/MM/YYYY")
             else:
                 new_data[c] = st.text_input(c, value=record.get(c, ""))
 
         submitted = st.form_submit_button("Salvar Alterações", use_container_width=True)
         if submitted:
-            if df_name == "vagas_df" and "Data de Início" in new_data and new_data["Data de Início"]:
+            # Validação para 'Data de Início' em ambas as abas
+            if "Data de Início" in new_data and new_data["Data de Início"]:
                 try:
                     datetime.strptime(new_data["Data de Início"], "%d/%m/%Y")
                 except ValueError:
@@ -215,25 +218,28 @@ def show_edit_form(df_name, cols, csv_path):
             df = st.session_state[df_name].copy()
             idx = df[df["ID"] == record["ID"]].index
             if not idx.empty:
-                if df_name == "vagas_df" and "Data de Início" in new_data and new_data["Data de Início"]:
+                # Verificação se o campo 'Data de Início' existe na tabela de destino
+                if (df_name == "vagas_df" or df_name == "candidatos_df") and "Data de Início" in new_data and new_data["Data de Início"]:
                     pass
                 else:
-                    new_data["Data de Início"] = ""
+                    if "Data de Início" in new_data:
+                        new_data["Data de Início"] = ""
 
                 for c in cols:
-                    antigo = df.loc[idx[0], c]
-                    novo = new_data[c]
-                    if str(antigo) != str(novo):
-                        registrar_log(
-                            aba=ABA_MAP[df_name],
-                            acao="Editar",
-                            item_id=record["ID"],
-                            campo=c,
-                            valor_anterior=antigo,
-                            valor_novo=novo,
-                            detalhe=f"Registro {record['ID']} alterado em {c}."
-                        )
-                        df.loc[idx, c] = novo
+                    if c in df.columns: # Adicionado para garantir que a coluna existe
+                        antigo = df.loc[idx[0], c]
+                        novo = new_data.get(c, '') # Usar .get para evitar KeyError
+                        if str(antigo) != str(novo):
+                            registrar_log(
+                                aba=ABA_MAP[df_name],
+                                acao="Editar",
+                                item_id=record["ID"],
+                                campo=c,
+                                valor_anterior=antigo,
+                                valor_novo=novo,
+                                detalhe=f"Registro {record['ID']} alterado em {c}."
+                            )
+                            df.loc[idx, c] = novo
 
             st.session_state[df_name] = df
             save_csv(df, csv_path)
@@ -553,12 +559,20 @@ def tela_candidatos():
         nome = st.text_input("Nome *")
         telefone = st.text_input("Telefone *")
         recrutador = st.text_input("Recrutador *")
+        data_inicio = st.text_input("Data de Início", help="Formato: DD/MM/YYYY")
 
         submitted = st.form_submit_button("Cadastrar Candidato", use_container_width=True)
         if submitted:
             if not nome or not telefone or not recrutador:
                 st.warning("⚠️ Preencha todos os campos obrigatórios.")
             else:
+                if data_inicio:
+                    try:
+                        datetime.strptime(data_inicio, "%d/%m/%Y")
+                    except ValueError:
+                        st.error("❌ Formato de data inválido. Use DD/MM/YYYY.")
+                        return
+
                 prox_id = next_id(st.session_state.candidatos_df, "ID")
                 novo = pd.DataFrame([{
                     "ID": str(prox_id),
@@ -567,6 +581,7 @@ def tela_candidatos():
                     "Nome": nome,
                     "Telefone": telefone,
                     "Recrutador": recrutador,
+                    "Data de Início": data_inicio,
                 }])
                 st.session_state.candidatos_df = pd.concat([st.session_state.candidatos_df, novo], ignore_index=True)
                 save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
@@ -590,7 +605,7 @@ def tela_candidatos():
         df["Cliente"] = df["VagaID"].map(lambda vid: vagas_map.get(vid, {}).get("Cliente", "Cliente não encontrado"))
         df["Cargo"] = df["VagaID"].map(lambda vid: vagas_map.get(vid, {}).get("Cargo", "Cargo não encontrado"))
 
-        cols_show = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "Status"]
+        cols_show = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "Status", "Data de Início"]
         download_button(df[cols_show], "candidatos.csv", "⬇️ Baixar Candidatos")
         show_table(df, cols_show, "candidatos_df", CANDIDATOS_CSV)
 
