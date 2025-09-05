@@ -60,7 +60,7 @@ if "confirm_delete" not in st.session_state:
 CLIENTES_COLS = ["ID", "Data", "Cliente", "Nome", "Cidade", "UF", "Telefone", "E-mail"]
 VAGAS_COLS = [
     "ID",
-    "ClienteID",  # mantemos no CSV mas não exibimos na tabela
+    "ClienteID",
     "Status",
     "Data de Abertura",
     "Cargo",
@@ -146,20 +146,18 @@ def show_edit_form(df_name, cols, csv_path):
             st.session_state[df_name] = df
             save_csv(df, csv_path)
 
-            # 🔄 Regras para atualização automática de vaga
+            # 🔄 Regras automáticas
             if df_name == "candidatos_df":
                 vaga_id = record.get("VagaID")
                 vagas_df = st.session_state.vagas_df
                 idx_vaga = vagas_df[vagas_df["ID"] == vaga_id].index
-
                 if not idx_vaga.empty:
                     if new_data.get("Status") == "Validado":
                         vagas_df.loc[idx_vaga, "Status"] = "Ag. Inicio"
-                        st.success("🔄 A vaga vinculada foi atualizada automaticamente para 'Ag. Inicio'!")
+                        st.success("🔄 Vaga atualizada para 'Ag. Inicio'!")
                     elif record.get("Status") == "Validado" and new_data.get("Status") != "Validado":
                         vagas_df.loc[idx_vaga, "Status"] = "Aberta"
-                        st.info("🔄 A vaga vinculada foi reaberta automaticamente!")
-
+                        st.info("🔄 Vaga reaberta automaticamente!")
                     st.session_state.vagas_df = vagas_df
                     save_csv(vagas_df, VAGAS_CSV)
 
@@ -336,12 +334,9 @@ def tela_vagas():
     if df.empty:
         st.info("Nenhuma vaga cadastrada.")
     else:
-        # 🔄 Substituir ClienteID pelo nome do cliente
         clientes_map = st.session_state.clientes_df.set_index("ID")["Cliente"].to_dict()
         df["Cliente"] = df["ClienteID"].map(lambda cid: clientes_map.get(cid, "Cliente não encontrado"))
-
         cols_show = ["ID", "Cliente", "Status", "Data de Abertura", "Cargo", "Salário 1", "Salário 2", "Recrutador", "Data de Fechamento"]
-
         download_button(df[cols_show], "vagas.csv", "⬇️ Baixar Vagas")
         show_table(df, cols_show, "vagas_df", VAGAS_CSV)
 
@@ -357,15 +352,19 @@ def tela_candidatos():
         st.rerun()
 
     st.header("🧑‍💼 Cadastro de Candidatos")
+
+    # 🔄 apenas vagas abertas
     vagas = st.session_state.vagas_df
-    if vagas.empty:
-        st.warning("⚠️ Cadastre uma Vaga antes de cadastrar Candidatos.")
+    vagas_abertas = vagas[vagas["Status"] == "Aberta"]
+
+    if vagas_abertas.empty:
+        st.warning("⚠️ Não há vagas abertas disponíveis para cadastro de candidatos.")
         return
 
     clientes = st.session_state.clientes_df.set_index("ID")
 
     with st.form("form_candidatos", enter_to_submit=False):
-        vagas_opcoes = vagas.apply(
+        vagas_opcoes = vagas_abertas.apply(
             lambda x: f"{x['ID']} - {clientes.loc[x['ClienteID'], 'Cliente']} - {x['Cargo']}", axis=1
         )
         vaga_sel = st.selectbox("Vaga *", options=vagas_opcoes)
@@ -404,9 +403,7 @@ def tela_candidatos():
             lambda vid: f"{clientes.loc[vagas_map[vid]['ClienteID'], 'Cliente']} - {vagas_map[vid]['Cargo']}"
             if vid in vagas_map else "Vaga não encontrada"
         )
-
         cols_show = ["ID", "Vaga (Cliente - Cargo)", "Status", "Nome", "Telefone", "Recrutador"]
-
         download_button(df[cols_show], "candidatos.csv", "⬇️ Baixar Candidatos")
         show_table(df, cols_show, "candidatos_df", CANDIDATOS_CSV)
 
