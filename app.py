@@ -85,13 +85,11 @@ if "candidatos_df" not in st.session_state:
 # ==============================
 # Garantir integridade referencial
 # ==============================
-# Remover vagas com Cliente inexistente
 clientes_ids = set(st.session_state.clientes_df["ID"])
 st.session_state.vagas_df = st.session_state.vagas_df[
     st.session_state.vagas_df["ClienteID"].isin(clientes_ids)
 ]
 
-# Remover candidatos com Vaga inexistente
 vagas_ids = set(st.session_state.vagas_df["ID"])
 st.session_state.candidatos_df = st.session_state.candidatos_df[
     st.session_state.candidatos_df["VagaID"].isin(vagas_ids)
