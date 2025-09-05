@@ -208,6 +208,12 @@ def show_edit_form(df_name, cols, csv_path):
             if df_name == "vagas_df" and "Data de Início" in new_data and new_data["Data de Início"]:
                 try:
                     datetime.strptime(new_data["Data de Início"], "%d/%m/%Y")
+                    
+                    # Se a data de início for preenchida, altera o status para "Fechada"
+                    if new_data["Data de Início"].strip() != "":
+                        new_data["Status"] = "Fechada"
+                        st.success("🔄 Vaga atualizada para 'Fechada' devido ao preenchimento da data de início!")
+
                 except ValueError:
                     st.error("❌ Formato de data inválido. Use DD/MM/YYYY.")
                     return
