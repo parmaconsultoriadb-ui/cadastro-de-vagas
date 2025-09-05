@@ -146,17 +146,25 @@ def show_edit_form(df_name, cols, csv_path):
             st.session_state[df_name] = df
             save_csv(df, csv_path)
 
-            # Lógica: se candidato validado, atualizar vaga
-            if df_name == "candidatos_df" and new_data.get("Status") == "Validado":
+            # 🔄 Regras automáticas de vaga quando editar candidato
+            if df_name == "candidatos_df":
                 vaga_id = record.get("VagaID")
                 vagas_df = st.session_state.vagas_df
                 idx_vaga = vagas_df[vagas_df["ID"] == vaga_id].index
 
                 if not idx_vaga.empty:
-                    vagas_df.loc[idx_vaga, "Status"] = "Ag. Inicio"
+                    # Caso 1: mudou para "Validado" → vaga vai para "Ag. Inicio"
+                    if new_data.get("Status") == "Validado":
+                        vagas_df.loc[idx_vaga, "Status"] = "Ag. Inicio"
+                        st.success("🔄 A vaga vinculada foi atualizada automaticamente para 'Ag. Inicio'!")
+
+                    # Caso 2: candidato estava "Validado" e mudou para outro → vaga volta para "Aberta"
+                    elif record.get("Status") == "Validado" and new_data.get("Status") != "Validado":
+                        vagas_df.loc[idx_vaga, "Status"] = "Aberta"
+                        st.info("🔄 A vaga vinculada foi reaberta automaticamente!")
+
                     st.session_state.vagas_df = vagas_df
                     save_csv(vagas_df, VAGAS_CSV)
-                    st.success("🔄 A vaga vinculada foi atualizada automaticamente para 'Ag. Inicio'!")
 
             st.success("✅ Registro atualizado com sucesso!")
             st.session_state.edit_mode = None
