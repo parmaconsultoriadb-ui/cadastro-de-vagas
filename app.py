@@ -146,7 +146,7 @@ def show_edit_form(df_name, cols, csv_path):
             st.session_state[df_name] = df
             save_csv(df, csv_path)
 
-            # 🔄 Regras automáticas de vaga quando editar candidato
+            # 🔄 Regras para atualização automática de vaga
             if df_name == "candidatos_df":
                 vaga_id = record.get("VagaID")
                 vagas_df = st.session_state.vagas_df
@@ -364,6 +364,7 @@ def tela_candidatos():
 
     clientes = st.session_state.clientes_df.set_index("ID")
 
+    # Formulário
     with st.form("form_candidatos", enter_to_submit=False):
         vagas_opcoes = vagas.apply(
             lambda x: f"{x['ID']} - {clientes.loc[x['ClienteID'], 'Cliente']} - {x['Cargo']}", axis=1
@@ -399,26 +400,38 @@ def tela_candidatos():
     if df.empty:
         st.info("Nenhum candidato cadastrado.")
     else:
-        download_button(df, "candidatos.csv", "⬇️ Baixar Candidatos")
-        show_table(df, CANDIDATOS_COLS, "candidatos_df", CANDIDATOS_CSV)
+        # 🔄 Enriquecer dados com Cliente + Cargo
+        vagas_map = vagas.set_index("ID")[["Cargo", "ClienteID"]].to_dict("index")
+        df["Vaga (Cliente - Cargo)"] = df["VagaID"].map(
+            lambda vid: f"{clientes.loc[vagas_map[vid]['ClienteID'], 'Cliente']} - {vagas_map[vid]['Cargo']}"
+            if vid in vagas_map else "Vaga não encontrada"
+        )
+
+        # Reordenar colunas para mostrar a nova no lugar de VagaID
+        cols_show = ["ID", "Vaga (Cliente - Cargo)", "Status", "Nome", "Telefone", "Recrutador"]
+
+        download_button(df[cols_show], "candidatos.csv", "⬇️ Baixar Candidatos")
+        show_table(df, cols_show, "candidatos_df", CANDIDATOS_CSV)
 
 
 # ==============================
-# Menu Principal
+# Menu principal
 # ==============================
 if st.session_state.page == "menu":
-    st.title("📌 Parma Consultoria")
+    st.title("📊 Sistema de Recrutamento - Parma Consultoria")
+    st.markdown("Escolha uma opção abaixo:")
+
     col1, col2, col3 = st.columns(3)
     with col1:
-        if st.button("👥 Cadastro de Clientes", use_container_width=True):
+        if st.button("👥 Clientes", use_container_width=True):
             st.session_state.page = "clientes"
             st.rerun()
     with col2:
-        if st.button("📋 Cadastro de Vagas", use_container_width=True):
+        if st.button("📋 Vagas", use_container_width=True):
             st.session_state.page = "vagas"
             st.rerun()
     with col3:
-        if st.button("🧑‍💼 Cadastro de Candidatos", use_container_width=True):
+        if st.button("🧑‍💼 Candidatos", use_container_width=True):
             st.session_state.page = "candidatos"
             st.rerun()
 
