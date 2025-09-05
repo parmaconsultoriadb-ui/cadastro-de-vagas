@@ -559,20 +559,12 @@ def tela_candidatos():
         nome = st.text_input("Nome *")
         telefone = st.text_input("Telefone *")
         recrutador = st.text_input("Recrutador *")
-        data_inicio = st.text_input("Data de Início", help="Formato: DD/MM/YYYY")
 
         submitted = st.form_submit_button("Cadastrar Candidato", use_container_width=True)
         if submitted:
             if not nome or not telefone or not recrutador:
                 st.warning("⚠️ Preencha todos os campos obrigatórios.")
             else:
-                if data_inicio:
-                    try:
-                        datetime.strptime(data_inicio, "%d/%m/%Y")
-                    except ValueError:
-                        st.error("❌ Formato de data inválido. Use DD/MM/YYYY.")
-                        return
-
                 prox_id = next_id(st.session_state.candidatos_df, "ID")
                 novo = pd.DataFrame([{
                     "ID": str(prox_id),
@@ -581,7 +573,7 @@ def tela_candidatos():
                     "Nome": nome,
                     "Telefone": telefone,
                     "Recrutador": recrutador,
-                    "Data de Início": data_inicio,
+                    "Data de Início": "",
                 }])
                 st.session_state.candidatos_df = pd.concat([st.session_state.candidatos_df, novo], ignore_index=True)
                 save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
