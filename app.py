@@ -44,7 +44,9 @@ def next_id(df, id_col="ID"):
 # Inicialização do estado
 # ==============================
 if "page" not in st.session_state:
-    st.session_state.page = "menu"
+    st.session_state.page = "login"   # começa na tela de login
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
 if "edit_mode" not in st.session_state:
     st.session_state.edit_mode = None
 if "edit_record" not in st.session_state:
@@ -263,6 +265,23 @@ def download_button(df, filename, label="⬇️ Baixar CSV"):
 # ==============================
 # Telas
 # ==============================
+def tela_login():
+    st.title("🔒 Login - Parma Consultoria")
+
+    with st.form("login_form"):
+        usuario = st.text_input("Usuário")
+        senha = st.text_input("Senha", type="password")
+        submitted = st.form_submit_button("Entrar")
+
+        if submitted:
+            if usuario == "admin123456" and senha == "admin123456":
+                st.session_state.logged_in = True
+                st.session_state.page = "menu"
+                st.success("✅ Login realizado com sucesso!")
+                st.rerun()
+            else:
+                st.error("❌ Usuário ou senha inválidos.")
+
 def tela_clientes():
     if st.session_state.edit_mode == "clientes_df":
         st.markdown("### ✏️ Editar Cliente")
@@ -394,20 +413,14 @@ def tela_candidatos():
 
     st.header("🧑‍💼 Cadastro de Candidatos")
 
-    vagas = st.session_state.vagas_df
-    vagas_abertas = vagas[vagas["Status"] == "Aberta"]
-
-    clientes = st.session_state.clientes_df.set_index("ID")
-
-    with st.form("form_candidatos", enter_to_submit=False):
-        if vagas_abertas.empty:
-            st.warning("⚠️ Não há vagas abertas disponíveis.")
+    with st.form("form_candidato", enter_to_submit=False):
+        vagas = st.session_state.vagas_df
+        if vagas.empty:
+            st.warning("⚠️ Cadastre uma Vaga antes de cadastrar Candidatos.")
             return
-        vagas_opts = vagas_abertas.apply(
-            lambda x: f"{x['ID']} - {clientes.loc[x['ClienteID'], 'Cliente']} - {x['Cargo']}",
-            axis=1,
-        )
-        vaga_sel = st.selectbox("Vaga *", options=vagas_opts)
+        vagas = vagas.merge(st.session_state.clientes_df[["ID", "Cliente"]], left_on="ClienteID", right_on="ID", suffixes=("", "_cliente"))
+        vagas["Opcao"] = vagas.apply(lambda x: f"{x['ID']} - {x['Cliente']} - {x['Cargo']}", axis=1)
+        vaga_sel = st.selectbox("Vaga *", options=vagas["Opcao"].tolist())
         vaga_id = vaga_sel.split(" - ")[0]
 
         nome = st.text_input("Nome *")
@@ -438,42 +451,49 @@ def tela_candidatos():
     if df.empty:
         st.info("Nenhum candidato cadastrado.")
     else:
-        vagas_map = vagas.set_index("ID")[["Cargo", "ClienteID"]].to_dict("index")
+        vagas_df = st.session_state.vagas_df.merge(
+            st.session_state.clientes_df[["ID", "Cliente"]], left_on="ClienteID", right_on="ID", suffixes=("", "_cliente")
+        )
+        vagas_map = vagas_df.set_index("ID")[["Cliente", "Cargo"]].to_dict(orient="index")
 
-        df["Cliente"] = df["VagaID"].map(
-            lambda vid: clientes.loc[vagas_map[vid]["ClienteID"], "Cliente"]
-            if vid in vagas_map else "Cliente não encontrado"
-        )
-        df["Cargo"] = df["VagaID"].map(
-            lambda vid: vagas_map[vid]["Cargo"] if vid in vagas_map else "Cargo não encontrado"
-        )
+        df["Cliente"] = df["VagaID"].map(lambda vid: vagas_map.get(vid, {}).get("Cliente", "Cliente não encontrado"))
+        df["Cargo"] = df["VagaID"].map(lambda vid: vagas_map.get(vid, {}).get("Cargo", "Cargo não encontrado"))
 
         cols_show = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "Status"]
-
         download_button(df[cols_show], "candidatos.csv", "⬇️ Baixar Candidatos")
         show_table(df, cols_show, "candidatos_df", CANDIDATOS_CSV)
 
-# ==============================
-# Menu principal
-# ==============================
 def tela_menu():
     st.title("📊 Sistema Parma Consultoria")
     st.subheader("Escolha uma opção:")
     st.divider()
+
     if st.button("👥 Clientes", use_container_width=True):
         st.session_state.page = "clientes"
         st.rerun()
+
     if st.button("📋 Vagas", use_container_width=True):
         st.session_state.page = "vagas"
         st.rerun()
+
     if st.button("🧑‍💼 Candidatos", use_container_width=True):
         st.session_state.page = "candidatos"
+        st.rerun()
+
+    st.divider()
+    if st.button("🚪 Sair", use_container_width=True):
+        st.session_state.logged_in = False
+        st.session_state.page = "login"
         st.rerun()
 
 # ==============================
 # Roteamento
 # ==============================
-if st.session_state.page == "menu":
+if st.session_state.page == "login":
+    tela_login()
+elif not st.session_state.logged_in:
+    tela_login()
+elif st.session_state.page == "menu":
     tela_menu()
 elif st.session_state.page == "clientes":
     tela_clientes()
