@@ -207,10 +207,14 @@ def show_edit_form(df_name, cols, csv_path):
 
         submitted = st.form_submit_button("Salvar Alterações", use_container_width=True)
         if submitted:
-            # Validação para 'Data de Início' em ambas as abas
-            if "Data de Início" in new_data and new_data["Data de Início"]:
+            # Validação para 'Data de Início'
+            data_inicio_str = new_data.get("Data de Início")
+            if data_inicio_str:
                 try:
-                    datetime.strptime(new_data["Data de Início"], "%d/%m/%Y")
+                    data_inicio = datetime.strptime(data_inicio_str, "%d/%m/%Y").date()
+                    if data_inicio < date.today():
+                        st.error("❌ A data de início não pode ser anterior à data atual.")
+                        return
                 except ValueError:
                     st.error("❌ Formato de data inválido. Use DD/MM/YYYY.")
                     return
