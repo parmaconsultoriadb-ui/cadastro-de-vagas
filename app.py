@@ -95,6 +95,8 @@ if "edit_record" not in st.session_state:
     st.session_state.edit_record = {}
 if "confirm_delete" not in st.session_state:
     st.session_state.confirm_delete = {"df_name": None, "row_id": None}
+if "vaga_selecionada_candidato" not in st.session_state:
+    st.session_state.vaga_selecionada_candidato = None
 
 # Definição das colunas
 CLIENTES_COLS = ["ID", "Data", "Cliente", "Nome", "Cidade", "UF", "Telefone", "E-mail"]
@@ -569,6 +571,11 @@ def tela_vagas():
 
 def tela_candidatos():
     """Tela de cadastro e visualização de candidatos."""
+    
+    # Callback para forçar a atualização da vaga selecionada
+    def on_vaga_select_change():
+        st.session_state.vaga_selecionada_candidato = st.session_state.vaga_sel_candidato_widget
+    
     if st.session_state.edit_mode == "candidatos_df":
         st.markdown("### ✏️ Editar Candidato")
         show_edit_form("candidatos_df", CANDIDATOS_COLS, CANDIDATOS_CSV)
@@ -602,11 +609,15 @@ def tela_candidatos():
             vaga_sel = st.selectbox(
                 "Vaga *", 
                 options=vagas["Opcao"].tolist(),
-                key="vaga_sel_candidato"
+                key="vaga_sel_candidato_widget",
+                on_change=on_vaga_select_change
             )
 
+            if st.session_state.vaga_selecionada_candidato is None:
+                st.session_state.vaga_selecionada_candidato = vaga_sel
+
             try:
-                vaga_id = vaga_sel.split(" - ")[0].strip()
+                vaga_id = st.session_state.vaga_selecionada_candidato.split(" - ")[0].strip()
             except (IndexError, AttributeError):
                 st.error("❌ Erro ao processar a seleção da vaga. Por favor, recarregue a página.")
                 return
