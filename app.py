@@ -251,14 +251,23 @@ def show_edit_form(df_name, cols, csv_path):
                 idx_vaga = vagas_df[vagas_df["ID"] == vaga_id].index
                 if not idx_vaga.empty:
                     antigo_status_vaga = vagas_df.loc[idx_vaga[0], "Status"]
+                    antigo_status_candidato = record.get("Status")
                     novo_status_candidato = new_data.get("Status")
-                    nova_data_inicio = new_data.get("Data de Início")
+                    nova_data_inicio_str = new_data.get("Data de Início")
+                    
+                    # Converte a data de início para um objeto datetime para comparação
+                    nova_data_inicio = None
+                    if nova_data_inicio_str:
+                        try:
+                            nova_data_inicio = datetime.strptime(nova_data_inicio_str, "%d/%m/%Y").date()
+                        except ValueError:
+                            pass # A validação já cuida disso, mas é bom ter uma proteção
 
-                    # Regra 1: Candidato Validado sem Data de Início -> Vaga Ag. Inicio
-                    if novo_status_candidato == "Validado" and not nova_data_inicio:
-                        if antigo_status_vaga != "Ag. Inicio":
+                    # Regra 1: Validado + Data de Início => Ag. Inicio
+                    if novo_status_candidato == "Validado" and nova_data_inicio:
+                        if antigo_status_vaga == "Aberta":
                             vagas_df.loc[idx_vaga, "Status"] = "Ag. Inicio"
-                            st.info("🔄 Status da vaga alterado para 'Ag. Inicio' (candidato validado).")
+                            st.info("🔄 Status da vaga alterado para 'Ag. Inicio' (candidato validado com data de início).")
                             registrar_log(
                                 aba="Vagas",
                                 acao="Atualização Automática",
@@ -268,11 +277,12 @@ def show_edit_form(df_name, cols, csv_path):
                                 valor_novo="Ag. Inicio",
                                 detalhe=f"Vaga alterada automaticamente ao validar candidato {record['ID']}."
                             )
-                    # Regra 2: Candidato Validado com Data de Início -> Vaga Fechada
-                    elif novo_status_candidato == "Validado" and nova_data_inicio:
+                    
+                    # Regra 2: Data de Início é no passado e vaga está em 'Ag. Inicio' => Fechada
+                    if novo_status_candidato == "Validado" and nova_data_inicio and nova_data_inicio < date.today():
                         if antigo_status_vaga != "Fechada":
                             vagas_df.loc[idx_vaga, "Status"] = "Fechada"
-                            st.success("✅ Status da vaga alterado para 'Fechada' (candidato contratado).")
+                            st.success("✅ Status da vaga alterado para 'Fechada' (data de início já passou).")
                             registrar_log(
                                 aba="Vagas",
                                 acao="Atualização Automática",
@@ -280,22 +290,24 @@ def show_edit_form(df_name, cols, csv_path):
                                 campo="Status",
                                 valor_anterior=antigo_status_vaga,
                                 valor_novo="Fechada",
-                                detalhe=f"Vaga fechada automaticamente ao validar e preencher a data de início do candidato {record['ID']}."
+                                detalhe=f"Vaga fechada automaticamente (data de início do candidato {record['ID']} já passou)."
                             )
-                    # Regra 3: Se o status do candidato mudar para algo diferente de "Validado" e a vaga estava fechada ou ag. inicio
-                    elif antigo_status_vaga in ["Ag. Inicio", "Fechada"] and novo_status_candidato != "Validado":
-                        vagas_df.loc[idx_vaga, "Status"] = "Aberta"
-                        st.info("🔄 Vaga reaberta automaticamente!")
-                        registrar_log(
-                            aba="Vagas",
-                            acao="Atualização Automática",
-                            item_id=vaga_id,
-                            campo="Status",
-                            valor_anterior=antigo_status_vaga,
-                            valor_novo="Aberta",
-                            detalhe=f"Vaga reaberta automaticamente ao reverter validação do candidato {record['ID']}."
-                        )
-                
+                    
+                    # Regra 3: Candidato muda de Validado para Desistência => Reaberta
+                    if antigo_status_candidato == "Validado" and novo_status_candidato == "Desistência":
+                        if antigo_status_vaga in ["Ag. Inicio", "Fechada"]:
+                            vagas_df.loc[idx_vaga, "Status"] = "Reaberta"
+                            st.info("🔄 Vaga reaberta automaticamente!")
+                            registrar_log(
+                                aba="Vagas",
+                                acao="Atualização Automática",
+                                item_id=vaga_id,
+                                campo="Status",
+                                valor_anterior=antigo_status_vaga,
+                                valor_novo="Reaberta",
+                                detalhe=f"Vaga reaberta automaticamente por desistência do candidato {record['ID']}."
+                            )
+
                 st.session_state.vagas_df = vagas_df
                 save_csv(vagas_df, VAGAS_CSV)
 
