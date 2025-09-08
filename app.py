@@ -572,10 +572,6 @@ def tela_vagas():
 def tela_candidatos():
     """Tela de cadastro e visualização de candidatos."""
     
-    # Callback para forçar a atualização da vaga selecionada
-    def on_vaga_select_change():
-        st.session_state.vaga_selecionada_candidato = st.session_state.vaga_sel_candidato_widget
-    
     if st.session_state.edit_mode == "candidatos_df":
         st.markdown("### ✏️ Editar Candidato")
         show_edit_form("candidatos_df", CANDIDATOS_COLS, CANDIDATOS_CSV)
@@ -587,47 +583,46 @@ def tela_candidatos():
 
     st.header("🧑‍💼 Cadastro de Candidatos")
 
+    # Obtém a lista de vagas para o selectbox
+    vagas = st.session_state.vagas_df
+    if vagas.empty:
+        st.warning("⚠️ Cadastre uma Vaga antes de cadastrar Candidatos.")
+        return
+
+    vagas = vagas.merge(
+        st.session_state.clientes_df[["ID", "Cliente"]], 
+        left_on="ClienteID", 
+        right_on="ID", 
+        suffixes=("", "_cliente")
+    )
+    vagas["Opcao"] = vagas.apply(
+        lambda x: f"{x['ID']} - {x['Cliente']} - {x['Cargo']}", axis=1
+    )
+    
     col_form, col_vaga_info = st.columns(2)
 
     with col_form:
+        # O selectbox não precisa de um callback
+        vaga_sel = st.selectbox(
+            "Vaga *", 
+            options=vagas["Opcao"].tolist()
+        )
+        
+        # O formulário de cadastro de candidatos
         with st.form("form_candidato", enter_to_submit=False):
-            vagas = st.session_state.vagas_df
-            if vagas.empty:
-                st.warning("⚠️ Cadastre uma Vaga antes de cadastrar Candidatos.")
-                return
-
-            vagas = vagas.merge(
-                st.session_state.clientes_df[["ID", "Cliente"]], 
-                left_on="ClienteID", 
-                right_on="ID", 
-                suffixes=("", "_cliente")
-            )
-            vagas["Opcao"] = vagas.apply(
-                lambda x: f"{x['ID']} - {x['Cliente']} - {x['Cargo']}", axis=1
-            )
-            
-            vaga_sel = st.selectbox(
-                "Vaga *", 
-                options=vagas["Opcao"].tolist(),
-                key="vaga_sel_candidato_widget",
-                on_change=on_vaga_select_change
-            )
-
-            if st.session_state.vaga_selecionada_candidato is None:
-                st.session_state.vaga_selecionada_candidato = vaga_sel
-
-            try:
-                vaga_id = st.session_state.vaga_selecionada_candidato.split(" - ")[0].strip()
-            except (IndexError, AttributeError):
-                st.error("❌ Erro ao processar a seleção da vaga. Por favor, recarregue a página.")
-                return
-
             nome = st.text_input("Nome *")
             telefone = st.text_input("Telefone *")
             recrutador = st.text_input("Recrutador *")
 
             submitted = st.form_submit_button("Cadastrar Candidato", use_container_width=True)
             if submitted:
+                # Lógica de extração do ID da vaga
+                try:
+                    vaga_id = vaga_sel.split(" - ")[0].strip()
+                except (IndexError, AttributeError):
+                    st.error("❌ Erro ao processar a seleção da vaga. Por favor, recarregue a página.")
+                    return
+                
                 if not nome or not telefone or not recrutador:
                     st.warning("⚠️ Preencha todos os campos obrigatórios.")
                 else:
@@ -653,7 +648,13 @@ def tela_candidatos():
     with col_vaga_info:
         st.subheader("Vaga Selecionada")
         
-        vaga_selecionada = vagas[vagas["ID"].astype(str) == vaga_id]
+        # Lógica para exibir informações da vaga selecionada
+        try:
+            vaga_id = vaga_sel.split(" - ")[0].strip()
+            vaga_selecionada = vagas[vagas["ID"].astype(str) == vaga_id]
+        except (IndexError, AttributeError):
+            st.info("Nenhuma vaga selecionada ou encontrada.")
+            vaga_selecionada = pd.DataFrame() # DataFrame vazio para evitar erros
 
         if not vaga_selecionada.empty:
             vaga_selecionada = vaga_selecionada.iloc[0]
