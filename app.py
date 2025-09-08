@@ -581,43 +581,76 @@ def tela_candidatos():
 
     st.header("🧑‍💼 Cadastro de Candidatos")
 
-    with st.form("form_candidato", enter_to_submit=False):
-        vagas = st.session_state.vagas_df
-        if vagas.empty:
-            st.warning("⚠️ Cadastre uma Vaga antes de cadastrar Candidatos.")
-            return
-        vagas = vagas.merge(st.session_state.clientes_df[["ID", "Cliente"]], left_on="ClienteID", right_on="ID", suffixes=("", "_cliente"))
-        vagas["Opcao"] = vagas.apply(lambda x: f"{x['ID']} - {x['Cliente']} - {x['Cargo']}", axis=1)
-        vaga_sel = st.selectbox("Vaga *", options=vagas["Opcao"].tolist())
-        vaga_id = vaga_sel.split(" - ")[0]
+    col_form, col_vaga_info = st.columns(2)
 
-        nome = st.text_input("Nome *")
-        telefone = st.text_input("Telefone *")
-        recrutador = st.text_input("Recrutador *")
+    with col_form:
+        with st.form("form_candidato", enter_to_submit=False):
+            vagas = st.session_state.vagas_df
+            if vagas.empty:
+                st.warning("⚠️ Cadastre uma Vaga antes de cadastrar Candidatos.")
+                return
 
-        submitted = st.form_submit_button("Cadastrar Candidato", use_container_width=True)
-        if submitted:
-            if not nome or not telefone or not recrutador:
-                st.warning("⚠️ Preencha todos os campos obrigatórios.")
-            else:
-                prox_id = next_id(st.session_state.candidatos_df, "ID")
-                novo = pd.DataFrame([{
-                    "ID": str(prox_id),
-                    "VagaID": vaga_id,
-                    "Status": "Enviado",
-                    "Nome": nome,
-                    "Telefone": telefone,
-                    "Recrutador": recrutador,
-                    "Data de Início": "",
-                }])
-                st.session_state.candidatos_df = pd.concat([st.session_state.candidatos_df, novo], ignore_index=True)
-                save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
+            vagas = vagas.merge(
+                st.session_state.clientes_df[["ID", "Cliente"]], 
+                left_on="ClienteID", 
+                right_on="ID", 
+                suffixes=("", "_cliente")
+            )
+            vagas["Opcao"] = vagas.apply(
+                lambda x: f"{x['ID']} - {x['Cliente']} - {x['Cargo']}", axis=1
+            )
+            
+            vaga_sel = st.selectbox(
+                "Vaga *", 
+                options=vagas["Opcao"].tolist(),
+                key="vaga_sel_candidato"
+            )
+            vaga_id = vaga_sel.split(" - ")[0]
 
-                for campo, valor in novo.iloc[0].items():
-                    registrar_log("Candidatos", "Criar", item_id=prox_id, campo=campo, valor_novo=valor, detalhe=f"Candidato criado (ID {prox_id}).")
+            nome = st.text_input("Nome *")
+            telefone = st.text_input("Telefone *")
+            recrutador = st.text_input("Recrutador *")
 
-                st.success(f"✅ Candidato cadastrado com sucesso! ID: {prox_id}")
-                st.rerun()
+            submitted = st.form_submit_button("Cadastrar Candidato", use_container_width=True)
+            if submitted:
+                if not nome or not telefone or not recrutador:
+                    st.warning("⚠️ Preencha todos os campos obrigatórios.")
+                else:
+                    prox_id = next_id(st.session_state.candidatos_df, "ID")
+                    novo = pd.DataFrame([{
+                        "ID": str(prox_id),
+                        "VagaID": vaga_id,
+                        "Status": "Enviado",
+                        "Nome": nome,
+                        "Telefone": telefone,
+                        "Recrutador": recrutador,
+                        "Data de Início": "",
+                    }])
+                    st.session_state.candidatos_df = pd.concat([st.session_state.candidatos_df, novo], ignore_index=True)
+                    save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
+
+                    for campo, valor in novo.iloc[0].items():
+                        registrar_log("Candidatos", "Criar", item_id=prox_id, campo=campo, valor_novo=valor, detalhe=f"Candidato criado (ID {prox_id}).")
+
+                    st.success(f"✅ Candidato cadastrado com sucesso! ID: {prox_id}")
+                    st.rerun()
+
+    with col_vaga_info:
+        st.subheader("Vaga Selecionada")
+        
+        # Obter a linha completa da vaga selecionada
+        vaga_selecionada = vagas[vagas["ID"] == vaga_id].iloc[0]
+
+        st.markdown(f"""
+            - **Cliente:** {vaga_selecionada['Cliente']}
+            - **Cargo:** {vaga_selecionada['Cargo']}
+            - **Status:** {vaga_selecionada['Status']}
+            - **Data de Abertura:** {vaga_selecionada['Data de Abertura']}
+            - **Recrutador:** {vaga_selecionada['Recrutador']}
+            - **Salário:** R$ {vaga_selecionada['Salário 1']} a R$ {vaga_selecionada['Salário 2']}
+        """)
+
+    st.divider()
 
     st.subheader("📄 Candidatos Cadastrados")
     df = st.session_state.candidatos_df.copy()
