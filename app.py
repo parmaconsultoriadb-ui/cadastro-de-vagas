@@ -688,25 +688,28 @@ def tela_candidatos():
     st.header("🧑‍💼 Candidatos")
     st.markdown("Gerencie os candidatos inscritos nas vagas.")
     
-    vagas = st.session_state.vagas_df
-    if vagas.empty:
-        st.warning("⚠️ Cadastre uma Vaga antes de cadastrar Candidatos.")
+    vagas_disponiveis = st.session_state.vagas_df[
+        (~st.session_state.vagas_df["Status"].isin(["Ag. Inicio", "Fechada"]))
+    ].copy()
+
+    if vagas_disponiveis.empty:
+        st.warning("⚠️ Não há vagas com status 'Aberta', 'Pausada', 'Reaberta' ou 'Cancelada' para cadastrar candidatos. Você pode cadastrar uma nova vaga ou alterar o status de uma existente.")
         return
 
-    vagas = vagas.merge(
+    vagas_disponiveis = vagas_disponiveis.merge(
         st.session_state.clientes_df[["ID", "Cliente"]], 
         left_on="ClienteID", 
         right_on="ID", 
         suffixes=("", "_cliente")
     )
-    vagas["Opcao"] = vagas.apply(
+    vagas_disponiveis["Opcao"] = vagas_disponiveis.apply(
         lambda x: f"{x['ID']} - {x['Cliente']} - {x['Cargo']}", axis=1
     )
     
     with st.expander("➕ Cadastrar Novo Candidato", expanded=False):
         col_form, col_vaga_info = st.columns(2)
         with col_form:
-            vaga_sel = st.selectbox("Vaga *", options=vagas["Opcao"].tolist())
+            vaga_sel = st.selectbox("Vaga *", options=vagas_disponiveis["Opcao"].tolist())
             try:
                 vaga_id = vaga_sel.split(" - ")[0].strip()
             except (IndexError, AttributeError):
@@ -742,7 +745,7 @@ def tela_candidatos():
         with col_vaga_info:
             st.subheader("Vaga Selecionada")
             try:
-                vaga_selecionada = vagas[vagas["ID"].astype(str) == vaga_id].iloc[0]
+                vaga_selecionada = vagas_disponiveis[vagas_disponiveis["ID"].astype(str) == vaga_id].iloc[0]
                 st.markdown(f"""
                     - **Cliente:** {vaga_selecionada['Cliente']}
                     - **Cargo:** {vaga_selecionada['Cargo']}
@@ -859,20 +862,17 @@ if st.session_state.logged_in:
         "Selecione uma página", 
         list(menu_options.keys()), 
         index=list(menu_options.values()).index(st.session_state.page),
-        key="sidebar_radio_menu" # Adicionado key para evitar avisos
+        key="sidebar_radio_menu"
     )
 
-    # Lógica que remove o st.rerun() e usa o valor da sidebar para navegar
     if st.sidebar.button("Sair", use_container_width=True):
         registrar_log("Login", "Logout", detalhe=f"Usuário {st.session_state.usuario} saiu do sistema.")
         st.session_state.logged_in = False
         st.session_state.page = "login"
-        st.rerun() # Precisa de rerun para voltar para a tela de login
+        st.rerun()
         
-    # Obtém o nome da página real a partir do rótulo selecionado
     current_page = menu_options[selected_page_label]
 
-    # Exibe a tela correspondente sem precisar de st.rerun()
     if current_page == "menu":
         tela_menu()
     elif current_page == "clientes":
