@@ -738,36 +738,4 @@ def tela_menu():
 if st.session_state.logged_in:
     
     st.sidebar.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=200)
-    st.sidebar.title("Navegação")
-    
-    # Adicionando um menu na sidebar
-    menu_options = {
-        "Menu Principal": "menu",
-        "Clientes": "clientes",
-        "Vagas": "vagas",
-        "Candidatos": "candidatos",
-        "Logs do Sistema": "logs"
-    }
-
-    selected_page = st.sidebar.radio("Selecione uma página", list(menu_options.keys()), index=list(menu_options.values()).index(st.session_state.page))
-    st.session_state.page = menu_options[selected_page]
-
-    if st.sidebar.button("Sair", use_container_width=True):
-        registrar_log("Login", "Logout", detalhe=f"Usuário {st.session_state.usuario} saiu do sistema.")
-        st.session_state.logged_in = False
-        st.session_state.page = "login"
-        st.rerun()
-
-    if st.session_state.page == "menu":
-        tela_menu()
-    elif st.session_state.page == "clientes":
-        tela_clientes()
-    elif st.session_state.page == "vagas":
-        tela_vagas()
-    elif st.session_state.page == "candidatos":
-        tela_candidatos()
-    elif st.session_state.page == "logs":
-        tela_logs()
-
-else:
-    tela_login()
+    st.sidebar.title("Nave
