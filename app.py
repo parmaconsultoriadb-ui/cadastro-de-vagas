@@ -17,6 +17,7 @@ CANDIDATOS_CSV = "candidatos.csv"
 LOGS_CSV = "logs.csv"
 
 def load_csv(path, expected_cols):
+    """Carrega um CSV, garantindo que as colunas esperadas existam."""
     if os.path.exists(path):
         try:
             df = pd.read_csv(path, dtype=str)
@@ -30,9 +31,11 @@ def load_csv(path, expected_cols):
     return pd.DataFrame(columns=expected_cols)
 
 def save_csv(df, path):
+    """Salva um DataFrame em um arquivo CSV."""
     df.to_csv(path, index=False, encoding="utf-8")
 
 def next_id(df, id_col="ID"):
+    """Gera o próximo ID sequencial."""
     if df.empty or df[id_col].isna().all():
         return 1
     try:
@@ -47,10 +50,12 @@ def next_id(df, id_col="ID"):
 LOGS_COLS = ["DataHora", "Usuario", "Aba", "Acao", "ItemID", "Campo", "ValorAnterior", "ValorNovo", "Detalhe"]
 
 def ensure_logs_file():
+    """Garante que o arquivo de logs existe."""
     if not os.path.exists(LOGS_CSV):
         save_csv(pd.DataFrame(columns=LOGS_COLS), LOGS_CSV)
 
 def registrar_log(aba, acao, item_id="", campo="", valor_anterior="", valor_novo="", detalhe=""):
+    """Registra uma ação no arquivo de logs."""
     ensure_logs_file()
     datahora = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     usuario = st.session_state.get("usuario", "admin")
@@ -71,6 +76,7 @@ def registrar_log(aba, acao, item_id="", campo="", valor_anterior="", valor_novo
     save_csv(log_df, LOGS_CSV)
 
 def carregar_logs():
+    """Carrega todos os logs do sistema."""
     ensure_logs_file()
     return pd.read_csv(LOGS_CSV, dtype=str)
 
@@ -110,7 +116,7 @@ CANDIDATOS_COLS = [
     "Nome",
     "Telefone",
     "Recrutador",
-    "Data de Início",  # Nova coluna para Candidatos
+    "Data de Início",
 ]
 
 ABA_MAP = {
@@ -179,6 +185,7 @@ st.markdown(
 # Funções auxiliares
 # ==============================
 def show_edit_form(df_name, cols, csv_path):
+    """Exibe um formulário para editar um registro."""
     record = st.session_state.edit_record
     with st.form("edit_form", enter_to_submit=False):
         new_data = {}
@@ -207,7 +214,6 @@ def show_edit_form(df_name, cols, csv_path):
 
         submitted = st.form_submit_button("Salvar Alterações", use_container_width=True)
         if submitted:
-            # Validação para 'Data de Início'
             data_inicio_str = new_data.get("Data de Início")
             if data_inicio_str:
                 try:
@@ -222,7 +228,6 @@ def show_edit_form(df_name, cols, csv_path):
             df = st.session_state[df_name].copy()
             idx = df[df["ID"] == record["ID"]].index
             if not idx.empty:
-                # Verificação se o campo 'Data de Início' existe na tabela de destino
                 if (df_name == "vagas_df" or df_name == "candidatos_df") and "Data de Início" in new_data and new_data["Data de Início"]:
                     pass
                 else:
@@ -230,9 +235,9 @@ def show_edit_form(df_name, cols, csv_path):
                         new_data["Data de Início"] = ""
 
                 for c in cols:
-                    if c in df.columns: # Adicionado para garantir que a coluna existe
+                    if c in df.columns:
                         antigo = df.loc[idx[0], c]
-                        novo = new_data.get(c, '') # Usar .get para evitar KeyError
+                        novo = new_data.get(c, '')
                         if str(antigo) != str(novo):
                             registrar_log(
                                 aba=ABA_MAP[df_name],
@@ -248,7 +253,6 @@ def show_edit_form(df_name, cols, csv_path):
             st.session_state[df_name] = df
             save_csv(df, csv_path)
 
-            # --- Lógica de atualização de Vagas com base em Candidatos (Modificada) ---
             if df_name == "candidatos_df":
                 vaga_id = record.get("VagaID")
                 vagas_df = st.session_state.vagas_df.copy()
@@ -259,15 +263,13 @@ def show_edit_form(df_name, cols, csv_path):
                     novo_status_candidato = new_data.get("Status")
                     nova_data_inicio_str = new_data.get("Data de Início")
                     
-                    # Converte a data de início para um objeto datetime para comparação
                     nova_data_inicio = None
                     if nova_data_inicio_str:
                         try:
                             nova_data_inicio = datetime.strptime(nova_data_inicio_str, "%d/%m/%Y").date()
                         except ValueError:
-                            pass # A validação já cuida disso, mas é bom ter uma proteção
+                            pass
 
-                    # Regra 1: Validado + Data de Início => Ag. Inicio
                     if novo_status_candidato == "Validado" and nova_data_inicio:
                         if antigo_status_vaga == "Aberta":
                             vagas_df.loc[idx_vaga, "Status"] = "Ag. Inicio"
@@ -282,7 +284,6 @@ def show_edit_form(df_name, cols, csv_path):
                                 detalhe=f"Vaga alterada automaticamente ao validar candidato {record['ID']}."
                             )
                     
-                    # Regra 2: Data de Início é no passado e vaga está em 'Ag. Inicio' => Fechada
                     if novo_status_candidato == "Validado" and nova_data_inicio and nova_data_inicio < date.today():
                         if antigo_status_vaga != "Fechada":
                             vagas_df.loc[idx_vaga, "Status"] = "Fechada"
@@ -297,7 +298,6 @@ def show_edit_form(df_name, cols, csv_path):
                                 detalhe=f"Vaga fechada automaticamente (data de início do candidato {record['ID']} já passou)."
                             )
                     
-                    # Regra 3: Candidato muda de Validado para Desistência => Reaberta
                     if antigo_status_candidato == "Validado" and novo_status_candidato == "Desistência":
                         if antigo_status_vaga in ["Ag. Inicio", "Fechada"]:
                             vagas_df.loc[idx_vaga, "Status"] = "Reaberta"
@@ -326,7 +326,7 @@ def show_edit_form(df_name, cols, csv_path):
         st.rerun()
 
 def show_table(df, cols, df_name, csv_path):
-    # Cabeçalho
+    """Exibe uma tabela com botões de editar e excluir."""
     cols_ui = st.columns(len(cols) + 2)
     for i, c in enumerate(cols):
         cols_ui[i].markdown(
@@ -336,7 +336,6 @@ def show_table(df, cols, df_name, csv_path):
     cols_ui[-2].markdown("<div style='background-color:#f0f0f0; padding:6px; font-weight:bold; color:black; border-radius:4px; text-align:center;'>Editar</div>", unsafe_allow_html=True)
     cols_ui[-1].markdown("<div style='background-color:#f0f0f0; padding:6px; font-weight:bold; color:black; border-radius:4px; text-align:center;'>Excluir</div>", unsafe_allow_html=True)
 
-    # Linhas
     for idx, row in df.iterrows():
         bg_color = "#ffffff" if idx % 2 == 0 else "#f9f9f9"
         cols_ui = st.columns(len(cols) + 2)
@@ -353,21 +352,17 @@ def show_table(df, cols, df_name, csv_path):
                 st.session_state.confirm_delete = {"df_name": df_name, "row_id": row["ID"]}
                 st.rerun()
 
-    # Confirmação de exclusão
     if st.session_state.confirm_delete["df_name"] == df_name:
         row_id = st.session_state.confirm_delete["row_id"]
         st.warning(f"Deseja realmente excluir o registro **ID {row_id}**?")
         col_spacer1, col1, col2, col_spacer2 = st.columns([2, 1, 1, 2])
         with col1:
             if st.button("✅ Sim, quero excluir", key=f"confirm_{df_name}_{row_id}"):
-                # Trabalhar SEMPRE no DF base do estado (sem colunas calculadas)
                 base_df = st.session_state[df_name].copy()
-                row_to_delete = base_df[base_df["ID"] == row_id].copy()
                 base_df2 = base_df[base_df["ID"] != row_id]
                 st.session_state[df_name] = base_df2
                 save_csv(base_df2, csv_path)
 
-                # Logs de exclusão
                 registrar_log(
                     aba=ABA_MAP[df_name],
                     acao="Excluir",
@@ -375,7 +370,6 @@ def show_table(df, cols, df_name, csv_path):
                     detalhe=f"Registro {row_id} excluído na aba {ABA_MAP[df_name]}."
                 )
 
-                # Exclusões em cascata + logs
                 if df_name == "clientes_df":
                     vagas_rel = st.session_state.vagas_df[st.session_state.vagas_df["ClienteID"] == row_id]["ID"].tolist()
                     cand_rel = st.session_state.candidatos_df[st.session_state.candidatos_df["VagaID"].isin(vagas_rel)]["ID"].tolist()
@@ -414,6 +408,7 @@ def show_table(df, cols, df_name, csv_path):
     st.divider()
 
 def download_button(df, filename, label="⬇️ Baixar CSV"):
+    """Cria um botão de download para um DataFrame."""
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button(label=label, data=csv, file_name=filename, mime="text/csv", use_container_width=True)
 
@@ -421,6 +416,7 @@ def download_button(df, filename, label="⬇️ Baixar CSV"):
 # Telas
 # ==============================
 def tela_login():
+    """Tela de login."""
     st.title("🔒 Login - Parma Consultoria")
 
     with st.form("login_form"):
@@ -440,6 +436,7 @@ def tela_login():
                 st.error("❌ Usuário ou senha inválidos.")
 
 def tela_clientes():
+    """Tela de cadastro e visualização de clientes."""
     if st.session_state.edit_mode == "clientes_df":
         st.markdown("### ✏️ Editar Cliente")
         show_edit_form("clientes_df", CLIENTES_COLS, CLIENTES_CSV)
@@ -501,6 +498,7 @@ def tela_clientes():
         show_table(df_filtrado, CLIENTES_COLS, "clientes_df", CLIENTES_CSV)
 
 def tela_vagas():
+    """Tela de cadastro e visualização de vagas."""
     if st.session_state.edit_mode == "vagas_df":
         st.markdown("### ✏️ Editar Vaga")
         show_edit_form("vagas_df", VAGAS_COLS, VAGAS_CSV)
@@ -570,6 +568,7 @@ def tela_vagas():
         show_table(df, cols_show, "vagas_df", VAGAS_CSV)
 
 def tela_candidatos():
+    """Tela de cadastro e visualização de candidatos."""
     if st.session_state.edit_mode == "candidatos_df":
         st.markdown("### ✏️ Editar Candidato")
         show_edit_form("candidatos_df", CANDIDATOS_COLS, CANDIDATOS_CSV)
@@ -605,7 +604,12 @@ def tela_candidatos():
                 options=vagas["Opcao"].tolist(),
                 key="vaga_sel_candidato"
             )
-            vaga_id = vaga_sel.split(" - ")[0]
+
+            try:
+                vaga_id = vaga_sel.split(" - ")[0].strip()
+            except (IndexError, AttributeError):
+                st.error("❌ Erro ao processar a seleção da vaga. Por favor, recarregue a página.")
+                return
 
             nome = st.text_input("Nome *")
             telefone = st.text_input("Telefone *")
@@ -638,18 +642,21 @@ def tela_candidatos():
     with col_vaga_info:
         st.subheader("Vaga Selecionada")
         
-        # Obter a linha completa da vaga selecionada
-        vaga_selecionada = vagas[vagas["ID"] == vaga_id].iloc[0]
+        vaga_selecionada = vagas[vagas["ID"].astype(str) == vaga_id]
 
-        st.markdown(f"""
-            - **Cliente:** {vaga_selecionada['Cliente']}
-            - **Cargo:** {vaga_selecionada['Cargo']}
-            - **Status:** {vaga_selecionada['Status']}
-            - **Data de Abertura:** {vaga_selecionada['Data de Abertura']}
-            - **Recrutador:** {vaga_selecionada['Recrutador']}
-            - **Salário:** R$ {vaga_selecionada['Salário 1']} a R$ {vaga_selecionada['Salário 2']}
-        """)
-
+        if not vaga_selecionada.empty:
+            vaga_selecionada = vaga_selecionada.iloc[0]
+            st.markdown(f"""
+                - **Cliente:** {vaga_selecionada['Cliente']}
+                - **Cargo:** {vaga_selecionada['Cargo']}
+                - **Status:** {vaga_selecionada['Status']}
+                - **Data de Abertura:** {vaga_selecionada['Data de Abertura']}
+                - **Recrutador:** {vaga_selecionada['Recrutador']}
+                - **Salário:** R$ {vaga_selecionada['Salário 1']} a R$ {vaga_selecionada['Salário 2']}
+            """)
+        else:
+            st.info("Nenhuma vaga selecionada ou encontrada.")
+        
     st.divider()
 
     st.subheader("📄 Candidatos Cadastrados")
@@ -670,6 +677,7 @@ def tela_candidatos():
         show_table(df, cols_show, "candidatos_df", CANDIDATOS_CSV)
 
 def tela_logs():
+    """Tela de visualização de logs."""
     st.header("📜 Logs do Sistema")
     df_logs = carregar_logs()
 
@@ -711,6 +719,7 @@ def tela_logs():
         st.rerun()
 
 def tela_menu():
+    """Tela principal com o menu de navegação."""
     st.title("📊 Sistema Parma Consultoria")
     st.subheader("Escolha uma opção:")
     st.divider()
