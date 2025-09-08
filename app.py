@@ -178,19 +178,6 @@ st.markdown(
         background-color: #27408B !important;
         color: white !important;
     }
-    .kanban-card {
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 10px;
-        margin-bottom: 10px;
-        box-shadow: 2px 2px 5px #f0f0f0;
-    }
-    .kanban-column {
-        padding: 10px;
-        border-radius: 8px;
-        background-color: #f9f9f9;
-        min-height: 500px;
-    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -701,45 +688,6 @@ def tela_candidatos():
         download_button(df[cols_show], "candidatos.csv", "⬇️ Baixar Candidatos")
         show_table(df, cols_show, "candidatos_df", CANDIDATOS_CSV)
 
-def tela_kanban_vagas():
-    """Nova tela de visualização Kanban para vagas."""
-    if st.button("⬅️ Voltar ao Menu", use_container_width=True):
-        st.session_state.page = "menu"
-        st.rerun()
-    
-    st.header("📊 Kanban de Vagas")
-
-    vagas = st.session_state.vagas_df.copy()
-    clientes = st.session_state.clientes_df.set_index("ID")["Cliente"].to_dict()
-    vagas["Cliente"] = vagas["ClienteID"].map(lambda x: clientes.get(x, "Desconhecido"))
-
-    vagas_status = vagas["Status"].unique().tolist()
-    if not vagas_status:
-        st.info("Nenhuma vaga cadastrada para exibir no Kanban.")
-        return
-
-    cols = st.columns(len(vagas_status))
-
-    for idx, status in enumerate(vagas_status):
-        with cols[idx]:
-            st.subheader(status)
-            st.markdown("---")
-            vagas_por_status = vagas[vagas["Status"] == status]
-            
-            for _, vaga in vagas_por_status.iterrows():
-                with st.container(border=True):
-                    st.markdown(f"**{vaga['Cargo']}**")
-                    st.markdown(f"**Cliente:** {vaga['Cliente']}")
-                    st.markdown(f"**Recrutador:** {vaga['Recrutador']}")
-                    st.markdown(f"ID: {vaga['ID']}")
-                    
-                    if st.button("Editar Vaga", key=f"kanban_edit_{vaga['ID']}", use_container_width=True):
-                        st.session_state.edit_mode = "vagas_df"
-                        st.session_state.edit_record = vaga.to_dict()
-                        st.rerun()
-
-    st.divider()
-
 def tela_logs():
     """Tela de visualização de logs."""
     st.header("📜 Logs do Sistema")
@@ -799,10 +747,6 @@ def tela_menu():
     if st.button("🧑‍💼 Candidatos", use_container_width=True):
         st.session_state.page = "candidatos"
         st.rerun()
-    
-    if st.button("📈 Kanban de Vagas", use_container_width=True):
-        st.session_state.page = "kanban_vagas"
-        st.rerun()
 
     if st.button("📜 Logs", use_container_width=True):
         st.session_state.page = "logs"
@@ -830,7 +774,5 @@ elif st.session_state.page == "vagas":
     tela_vagas()
 elif st.session_state.page == "candidatos":
     tela_candidatos()
-elif st.session_state.page == "kanban_vagas":
-    tela_kanban_vagas()
 elif st.session_state.page == "logs":
     tela_logs()
