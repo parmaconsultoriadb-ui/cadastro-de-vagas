@@ -166,26 +166,128 @@ except Exception as e:
 st.markdown(
     """
     <style>
+    /* Cores principais */
+    :root {
+        --parma-blue-dark: #004488;
+        --parma-blue-medium: #0066AA;
+        --parma-blue-light: #E0F2F7;
+        --parma-green-success: #28A745;
+        --parma-yellow-warning: #FFC107;
+        --parma-red-error: #DC3545;
+        --parma-text-dark: #333333;
+        --parma-background-light: #F8F9FA;
+    }
+
+    /* Estilo Geral */
+    body {
+        color: var(--parma-text-dark);
+    }
+
+    /* Botões */
     div.stButton > button {
-        background-color: royalblue !important;
+        background-color: var(--parma-blue-dark) !important;
         color: white !important;
         border-radius: 8px;
         height: 2.5em;
         font-size: 15px;
         font-weight: bold;
+        border: none;
+        transition: background-color 0.3s ease;
     }
     div.stButton > button:hover {
-        background-color: #27408B !important;
+        background-color: var(--parma-blue-medium) !important;
         color: white !important;
     }
-    .st-emotion-cache-1r6r0jr { /* Expander header */
-        background-color: #f0f2f6;
+
+    /* Botões de Ação (Editar, Excluir) */
+    .st-emotion-cache-1jm69f1 button { /* Botão editar */
+        background-color: var(--parma-blue-dark) !important;
+    }
+    .st-emotion-cache-1jm69f1 button:hover {
+        background-color: var(--parma-blue-medium) !important;
+    }
+     .st-emotion-cache-1jm69f1 button[kind="secondary"] { /* Botão delete */
+        background-color: var(--parma-red-error) !important;
+        color: white !important;
+    }
+    .st-emotion-cache-1jm69f1 button[kind="secondary"]:hover {
+        background-color: #C82333 !important; /* Slightly darker red on hover */
+    }
+
+
+    /* Expander Headers */
+    .st-emotion-cache-1r6r0jr { /* targeta o cabeçalho do expander */
+        background-color: var(--parma-blue-light);
         border-radius: 8px;
         padding: 10px;
+        border: 1px solid var(--parma-blue-medium);
     }
     .st-emotion-cache-1r6r0jr > p {
         font-size: 1.1rem;
         font-weight: bold;
+        color: var(--parma-text-dark);
+    }
+
+    /* Sidebar */
+    .st-emotion-cache-1dp5vir { /* Streamlit sidebar container */
+        background-color: var(--parma-blue-light);
+        border-right: 1px solid var(--parma-blue-medium);
+    }
+    .st-emotion-cache-pkc02q { /* Sidebar radio buttons container */
+        background-color: transparent;
+    }
+    .st-emotion-cache-pkc02q label { /* Sidebar radio button labels */
+        color: var(--parma-text-dark);
+        font-weight: bold;
+        padding: 8px 10px;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+    }
+    .st-emotion-cache-pkc02q label:has(input:checked) { /* Selected sidebar radio button */
+        background-color: var(--parma-blue-dark);
+        color: white;
+    }
+    .st-emotion-cache-pkc02q label:hover { /* Hover on sidebar radio button */
+        background-color: var(--parma-blue-medium);
+        color: white;
+    }
+
+    /* Tabela de Dados */
+    .st-emotion-cache-10o445y .st-emotion-cache-f1mcb1 { /* Table header cells */
+        background-color: var(--parma-blue-light);
+        color: var(--parma-text-dark);
+        font-weight: bold;
+    }
+    .st-emotion-cache-10o445y .st-emotion-cache-1r4qj8m { /* Table row background alternate */
+        background-color: var(--parma-background-light);
+    }
+    .st-emotion-cache-10o445y .st-emotion-cache-1r4qj8m:nth-child(even) {
+        background-color: white;
+    }
+
+    /* Mensagens de feedback */
+    .st-emotion-cache-zt5igz { /* Success message */
+        background-color: #E6F7ED; /* Light green */
+        color: var(--parma-green-success);
+        border-left: 5px solid var(--parma-green-success);
+        border-radius: 4px;
+    }
+    .st-emotion-cache-h6nsqd { /* Warning message */
+        background-color: #FFF3E0; /* Light yellow */
+        color: var(--parma-yellow-warning);
+        border-left: 5px solid var(--parma-yellow-warning);
+        border-radius: 4px;
+    }
+    .st-emotion-cache-k5v490 { /* Error message */
+        background-color: #FDEDED; /* Light red */
+        color: var(--parma-red-error);
+        border-left: 5px solid var(--parma-red-error);
+        border-radius: 4px;
+    }
+
+    /* Headings */
+    h1, h2, h3, h4, h5, h6 {
+        color: var(--parma-blue-dark);
     }
     </style>
     """,
@@ -270,7 +372,7 @@ def show_edit_form(df_name, cols, csv_path):
                 vagas_df = st.session_state.vagas_df.copy()
                 idx_vaga = vagas_df[vagas_df["ID"] == vaga_id].index
                 if not idx_vaga.empty:
-                    antigo_status_vaga = vagas_df.loc[idx_vaga[0], "Status"]
+                    antigo_status_vaga = vagas_df.loc[idx[0], "Status"] # Pega o status da vaga ANTES da alteração
                     antigo_status_candidato = record.get("Status")
                     novo_status_candidato = new_data.get("Status")
                     nova_data_inicio_str = new_data.get("Data de Início")
@@ -282,36 +384,37 @@ def show_edit_form(df_name, cols, csv_path):
                         except ValueError:
                             pass
 
-                    if novo_status_candidato == "Validado" and nova_data_inicio:
-                        if antigo_status_vaga == "Aberta":
-                            vagas_df.loc[idx_vaga, "Status"] = "Ag. Inicio"
-                            st.info("🔄 Status da vaga alterado para 'Ag. Inicio' (candidato validado com data de início).")
-                            registrar_log(
-                                aba="Vagas",
-                                acao="Atualização Automática",
-                                item_id=vaga_id,
-                                campo="Status",
-                                valor_anterior=antigo_status_vaga,
-                                valor_novo="Ag. Inicio",
-                                detalhe=f"Vaga alterada automaticamente ao validar candidato {record['ID']}."
-                            )
+                    # Lógica para atualização do status da vaga baseada no candidato
+                    if novo_status_candidato == "Validado":
+                        if nova_data_inicio: # Candidato validado com data de início
+                            if antigo_status_vaga == "Aberta":
+                                vagas_df.loc[idx_vaga, "Status"] = "Ag. Inicio"
+                                st.info("🔄 Status da vaga alterado para 'Ag. Inicio' (candidato validado com data de início).")
+                                registrar_log(
+                                    aba="Vagas",
+                                    acao="Atualização Automática",
+                                    item_id=vaga_id,
+                                    campo="Status",
+                                    valor_anterior=antigo_status_vaga,
+                                    valor_novo="Ag. Inicio",
+                                    detalhe=f"Vaga alterada automaticamente ao validar candidato {record['ID']}."
+                                )
+                            if nova_data_inicio <= date.today() and antigo_status_vaga != "Fechada":
+                                vagas_df.loc[idx_vaga, "Status"] = "Fechada"
+                                st.success("✅ Status da vaga alterado para 'Fechada' (data de início já passou).")
+                                registrar_log(
+                                    aba="Vagas",
+                                    acao="Atualização Automática",
+                                    item_id=vaga_id,
+                                    campo="Status",
+                                    valor_anterior=antigo_status_vaga,
+                                    valor_novo="Fechada",
+                                    detalhe=f"Vaga fechada automaticamente (data de início do candidato {record['ID']} já passou)."
+                                )
                     
-                    if novo_status_candidato == "Validado" and nova_data_inicio and nova_data_inicio < date.today():
-                        if antigo_status_vaga != "Fechada":
-                            vagas_df.loc[idx_vaga, "Status"] = "Fechada"
-                            st.success("✅ Status da vaga alterado para 'Fechada' (data de início já passou).")
-                            registrar_log(
-                                aba="Vagas",
-                                acao="Atualização Automática",
-                                item_id=vaga_id,
-                                campo="Status",
-                                valor_anterior=antigo_status_vaga,
-                                valor_novo="Fechada",
-                                detalhe=f"Vaga fechada automaticamente (data de início do candidato {record['ID']} já passou)."
-                            )
-                    
+                    # Se o candidato era validado e agora desistiu, reabrir vaga se necessário
                     if antigo_status_candidato == "Validado" and novo_status_candidato == "Desistência":
-                        if antigo_status_vaga in ["Ag. Inicio", "Fechada"]:
+                        if vagas_df.loc[idx_vaga, "Status"].iloc[0] in ["Ag. Inicio", "Fechada"]:
                             vagas_df.loc[idx_vaga, "Status"] = "Reaberta"
                             st.info("🔄 Vaga reaberta automaticamente!")
                             registrar_log(
@@ -323,7 +426,6 @@ def show_edit_form(df_name, cols, csv_path):
                                 valor_novo="Reaberta",
                                 detalhe=f"Vaga reaberta automaticamente por desistência do candidato {record['ID']}."
                             )
-
                 st.session_state.vagas_df = vagas_df
                 save_csv(vagas_df, VAGAS_CSV)
 
@@ -332,44 +434,48 @@ def show_edit_form(df_name, cols, csv_path):
             st.session_state.edit_record = {}
             st.rerun()
 
-    if st.button("❌ Cancelar Edição", use_container_width=True):
+    if st.button("❌ Cancelar Edição", use_container_width=True, type="secondary"): # Botão secundário para cancelar
         st.session_state.edit_mode = None
         st.session_state.edit_record = {}
         st.rerun()
 
 def show_table(df, cols, df_name, csv_path):
     """Exibe uma tabela com botões de editar e excluir."""
-    cols_ui = st.columns(len(cols) + 2)
+    
+    # Criar cabeçalhos da tabela estilizados
+    header_cols = st.columns(len(cols) + 2)
     for i, c in enumerate(cols):
-        cols_ui[i].markdown(
-            f"<div style='background-color:#f0f0f0; padding:6px; font-weight:bold; color:black; border-radius:4px; text-align:center;'>{c}</div>",
+        header_cols[i].markdown(
+            f"<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); border-radius:4px; text-align:center;'>{c}</div>",
             unsafe_allow_html=True,
         )
-    cols_ui[-2].markdown("<div style='background-color:#f0f0f0; padding:6px; font-weight:bold; color:black; border-radius:4px; text-align:center;'>Editar</div>", unsafe_allow_html=True)
-    cols_ui[-1].markdown("<div style='background-color:#f0f0f0; padding:6px; font-weight:bold; color:black; border-radius:4px; text-align:center;'>Excluir</div>", unsafe_allow_html=True)
+    header_cols[-2].markdown("<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); border-radius:4px; text-align:center;'>Editar</div>", unsafe_allow_html=True)
+    header_cols[-1].markdown("<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); border-radius:4px; text-align:center;'>Excluir</div>", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True) # Espaço após o cabeçalho
 
     for idx, row in df.iterrows():
-        bg_color = "#ffffff" if idx % 2 == 0 else "#f9f9f9"
-        cols_ui = st.columns(len(cols) + 2)
+        bg_color = "white" if idx % 2 == 0 else "var(--parma-background-light)" # Cores alternadas para linhas
+        row_cols = st.columns(len(cols) + 2)
         for i, c in enumerate(cols):
-            cols_ui[i].markdown(f"<div style='background-color:{bg_color}; padding:6px; text-align:center; color:black;'>{row.get(c, '')}</div>", unsafe_allow_html=True)
+            row_cols[i].markdown(f"<div style='background-color:{bg_color}; padding:6px; text-align:center; color:var(--parma-text-dark); border-radius:4px;'>{row.get(c, '')}</div>", unsafe_allow_html=True)
 
-        with cols_ui[-2]:
+        with row_cols[-2]:
             if st.button("✏️", key=f"edit_{df_name}_{row['ID']}", use_container_width=True):
                 st.session_state.edit_mode = df_name
                 st.session_state.edit_record = row.to_dict()
                 st.rerun()
-        with cols_ui[-1]:
-            if st.button("🗑️", key=f"del_{df_name}_{row['ID']}", use_container_width=True):
+        with row_cols[-1]:
+            if st.button("🗑️", key=f"del_{df_name}_{row['ID']}", use_container_width=True, type="secondary"): # Botão de exclusão com cor de alerta
                 st.session_state.confirm_delete = {"df_name": df_name, "row_id": row["ID"]}
                 st.rerun()
 
     if st.session_state.confirm_delete["df_name"] == df_name:
         row_id = st.session_state.confirm_delete["row_id"]
-        st.warning(f"Deseja realmente excluir o registro **ID {row_id}**?")
+        st.error(f"⚠️ Deseja realmente excluir o registro **ID {row_id}**? Esta ação é irreversível.") # Mensagem de exclusão em vermelho
         col_spacer1, col1, col2, col_spacer2 = st.columns([2, 1, 1, 2])
         with col1:
-            if st.button("✅ Sim, quero excluir", key=f"confirm_{df_name}_{row_id}"):
+            if st.button("✅ Sim, excluir", key=f"confirm_{df_name}_{row_id}", use_container_width=True, type="secondary"):
                 base_df = st.session_state[df_name].copy()
                 base_df2 = base_df[base_df["ID"] != row_id]
                 st.session_state[df_name] = base_df2
@@ -409,11 +515,11 @@ def show_table(df, cols, df_name, csv_path):
                         detalhe=f"Vaga {row_id} removida. Candidatos removidos: {cand_rel}"
                     )
 
-                st.success(f"Registro {row_id} excluído com sucesso!")
+                st.success(f"✅ Registro {row_id} excluído com sucesso!")
                 st.session_state.confirm_delete = {"df_name": None, "row_id": None}
                 st.rerun()
         with col2:
-            if st.button("❌ Cancelar", key=f"cancel_{df_name}_{row_id}"):
+            if st.button("❌ Cancelar", key=f"cancel_{df_name}_{row_id}", use_container_width=True):
                 st.session_state.confirm_delete = {"df_name": None, "row_id": None}
                 st.rerun()
 
@@ -752,7 +858,8 @@ if st.session_state.logged_in:
     selected_page_label = st.sidebar.radio(
         "Selecione uma página", 
         list(menu_options.keys()), 
-        index=list(menu_options.values()).index(st.session_state.page)
+        index=list(menu_options.values()).index(st.session_state.page),
+        key="sidebar_radio_menu" # Adicionado key para evitar avisos
     )
 
     # Lógica que remove o st.rerun() e usa o valor da sidebar para navegar
@@ -760,9 +867,9 @@ if st.session_state.logged_in:
         registrar_log("Login", "Logout", detalhe=f"Usuário {st.session_state.usuario} saiu do sistema.")
         st.session_state.logged_in = False
         st.session_state.page = "login"
-        st.rerun()
-
-    # O dicionário mapeia o rótulo do rádio para o valor da página
+        st.rerun() # Precisa de rerun para voltar para a tela de login
+        
+    # Obtém o nome da página real a partir do rótulo selecionado
     current_page = menu_options[selected_page_label]
 
     # Exibe a tela correspondente sem precisar de st.rerun()
