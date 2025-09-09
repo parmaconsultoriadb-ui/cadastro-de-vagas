@@ -109,8 +109,8 @@ VAGAS_COLS = [
     "Salário 1",
     "Salário 2",
     "Recrutador",
-    "Descrição / Observação",   # <-- NOVO CAMPO (apenas no CSV/persistência)
     "Data de Início",
+    "Descrição / Observação",  # <-- NOVA COLUNA PERSISTIDA NO CSV
 ]
 CANDIDATOS_COLS = [
     "ID",
@@ -214,7 +214,6 @@ st.markdown(
     .st-emotion-cache-1jm69f1 button[kind="secondary"]:hover {
         background-color: #C82333 !important; /* Slightly darker red on hover */
     }
-
 
     /* Expander Headers */
     .st-emotion-cache-1r6r0jr { /* targeta o cabeçalho do expander */
@@ -325,7 +324,7 @@ def show_edit_form(df_name, cols, csv_path):
                  (c == "Data de Início" and df_name == "candidatos_df"):
                 new_data[c] = st.text_input(c, value=record.get(c, ""), help="Formato: DD/MM/YYYY")
             else:
-                # Campo livre (inclui 'Descrição / Observação' quando em Vagas)
+                # Para qualquer outro campo (inclui 'Descrição / Observação')
                 new_data[c] = st.text_input(c, value=record.get(c, ""))
 
         submitted = st.form_submit_button("✅ Salvar Alterações", use_container_width=True)
@@ -374,7 +373,7 @@ def show_edit_form(df_name, cols, csv_path):
                 vagas_df = st.session_state.vagas_df.copy()
                 idx_vaga = vagas_df[vagas_df["ID"] == vaga_id].index
                 if not idx_vaga.empty:
-                    antigo_status_vaga = vagas_df.loc[idx_vaga[0], "Status"]
+                    antigo_status_vaga = vagas_df.loc[idx[0], "Status"] # Pega o status da vaga ANTES da alteração
                     antigo_status_candidato = record.get("Status")
                     novo_status_candidato = new_data.get("Status")
                     nova_data_inicio_str = new_data.get("Data de Início")
@@ -451,8 +450,8 @@ def show_table(df, cols, df_name, csv_path):
             f"<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); border-radius:4px; text-align:center;'>{c}</div>",
             unsafe_allow_html=True,
         )
-    header_cols[-2].markdown("<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); text-align:center;'>Editar</div>", unsafe_allow_html=True)
-    header_cols[-1].markdown("<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); text-align:center;'>Excluir</div>", unsafe_allow_html=True)
+    header_cols[-2].markdown("<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); border-radius:4px; text-align:center;'>Editar</div>", unsafe_allow_html=True)
+    header_cols[-1].markdown("<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); border-radius:4px; text-align:center;'>Excluir</div>", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True) # Espaço após o cabeçalho
 
@@ -546,12 +545,8 @@ def tela_login():
         submitted = st.form_submit_button("Entrar", use_container_width=True)
 
         if submitted:
-            # ✅ Agora aceita 'admin' e 'andre'
-            cred_ok = (
-                (usuario == "admin" and senha == "Parma!123@") or
-                (usuario == "andre" and senha == "And!123@")
-            )
-            if cred_ok:
+            # ✅ Suporte a dois usuários: admin e andre
+            if (usuario == "admin" and senha == "Parma!123@") or (usuario == "andre" and senha == "And!123@"):
                 st.session_state.usuario = usuario
                 st.session_state.logged_in = True
                 st.session_state.page = "menu"
@@ -645,11 +640,12 @@ def tela_vagas():
                     index=0,
                     placeholder="Digite ou selecione um cargo"
                 )
-                descricao_obs = st.text_area("Descrição / Observação")  # <-- NOVO CAMPO (salvo apenas no CSV)
             with col2:
                 salario1 = st.text_input("Salário 1 (R$)")
                 salario2 = st.text_input("Salário 2 (R$)")
                 recrutador = st.text_input("Recrutador *")
+
+            descricao_obs = st.text_area("Descrição / Observação")  # <-- NOVO CAMPO NO FORM
 
             submitted = st.form_submit_button("✅ Salvar Vaga", use_container_width=True)
             if submitted:
@@ -666,8 +662,8 @@ def tela_vagas():
                         "Salário 1": salario1,
                         "Salário 2": salario2,
                         "Recrutador": recrutador,
-                        "Descrição / Observação": descricao_obs,   # <-- salvo no CSV/persistência
                         "Data de Início": "",
+                        "Descrição / Observação": descricao_obs,  # <-- PERSISTE NO CSV
                     }])
                     st.session_state.vagas_df = pd.concat([st.session_state.vagas_df, nova], ignore_index=True)
                     save_csv(st.session_state.vagas_df, VAGAS_CSV)
@@ -682,12 +678,10 @@ def tela_vagas():
         else:
             clientes_map = st.session_state.clientes_df.set_index("ID")["Cliente"].to_dict()
             df["Cliente"] = df["ClienteID"].map(lambda cid: clientes_map.get(cid, "Cliente não encontrado"))
+            # Não exibir 'Descrição / Observação' na tabela (mantendo a listagem original mais limpa)
             cols_show = ["ID", "Cliente", "Status", "Data de Abertura", "Cargo", "Recrutador", "Data de Início"]
             
-            # ⬇️ Download inclui a descrição apenas no CSV baixado (não aparece na tabela)
-            download_cols = cols_show + ["Descrição / Observação"]
-            download_button(df[download_cols], "vagas.csv", "⬇️ Baixar Lista de Vagas")
-            # Tabela exibida SEM a descrição
+            download_button(df[cols_show], "vagas.csv", "⬇️ Baixar Lista de Vagas")
             show_table(df, cols_show, "vagas_df", VAGAS_CSV)
 
 def tela_candidatos():
@@ -719,7 +713,7 @@ def tela_candidatos():
     )
     
     with st.expander("➕ Cadastrar Novo Candidato", expanded=False):
-        col_form, col_vaga_info = st.columns(2)
+        col_form, col_vaga_info = st.columns([2, 1])
         with col_form:
             vaga_sel = st.selectbox("Vaga *", options=vagas_disponiveis["Opcao"].tolist())
             try:
@@ -758,13 +752,14 @@ def tela_candidatos():
             st.subheader("Vaga Selecionada")
             try:
                 vaga_selecionada = vagas_disponiveis[vagas_disponiveis["ID"].astype(str) == vaga_id].iloc[0]
+                # ✅ Informações solicitadas: Status, Cliente, Cargo, Salário 1, Salário 2 e Descrição / Observação
                 st.markdown(f"""
+                    - **Status:** {vaga_selecionada['Status']}
                     - **Cliente:** {vaga_selecionada['Cliente']}
                     - **Cargo:** {vaga_selecionada['Cargo']}
-                    - **Status:** {vaga_selecionada['Status']}
-                    - **Data de Abertura:** {vaga_selecionada['Data de Abertura']}
-                    - **Recrutador:** {vaga_selecionada['Recrutador']}
-                    - **Salário:** R$ {vaga_selecionada['Salário 1']} a R$ {vaga_selecionada['Salário 2']}
+                    - **Salário 1:** R$ {vaga_selecionada['Salário 1']}
+                    - **Salário 2:** R$ {vaga_selecionada['Salário 2']}
+                    - **Descrição / Observação:** {vaga_selecionada.get('Descrição / Observação', '')}
                 """)
             except (IndexError, AttributeError):
                 st.info("Nenhuma vaga selecionada ou encontrada.")
