@@ -45,6 +45,14 @@ def next_id(df, id_col="ID"):
         return 1
 
 # ==============================
+# (NOVO) Usuários do sistema
+# ==============================
+USERS = {
+    "admin": "Parma!123@",
+    "andre": "And!123@",
+}
+
+# ==============================
 # Logs
 # ==============================
 LOGS_COLS = ["DataHora", "Usuario", "Aba", "Acao", "ItemID", "Campo", "ValorAnterior", "ValorNovo", "Detalhe"]
@@ -372,7 +380,7 @@ def show_edit_form(df_name, cols, csv_path):
                 vagas_df = st.session_state.vagas_df.copy()
                 idx_vaga = vagas_df[vagas_df["ID"] == vaga_id].index
                 if not idx_vaga.empty:
-                    antigo_status_vaga = vagas_df.loc[idx[0], "Status"] # Pega o status da vaga ANTES da alteração
+                    antigo_status_vaga = vagas_df.loc[idx_vaga[0], "Status"]  # corrige referência ao índice da vaga
                     antigo_status_candidato = record.get("Status")
                     novo_status_candidato = new_data.get("Status")
                     nova_data_inicio_str = new_data.get("Data de Início")
@@ -386,7 +394,7 @@ def show_edit_form(df_name, cols, csv_path):
 
                     # Lógica para atualização do status da vaga baseada no candidato
                     if novo_status_candidato == "Validado":
-                        if nova_data_inicio: # Candidato validado com data de início
+                        if nova_data_inicio:  # Candidato validado com data de início
                             if antigo_status_vaga == "Aberta":
                                 vagas_df.loc[idx_vaga, "Status"] = "Ag. Inicio"
                                 st.info("🔄 Status da vaga alterado para 'Ag. Inicio' (candidato validado com data de início).")
@@ -434,7 +442,7 @@ def show_edit_form(df_name, cols, csv_path):
             st.session_state.edit_record = {}
             st.rerun()
 
-    if st.button("❌ Cancelar Edição", use_container_width=True, type="secondary"): # Botão secundário para cancelar
+    if st.button("❌ Cancelar Edição", use_container_width=True, type="secondary"):  # Botão secundário para cancelar
         st.session_state.edit_mode = None
         st.session_state.edit_record = {}
         st.rerun()
@@ -449,13 +457,13 @@ def show_table(df, cols, df_name, csv_path):
             f"<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); border-radius:4px; text-align:center;'>{c}</div>",
             unsafe_allow_html=True,
         )
-    header_cols[-2].markdown("<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); border-radius:4px; text-align:center;'>Editar</div>", unsafe_allow_html=True)
-    header_cols[-1].markdown("<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); border-radius:4px; text-align:center;'>Excluir</div>", unsafe_allow_html=True)
+    header_cols[-2].markdown("<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); text-align:center; border-radius:4px;'>Editar</div>", unsafe_allow_html=True)
+    header_cols[-1].markdown("<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); text-align:center; border-radius:4px;'>Excluir</div>", unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True) # Espaço após o cabeçalho
+    st.markdown("<br>", unsafe_allow_html=True)  # Espaço após o cabeçalho
 
     for idx, row in df.iterrows():
-        bg_color = "white" if idx % 2 == 0 else "var(--parma-background-light)" # Cores alternadas para linhas
+        bg_color = "white" if idx % 2 == 0 else "var(--parma-background-light)"  # Cores alternadas para linhas
         row_cols = st.columns(len(cols) + 2)
         for i, c in enumerate(cols):
             row_cols[i].markdown(f"<div style='background-color:{bg_color}; padding:6px; text-align:center; color:var(--parma-text-dark); border-radius:4px;'>{row.get(c, '')}</div>", unsafe_allow_html=True)
@@ -466,13 +474,13 @@ def show_table(df, cols, df_name, csv_path):
                 st.session_state.edit_record = row.to_dict()
                 st.rerun()
         with row_cols[-1]:
-            if st.button("🗑️", key=f"del_{df_name}_{row['ID']}", use_container_width=True, type="secondary"): # Botão de exclusão com cor de alerta
+            if st.button("🗑️", key=f"del_{df_name}_{row['ID']}", use_container_width=True, type="secondary"):  # Botão de exclusão com cor de alerta
                 st.session_state.confirm_delete = {"df_name": df_name, "row_id": row["ID"]}
                 st.rerun()
 
     if st.session_state.confirm_delete["df_name"] == df_name:
         row_id = st.session_state.confirm_delete["row_id"]
-        st.error(f"⚠️ Deseja realmente excluir o registro **ID {row_id}**? Esta ação é irreversível.") # Mensagem de exclusão em vermelho
+        st.error(f"⚠️ Deseja realmente excluir o registro **ID {row_id}**? Esta ação é irreversível.")  # Mensagem de exclusão em vermelho
         col_spacer1, col1, col2, col_spacer2 = st.columns([2, 1, 1, 2])
         with col1:
             if st.button("✅ Sim, excluir", key=f"confirm_{df_name}_{row_id}", use_container_width=True, type="secondary"):
@@ -544,7 +552,8 @@ def tela_login():
         submitted = st.form_submit_button("Entrar", use_container_width=True)
 
         if submitted:
-            if usuario == "admin" and senha == "Parma!123@":
+            # >>> ALTERADO: validação contra o dicionário USERS
+            if usuario in USERS and senha == USERS[usuario]:
                 st.session_state.usuario = usuario
                 st.session_state.logged_in = True
                 st.session_state.page = "menu"
