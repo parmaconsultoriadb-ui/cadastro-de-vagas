@@ -36,12 +36,12 @@ CANDIDATOS_COLS = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "
 LOGS_COLS = ["DataHora", "Usuario", "Aba", "Acao", "ItemID", "Campo", "ValorAnterior", "ValorNovo", "Detalhe"]
 
 # ==============================
-# Usuários e permissões
+# Usuários e permissões (chaves lowercase)
 # ==============================
 USUARIOS = {
     "admin": {"senha": "Parma!123@", "permissoes": ["menu", "clientes", "vagas", "candidatos", "logs"]},
     "andre": {"senha": "And!123@", "permissoes": ["menu", "clientes", "vagas", "candidatos", "logs"]},
-    # usuário solicitado: acesso apenas a Vagas e Candidatos (menu incluso)
+    # Usuário solicitado: acesso apenas a vagas e candidatos (menu incluso)
     "lorrayne": {"senha": "Lrn!123@", "permissoes": ["menu", "vagas", "candidatos"]},
 }
 
@@ -49,7 +49,6 @@ USUARIOS = {
 # Helpers de persistência
 # ==============================
 def load_csv(path, expected_cols):
-    """Carrega CSV garantindo colunas esperadas e ordem."""
     if os.path.exists(path):
         try:
             df = pd.read_csv(path, dtype=str)
@@ -131,7 +130,7 @@ if "edit_record" not in st.session_state:
 if "confirm_delete" not in st.session_state:
     st.session_state.confirm_delete = {"df_name": None, "row_id": None}
 
-# Carregar DataFrames (somente na primeira carga; use o Refresh na sidebar para recarregar)
+# Carregar DataFrames na sessão (somente na primeira carga; usar Refresh para recarregar)
 if "clientes_df" not in st.session_state:
     st.session_state.clientes_df = load_csv(CLIENTES_CSV, CLIENTES_COLS)
 if "vagas_df" not in st.session_state:
@@ -140,7 +139,7 @@ if "candidatos_df" not in st.session_state:
     st.session_state.candidatos_df = load_csv(CANDIDATOS_CSV, CANDIDATOS_COLS)
 
 # ==============================
-# Estilos (cores, botões, fonte 10px e bordas nas tabelas)
+# Estilo (apenas linha horizontal entre registros + fonte 10px)
 # ==============================
 st.markdown(
     """
@@ -165,7 +164,7 @@ st.markdown(
         background-color: var(--parma-blue-medium) !important;
     }
 
-    /* Paramed styling for custom table (show_table) */
+    /* Custom table headers (used by show_table) */
     .parma-header {
         background-color: var(--parma-blue-light);
         padding:6px;
@@ -174,35 +173,43 @@ st.markdown(
         border-radius:4px;
         text-align:center;
         font-size:10px;
-        border: 1px solid #cfcfcf;
+        /* only bottom border to separate header from rows */
+        border-bottom: 1px solid #cfcfcf;
     }
+    /* Custom table cells: only border-bottom to separate rows (no vertical borders) */
     .parma-cell {
         padding:6px;
         text-align:center;
         color:var(--parma-text-dark);
-        border-radius:4px;
         font-size:10px;
-        border: 1px solid #cfcfcf;
+        border-bottom: 1px solid #e0e0e0;
         background-color: white;
     }
 
-    /* Ajuste para st.dataframe (tabela padrão do Streamlit): fonte 10px e bordas */
+    /* Ajuste para st.dataframe (tabela padrão do Streamlit): fonte 10px e apenas border-bottom */
     .stDataFrame div[data-testid="stStyledTable"] table {
         font-size: 10px !important;
         border-collapse: collapse !important;
     }
-    .stDataFrame div[data-testid="stStyledTable"] th {
+    .stDataFrame div[data-testid="stStyledTable"] thead th {
         font-size: 10px !important;
-        border: 1px solid #cfcfcf !important;
         background-color: #f6f9fb !important;
         padding: 6px !important;
+        border-bottom: 1px solid #cfcfcf !important;
+        border-left: none !important;
+        border-right: none !important;
+    }
+    .stDataFrame div[data-testid="stStyledTable"] tbody tr {
+        border-bottom: 1px solid #e0e0e0 !important;
     }
     .stDataFrame div[data-testid="stStyledTable"] td {
-        border: 1px solid #e0e0e0 !important;
         padding: 6px !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-top: none !important;
     }
 
-    /* Reduzir fontes em alguns componentes menores */
+    /* Pequenos componentes */
     .streamlit-expanderHeader, .stMarkdown, .stText {
         font-size:10px !important;
     }
@@ -219,12 +226,12 @@ def download_button(df, filename, label="⬇️ Baixar CSV"):
     st.download_button(label=label, data=csv, file_name=filename, mime="text/csv", use_container_width=True)
 
 def show_table(df, cols, df_name, csv_path):
-    """Exibe tabela com botões de editar e excluir (HTML-styled, fonte 10 e bordas)."""
+    """Exibe tabela com botões de editar/excluir. Usa apenas linha horizontal entre registros."""
     if df is None or df.empty:
         st.info("Nenhum registro para exibir.")
         return
 
-    # Header
+    # Cabeçalho
     header_cols = st.columns(len(cols) + 2)
     for i, c in enumerate(cols):
         header_cols[i].markdown(f"<div class='parma-header'>{c}</div>", unsafe_allow_html=True)
@@ -237,7 +244,6 @@ def show_table(df, cols, df_name, csv_path):
         row_cols = st.columns(len(cols) + 2)
         for i, c in enumerate(cols):
             value = row.get(c, "")
-            # escape None
             if pd.isna(value):
                 value = ""
             row_cols[i].markdown(f"<div class='parma-cell'>{value}</div>", unsafe_allow_html=True)
@@ -256,7 +262,7 @@ def show_table(df, cols, df_name, csv_path):
     if st.session_state.confirm_delete["df_name"] == df_name:
         row_id = st.session_state.confirm_delete["row_id"]
         st.error(f"⚠️ Deseja realmente excluir o registro **ID {row_id}**? Esta ação é irreversível.")
-        col_sp1, col_yes, col_no, col_sp2 = st.columns([2,1,1,2])
+        col_sp1, col_yes, col_no, col_sp2 = st.columns([2, 1, 1, 2])
         with col_yes:
             if st.button("✅ Sim, excluir", key=f"confirm_{df_name}_{row_id}", use_container_width=True):
                 # exclusão com cascata quando necessário
@@ -346,7 +352,7 @@ def show_edit_form(df_name, cols, csv_path):
 
         submitted = st.form_submit_button("✅ Salvar Alterações", use_container_width=True)
         if submitted:
-            # validar data se fornecida
+            # validação de data
             data_inicio_str = new_data.get("Data de Início")
             if data_inicio_str:
                 try:
@@ -370,7 +376,7 @@ def show_edit_form(df_name, cols, csv_path):
                 st.session_state[df_name] = df
                 save_csv(df, csv_path)
 
-                # lógica extra para candidatos -> atualizar vaga correspondente
+                # lógica para candidatos -> atualizar vaga automática
                 if df_name == "candidatos_df":
                     candidato_id = record.get("ID")
                     antigo_status = record.get("Status")
@@ -443,6 +449,35 @@ def tela_login():
                 st.rerun()
             else:
                 st.error("❌ Usuário ou senha inválidos.")
+
+def tela_menu_interno():
+    st.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=350)
+    st.title("📊 Sistema Parma Consultoria")
+    st.subheader("Bem-vindo! Escolha uma opção para começar.")
+    st.divider()
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if "clientes" in st.session_state.permissoes:
+            if st.button("👥 Clientes", use_container_width=True):
+                st.session_state.page = "clientes"
+                st.rerun()
+    with col2:
+        if "vagas" in st.session_state.permissoes:
+            if st.button("📋 Vagas", use_container_width=True):
+                st.session_state.page = "vagas"
+                st.rerun()
+    with col3:
+        if "candidatos" in st.session_state.permissoes:
+            if st.button("🧑‍💼 Candidatos", use_container_width=True):
+                st.session_state.page = "candidatos"
+                st.rerun()
+
+    st.divider()
+    if "logs" in st.session_state.permissoes:
+        if st.button("📜 Logs do Sistema", use_container_width=True):
+            st.session_state.page = "logs"
+            st.rerun()
 
 def tela_clientes():
     if st.session_state.edit_mode == "clientes_df":
@@ -591,7 +626,7 @@ def tela_vagas():
                 with col1f:
                     cliente_sel = st.selectbox("Cliente *", options=clientes.apply(lambda x: f"{x['ID']} - {x['Cliente']}", axis=1))
                     cliente_id = cliente_sel.split(" - ")[0]
-                    cliente_nome = clientes[clientes['ID'] == cliente_id]['Cliente'].iloc[0]
+                    cliente_nome = clients = clientes[clientes['ID'] == cliente_id]['Cliente'].iloc[0]
                     cargo = st.text_input("Cargo *")
                     salario1 = st.text_input("Salário 1 (R$)")
                     salario2 = st.text_input("Salário 2 (R$)")
@@ -661,7 +696,6 @@ def tela_candidatos():
     if cargo_filter != "(todos)":
         df = df[df["Cargo"] == cargo_filter]
 
-    # vagas disponíveis
     vagas_disponiveis = st.session_state.vagas_df[~st.session_state.vagas_df["Status"].isin(["Ag. Inicio", "Fechada"])].copy()
     if not vagas_disponiveis.empty:
         vagas_disponiveis["Opcao"] = vagas_disponiveis.apply(lambda x: f"{x['ID']} - {x['Cliente']} - {x['Cargo']}", axis=1)
@@ -801,36 +835,6 @@ def tela_logs():
 
     st.divider()
 
-def tela_menu_interno():
-    st.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=350)
-    st.title("📊 Sistema Parma Consultoria")
-    st.subheader("Bem-vindo! Escolha uma opção para começar.")
-    st.divider()
-
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if "clientes" in st.session_state.permissoes:
-            if st.button("👥 Clientes", use_container_width=True):
-                st.session_state.page = "clientes"
-                st.rerun()
-    with col2:
-        if "vagas" in st.session_state.permissoes:
-            if st.button("📋 Vagas", use_container_width=True):
-                st.session_state.page = "vagas"
-                st.rerun()
-    with col3:
-        if "candidatos" in st.session_state.permissoes:
-            if st.button("🧑‍💼 Candidatos", use_container_width=True):
-                st.session_state.page = "candidatos"
-                st.rerun()
-
-    st.divider()
-
-    if "logs" in st.session_state.permissoes:
-        if st.button("📜 Logs do Sistema", use_container_width=True):
-            st.session_state.page = "logs"
-            st.rerun()
-
 # ==============================
 # Refresh (recarrega CSVs na sessão)
 # ==============================
@@ -841,14 +845,14 @@ def refresh_data():
     registrar_log("Sistema", "Refresh", detalhe="Dados recarregados via botão Refresh na sidebar.")
 
 # ==============================
-# Lógica principal: menu lateral com refresh
+# Lógica principal (menu lateral dinâmico por permissão) - refresh na sidebar
 # ==============================
 if st.session_state.logged_in:
     st.sidebar.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=200)
     st.sidebar.title("Navegação")
     st.sidebar.caption(f"Usuário: {st.session_state.usuario}")
 
-    # refresh global na sidebar
+    # refresh global na sidebar (apenas aqui)
     if st.sidebar.button("🔄 Refresh dados"):
         refresh_data()
         st.rerun()
@@ -914,6 +918,5 @@ if st.session_state.logged_in:
             tela_logs()
         else:
             st.warning("⚠️ Você não tem permissão para acessar esta página.")
-
 else:
     tela_login()
