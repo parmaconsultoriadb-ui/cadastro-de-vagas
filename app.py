@@ -17,11 +17,12 @@ CANDIDATOS_CSV = "candidatos.csv"
 LOGS_CSV = "logs.csv"
 
 # ==============================
-# Colunas esperadas (conforme solicitado)
+# Colunas esperadas
 # ==============================
 CLIENTES_COLS = ["ID", "Data", "Cliente", "Nome", "Cidade", "UF", "Telefone", "E-mail"]
-VAGAS_COLS = ["ID", "Cliente", "Status", "Data de Abertura", "Cargo", "Recrutador", "Data de Início"]
+VAGAS_COLS = ["ID", "Cliente", "Status", "Data de Abertura", "Cargo", "Recrutador", "Data de Início", "Descrição / Observação"]
 CANDIDATOS_COLS = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "Status", "Data de Início"]
+LOGS_COLS = ["DataHora", "Usuario", "Aba", "Acao", "ItemID", "Campo", "ValorAnterior", "ValorNovo", "Detalhe"]
 
 # ==============================
 # Helpers de persistência
@@ -35,8 +36,12 @@ def load_csv(path, expected_cols):
             for col in expected_cols:
                 if col not in df.columns:
                     df[col] = ""
+            # Reordenar e preencher NaN
             df = df[expected_cols]
             df = df.fillna("")
+            # Garantir ID como string
+            if "ID" in df.columns:
+                df["ID"] = df["ID"].astype(str)
             return df
         except Exception:
             return pd.DataFrame(columns=expected_cols)
@@ -62,9 +67,6 @@ def next_id(df, id_col="ID"):
 # ==============================
 # Logs
 # ==============================
-LOGS_COLS = ["DataHora", "Usuario", "Aba", "Acao", "ItemID", "Campo", "ValorAnterior", "ValorNovo", "Detalhe"]
-
-
 def ensure_logs_file():
     if not os.path.exists(LOGS_CSV):
         save_csv(pd.DataFrame(columns=LOGS_COLS), LOGS_CSV)
@@ -164,7 +166,6 @@ st.markdown(
 # ==============================
 # Funções UI auxiliares
 # ==============================
-
 def download_button(df, filename, label="⬇️ Baixar CSV"):
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button(label=label, data=csv, file_name=filename, mime="text/csv", use_container_width=True)
@@ -297,6 +298,8 @@ def show_edit_form(df_name, cols, csv_path):
                 new_data[c] = st.selectbox(c, options=opcoes, index=idx)
             elif c == "Data de Início":
                 new_data[c] = st.text_input(c, value=val, help="Formato: DD/MM/YYYY")
+            elif c == "Descrição / Observação":
+                new_data[c] = st.text_area(c, value=val)
             else:
                 new_data[c] = st.text_input(c, value=val)
 
@@ -307,7 +310,6 @@ def show_edit_form(df_name, cols, csv_path):
             if data_inicio_str:
                 try:
                     di = datetime.strptime(data_inicio_str, "%d/%m/%Y").date()
-                    # não forçar data no futuro aqui — apenas valida formato
                 except ValueError:
                     st.error("❌ Formato de data inválido. Use DD/MM/YYYY.")
                     return
@@ -382,7 +384,6 @@ def show_edit_form(df_name, cols, csv_path):
 # ==============================
 # Telas
 # ==============================
-
 def tela_login():
     st.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=350)
     st.title("🔒 Login - Parma Consultoria")
@@ -496,7 +497,7 @@ def tela_vagas():
 
     # Upload de vagas
     with st.expander("📤 Importar Vagas (CSV/XLSX)", expanded=False):
-        arquivo = st.file_uploader("Selecione um arquivo com as colunas: ID, Cliente, Status, Data de Abertura, Cargo, Recrutador, Data de Início", type=["csv", "xlsx"], key="upload_vagas")
+        arquivo = st.file_uploader("Selecione um arquivo com as colunas: ID, Cliente, Status, Data de Abertura, Cargo, Recrutador, Data de Início, Descrição / Observação", type=["csv", "xlsx"], key="upload_vagas")
         if arquivo is not None:
             try:
                 if arquivo.name.lower().endswith('.csv'):
@@ -533,6 +534,7 @@ def tela_vagas():
                     cliente_id = cliente_sel.split(" - ")[0]
                     cliente_nome = clientes[clientes['ID'] == cliente_id]['Cliente'].iloc[0]
                     cargo = st.text_input("Cargo *")
+                    descricao = st.text_area("Descrição / Observação")
                 with col2:
                     recrutador = st.text_input("Recrutador *")
                     status = st.selectbox("Status", options=["Aberta", "Ag. Inicio", "Cancelada", "Fechada", "Reaberta", "Pausada"], index=0)
@@ -552,6 +554,7 @@ def tela_vagas():
                             "Cargo": cargo,
                             "Recrutador": recrutador,
                             "Data de Início": data_inicio,
+                            "Descrição / Observação": descricao
                         }])
                         st.session_state.vagas_df = pd.concat([st.session_state.vagas_df, nova], ignore_index=True)
                         save_csv(st.session_state.vagas_df, VAGAS_CSV)
@@ -567,8 +570,11 @@ def tela_vagas():
         filtro = st.text_input("🔎 Buscar por Cargo/Cliente")
         mask = df['Cargo'].str.contains(filtro, case=False, na=False) | df['Cliente'].str.contains(filtro, case=False, na=False) if filtro else pd.Series([True]*len(df))
         df_filtrado = df[mask]
-        download_button(df_filtrado, "vagas.csv", "⬇️ Baixar Lista de Vagas")
-        show_table(df_filtrado, VAGAS_COLS, "vagas_df", VAGAS_CSV)
+        # Não incluímos a coluna de descrição na listagem principal para manter visual limpo,
+        # mas ela está persistida no CSV e aparece na edição/seleção.
+        cols_show = [c for c in VAGAS_COLS if c != "Descrição / Observação"]
+        download_button(df_filtrado[cols_show], "vagas.csv", "⬇️ Baixar Lista de Vagas")
+        show_table(df_filtrado[cols_show], cols_show, "vagas_df", VAGAS_CSV)
 
 
 def tela_candidatos():
@@ -581,6 +587,7 @@ def tela_candidatos():
 
     # Prepara lista de vagas disponíveis (status não em Ag. Inicio ou Fechada)
     vagas_disponiveis = st.session_state.vagas_df[~st.session_state.vagas_df['Status'].isin(['Ag. Inicio', 'Fechada'])].copy()
+    vaga_id = None
     if vagas_disponiveis.empty:
         st.warning("⚠️ Não há vagas disponíveis para cadastrar candidatos. Cadastre ou reabra vagas.")
     else:
@@ -618,8 +625,11 @@ def tela_candidatos():
             if vagas_disponiveis.empty:
                 st.info("Cadastre uma vaga disponível primeiro.")
             else:
-                vaga_sel = st.selectbox("Vaga *", options=vagas_disponiveis['Opcao'].tolist())
-                vaga_id = vaga_sel.split(' - ')[0].strip()
+                vaga_sel = st.selectbox("Vaga *", options=vagas_disponiveis['Opcao'].tolist(), key="vaga_sel")
+                try:
+                    vaga_id = vaga_sel.split(' - ')[0].strip()
+                except Exception:
+                    vaga_id = None
 
                 with st.form("form_candidato", enter_to_submit=False):
                     nome = st.text_input("Nome *")
@@ -628,8 +638,8 @@ def tela_candidatos():
 
                     submitted = st.form_submit_button("✅ Salvar Candidato", use_container_width=True)
                     if submitted:
-                        if not nome or not telefone or not recrutador:
-                            st.warning("⚠️ Preencha todos os campos obrigatórios.")
+                        if not nome or not telefone or not recrutador or not vaga_id:
+                            st.warning("⚠️ Preencha todos os campos obrigatórios e selecione uma vaga.")
                         else:
                             vaga_row = st.session_state.vagas_df[st.session_state.vagas_df['ID'] == vaga_id].iloc[0]
                             cliente_nome = vaga_row['Cliente']
@@ -653,11 +663,14 @@ def tela_candidatos():
 
         with col_info:
             st.subheader("Vaga Selecionada")
-            try:
-                vaga_row = st.session_state.vagas_df[st.session_state.vagas_df['ID'] == vaga_id].iloc[0]
-                st.markdown(f"- **Status:** {vaga_row['Status']}\n- **Cliente:** {vaga_row['Cliente']}\n- **Cargo:** {vaga_row['Cargo']}\n- **Recrutador:** {vaga_row['Recrutador']}\n- **Data de Abertura:** {vaga_row['Data de Abertura']}\n- **Data de Início:** {vaga_row.get('Data de Início', '')}")
-            except Exception:
-                st.info("Nenhuma vaga selecionada ou encontrada.")
+            if vaga_id:
+                try:
+                    vaga_row = st.session_state.vagas_df[st.session_state.vagas_df['ID'] == vaga_id].iloc[0]
+                    st.markdown(f"- **Status:** {vaga_row['Status']}\n- **Cliente:** {vaga_row['Cliente']}\n- **Cargo:** {vaga_row['Cargo']}\n- **Recrutador:** {vaga_row['Recrutador']}\n- **Data de Abertura:** {vaga_row['Data de Abertura']}\n- **Data de Início:** {vaga_row.get('Data de Início', '')}\n- **Descrição / Observação:** {vaga_row.get('Descrição / Observação', '')}")
+                except Exception:
+                    st.info("Nenhuma vaga selecionada ou encontrada.")
+            else:
+                st.info("Selecione uma vaga para ver as informações.")
 
     st.subheader("📋 Candidatos Cadastrados")
     df = st.session_state.candidatos_df.copy()
@@ -756,10 +769,16 @@ if st.session_state.logged_in:
         "Logs do Sistema": "logs"
     }
 
+    # determinar índice inicial de seleção (fallback seguro)
+    try:
+        index_initial = list(menu_options.values()).index(st.session_state.page)
+    except Exception:
+        index_initial = 0
+
     selected_page_label = st.sidebar.radio(
-        "Selecione uma página", 
-        list(menu_options.keys()), 
-        index=list(menu_options.values()).index(st.session_state.page),
+        "Selecione uma página",
+        list(menu_options.keys()),
+        index=index_initial,
         key="sidebar_radio_menu"
     )
 
