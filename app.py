@@ -36,9 +36,8 @@ CANDIDATOS_COLS = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "
 LOGS_COLS = ["DataHora", "Usuario", "Aba", "Acao", "ItemID", "Campo", "ValorAnterior", "ValorNovo", "Detalhe"]
 
 # ==============================
-# Controle de Usuários e Permissões
+# Controle de Usuários e Permissões (keys em lowercase)
 # ==============================
-# As permissões aqui usam os nomes de página (keys): "menu","clientes","vagas","candidatos","logs"
 USUARIOS = {
     "admin": {"senha": "Parma!123@", "permissoes": ["menu", "clientes", "vagas", "candidatos", "logs"]},
     "andre": {"senha": "And!123@", "permissoes": ["menu", "clientes", "vagas", "candidatos", "logs"]},
@@ -137,7 +136,7 @@ if "edit_record" not in st.session_state:
 if "confirm_delete" not in st.session_state:
     st.session_state.confirm_delete = {"df_name": None, "row_id": None}
 
-# Carregar DataFrames na sessão
+# Carregar DataFrames na sessão (somente se ainda não existirem — refresh manual recarrega)
 if "clientes_df" not in st.session_state:
     st.session_state.clientes_df = load_csv(CLIENTES_CSV, CLIENTES_COLS)
 if "vagas_df" not in st.session_state:
@@ -219,7 +218,7 @@ def show_table(df, cols, df_name, csv_path):
                 st.session_state.edit_record = row.to_dict()
                 st.rerun()
         with row_cols[-1]:
-            if st.button("🗑️", key=f"del_{df_name}_{row['ID']}", use_container_width=True, type="secondary"):
+            if st.button("🗑️", key=f"del_{df_name}_{row['ID']}", use_container_width=True):
                 st.session_state.confirm_delete = {"df_name": df_name, "row_id": row["ID"]}
                 st.rerun()
 
@@ -229,7 +228,7 @@ def show_table(df, cols, df_name, csv_path):
         st.error(f"⚠️ Deseja realmente excluir o registro **ID {row_id}**? Esta ação é irreversível.")
         col_spacer1, col1, col2, col_spacer2 = st.columns([2, 1, 1, 2])
         with col1:
-            if st.button("✅ Sim, excluir", key=f"confirm_{df_name}_{row_id}", use_container_width=True, type="secondary"):
+            if st.button("✅ Sim, excluir", key=f"confirm_{df_name}_{row_id}", use_container_width=True):
                 # Executar exclusão e ações em cascata quando necessário
                 if df_name == "clientes_df":
                     base_df = st.session_state.clientes_df.copy()
@@ -395,7 +394,7 @@ def show_edit_form(df_name, cols, csv_path):
             else:
                 st.error("❌ Registro não encontrado para edição.")
 
-    if st.button("❌ Cancelar Edição", use_container_width=True, type="secondary"):
+    if st.button("❌ Cancelar Edição", use_container_width=True):
         st.session_state.edit_mode = None
         st.session_state.edit_record = {}
         st.rerun()
@@ -792,7 +791,6 @@ def tela_menu():
     st.subheader("Bem-vindo! Escolha uma opção para começar.")
     st.divider()
 
-    # Mostrar apenas botões das páginas que o usuário tem permissão
     col1, col2, col3 = st.columns(3)
     with col1:
         if "clientes" in st.session_state.permissoes:
@@ -818,12 +816,26 @@ def tela_menu():
             st.rerun()
 
 # ==============================
-# Lógica principal (menu lateral dinâmico por permissão)
+# Função de refresh (recarrega CSVs para a sessão)
+# ==============================
+def refresh_data():
+    st.session_state.clientes_df = load_csv(CLIENTES_CSV, CLIENTES_COLS)
+    st.session_state.vagas_df = load_csv(VAGAS_CSV, VAGAS_COLS)
+    st.session_state.candidatos_df = load_csv(CANDIDATOS_CSV, CANDIDATOS_COLS)
+    registrar_log(aba="Sistema", acao="Refresh", detalhe="Dados recarregados via botão Refresh na sidebar.")
+
+# ==============================
+# Lógica principal (menu lateral dinâmico por permissão) - com botão de refresh na sidebar
 # ==============================
 if st.session_state.logged_in:
     st.sidebar.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=200)
     st.sidebar.title("Navegação")
     st.sidebar.caption(f"Usuário: {st.session_state.usuario}")
+
+    # Botão global de refresh (apenas na sidebar)
+    if st.sidebar.button("🔄 Refresh dados"):
+        refresh_data()
+        st.experimental_rerun()
 
     # map page key -> label
     page_label_map = {
@@ -862,7 +874,7 @@ if st.session_state.logged_in:
         registrar_log(aba="Login", acao="Logout", detalhe=f"Usuário {st.session_state.usuario} saiu do sistema.")
         st.session_state.logged_in = False
         st.session_state.page = "login"
-        st.rerun()
+        st.experimental_rerun()
 
     # map selected label de volta ao page key
     try:
