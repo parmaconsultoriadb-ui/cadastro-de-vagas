@@ -42,11 +42,13 @@ def load_csv(path, expected_cols):
     """Carrega CSV garantindo as colunas esperadas (retorna DataFrame com as colunas na ordem esperada)."""
     if os.path.exists(path):
         try:
-            df = pd.read_csv(path, dtype=str).fillna("")
-            # garantir colunas
+            df = pd.read_csv(path, dtype=str)
+            df = df.fillna("")
+            # Garantir colunas
             for col in expected_cols:
                 if col not in df.columns:
                     df[col] = ""
+            # Reordenar e devolver só as colunas esperadas
             df = df[expected_cols]
             if "ID" in df.columns:
                 df["ID"] = df["ID"].astype(str)
@@ -56,9 +58,11 @@ def load_csv(path, expected_cols):
     else:
         return pd.DataFrame(columns=expected_cols)
 
+
 def save_csv(df, path):
     """Salva DataFrame em CSV com encoding utf-8."""
     df.to_csv(path, index=False, encoding="utf-8")
+
 
 def next_id(df, id_col="ID"):
     """Gera próximo ID sequencial baseado na coluna ID (assume inteiros)."""
@@ -120,8 +124,6 @@ if "edit_record" not in st.session_state:
     st.session_state.edit_record = {}
 if "confirm_delete" not in st.session_state:
     st.session_state.confirm_delete = {"df_name": None, "row_id": None}
-if "_toast" not in st.session_state:
-    st.session_state["_toast"] = None
 
 # Carregar DataFrames na sessão
 if "clientes_df" not in st.session_state:
@@ -132,7 +134,7 @@ if "candidatos_df" not in st.session_state:
     st.session_state.candidatos_df = load_csv(CANDIDATOS_CSV, CANDIDATOS_COLS)
 
 # ==============================
-# Estilo (CSS básico)
+# Estilo (CSS)
 # ==============================
 st.markdown(
     """
@@ -161,50 +163,12 @@ st.markdown(
         background-color: var(--parma-blue-medium) !important;
         color: white !important;
     }
-    .parma-toast {
-        min-width: 220px;
-        max-width: 360px;
-        background: #4BB543;
-        color: white;
-        padding: 12px 16px;
-        border-radius: 10px;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-        font-weight: 600;
-        font-size: 15px;
-    }
+    .st-emotion-cache-1r6r0jr { background-color: var(--parma-blue-light); border-radius: 8px; padding: 10px; border: 1px solid var(--parma-blue-medium);}    
+    h1, h2, h3, h4, h5, h6 { color: var(--parma-blue-dark); }
     </style>
     """,
     unsafe_allow_html=True,
 )
-
-# ==============================
-# Toast helper (auto-close)
-# ==============================
-def show_toast_now(message="Cadastrado com Sucesso ✅", bgcolor="#4BB543", duration_ms=3000):
-    """Renderiza um toast que some automaticamente."""
-    html = f"""
-    <div id="parma_toast_container" style="position:fixed; right:24px; bottom:24px; z-index:9999;">
-      <div class="parma-toast" style="background:{bgcolor};">
-        {message}
-      </div>
-    </div>
-    <script>
-      setTimeout(function(){{
-        var t = document.getElementById('parma_toast_container');
-        if (t) {{
-          t.style.transition = 'opacity 400ms ease';
-          t.style.opacity = '0';
-          setTimeout(function(){{ if (t && t.remove) t.remove(); }}, 450);
-        }}
-      }}, {duration_ms});
-    </script>
-    """
-    st.markdown(html, unsafe_allow_html=True)
-
-# Se programado, exibir toast ao carregar a página (após rerun)
-if st.session_state.get("_toast"):
-    show_toast_now(st.session_state["_toast"])
-    st.session_state["_toast"] = None
 
 # ==============================
 # UI helpers
@@ -243,7 +207,7 @@ def show_table(df, cols, df_name, csv_path):
                 st.session_state.edit_record = row.to_dict()
                 st.rerun()
         with row_cols[-1]:
-            if st.button("🗑️", key=f"del_{df_name}_{row['ID']}", use_container_width=True):
+            if st.button("🗑️", key=f"del_{df_name}_{row['ID']}", use_container_width=True, type="secondary"):
                 st.session_state.confirm_delete = {"df_name": df_name, "row_id": row["ID"]}
                 st.rerun()
 
@@ -253,7 +217,7 @@ def show_table(df, cols, df_name, csv_path):
         st.error(f"⚠️ Deseja realmente excluir o registro **ID {row_id}**? Esta ação é irreversível.")
         col_spacer1, col1, col2, col_spacer2 = st.columns([2, 1, 1, 2])
         with col1:
-            if st.button("✅ Sim, excluir", key=f"confirm_{df_name}_{row_id}", use_container_width=True):
+            if st.button("✅ Sim, excluir", key=f"confirm_{df_name}_{row_id}", use_container_width=True, type="secondary"):
                 # Executar exclusão e ações em cascata quando necessário
                 if df_name == "clientes_df":
                     base_df = st.session_state.clientes_df.copy()
@@ -419,7 +383,7 @@ def show_edit_form(df_name, cols, csv_path):
             else:
                 st.error("❌ Registro não encontrado para edição.")
 
-    if st.button("❌ Cancelar Edição", use_container_width=True):
+    if st.button("❌ Cancelar Edição", use_container_width=True, type="secondary"):
         st.session_state.edit_mode = None
         st.session_state.edit_record = {}
         st.rerun()
@@ -437,7 +401,6 @@ def tela_login():
         submitted = st.form_submit_button("Entrar", use_container_width=True)
 
         if submitted:
-            # Suporte a dois usuários: admin e andre (exemplo)
             if (usuario == "admin" and senha == "Parma!123@") or (usuario == "andre" and senha == "And!123@"):
                 st.session_state.usuario = usuario
                 st.session_state.logged_in = True
@@ -458,7 +421,7 @@ def tela_clientes():
 
     # Upload de arquivo (CSV/XLSX)
     with st.expander("📤 Importar Clientes (CSV/XLSX)", expanded=False):
-        arquivo = st.file_uploader("Selecione um arquivo com as colunas: " + ", ".join(CLIENTES_COLS), type=["csv", "xlsx"], key="upload_clientes")
+        arquivo = st.file_uploader("Selecione um arquivo com as colunas: ID, Data, Cliente, Nome, Cidade, UF, Telefone, E-mail", type=["csv", "xlsx"], key="upload_clientes")
         if arquivo is not None:
             try:
                 if arquivo.name.lower().endswith('.csv'):
@@ -471,13 +434,15 @@ def tela_clientes():
                     st.error(f"Colunas faltando: {missing}")
                 else:
                     df_upload = df_upload[CLIENTES_COLS].fillna("")
+                    # Evitar IDs duplicados: preferir manter os existentes do sistema
                     base = st.session_state.clientes_df.copy()
                     combined = pd.concat([base, df_upload], ignore_index=True)
+                    # Remover duplicatas por ID
                     combined = combined.drop_duplicates(subset=["ID"], keep="first")
                     st.session_state.clientes_df = combined
                     save_csv(combined, CLIENTES_CSV)
                     registrar_log("Clientes", "Importar", detalhe=f"Importação de clientes via upload ({arquivo.name}).")
-                    st.session_state["_toast"] = "Clientes importados com sucesso ✅"
+                    st.success("✅ Clientes importados com sucesso!")
                     st.rerun()
             except Exception as e:
                 st.error(f"Erro ao processar o arquivo: {e}")
@@ -514,7 +479,7 @@ def tela_clientes():
                     st.session_state.clientes_df = pd.concat([st.session_state.clientes_df, novo], ignore_index=True)
                     save_csv(st.session_state.clientes_df, CLIENTES_CSV)
                     registrar_log("Clientes", "Criar", item_id=prox_id, detalhe=f"Cliente criado (ID {prox_id}).")
-                    st.session_state["_toast"] = "Cadastrado com Sucesso ✅"
+                    st.success(f"✅ Cliente cadastrado com sucesso! ID: {prox_id}")
                     st.rerun()
 
     st.subheader("📋 Clientes Cadastrados")
@@ -577,7 +542,7 @@ def tela_vagas():
                     st.session_state.vagas_df = combined
                     save_csv(combined, VAGAS_CSV)
                     registrar_log("Vagas", "Importar", detalhe=f"Importação de vagas via upload ({arquivo.name}).")
-                    st.session_state["_toast"] = "Vagas importadas com sucesso ✅"
+                    st.success("✅ Vagas importadas com sucesso!")
                     st.rerun()
             except Exception as e:
                 st.error(f"Erro ao processar o arquivo: {e}")
@@ -594,7 +559,7 @@ def tela_vagas():
                 with col1f:
                     cliente_sel = st.selectbox("Cliente *", options=clientes.apply(lambda x: f"{x['ID']} - {x['Cliente']}", axis=1))
                     cliente_id = cliente_sel.split(" - ")[0]
-                    cliente_nome = clientes[clientes['ID'] == cliente_id]['Cliente'].iloc[0] if cliente_id in clientes['ID'].values else cliente_sel
+                    cliente_nome = clientes[clientes['ID'] == cliente_id]['Cliente'].iloc[0]
                     cargo = st.text_input("Cargo *")
                     salario1 = st.text_input("Salário 1 (R$)")
                     salario2 = st.text_input("Salário 2 (R$)")
@@ -625,8 +590,7 @@ def tela_vagas():
                         st.session_state.vagas_df = pd.concat([st.session_state.vagas_df, nova], ignore_index=True)
                         save_csv(st.session_state.vagas_df, VAGAS_CSV)
                         registrar_log("Vagas", "Criar", item_id=prox_id, detalhe=f"Vaga criada (ID {prox_id}).")
-                        # programar toast e rerun para exibir
-                        st.session_state["_toast"] = "Cadastrado com Sucesso ✅"
+                        st.success(f"✅ Vaga cadastrada com sucesso! ID: {prox_id}")
                         st.rerun()
 
     st.subheader("📋 Vagas Cadastradas")
@@ -693,7 +657,7 @@ def tela_candidatos():
                     st.session_state.candidatos_df = combined
                     save_csv(combined, CANDIDATOS_CSV)
                     registrar_log("Candidatos", "Importar", detalhe=f"Importação de candidatos via upload ({arquivo.name}).")
-                    st.session_state["_toast"] = "Candidatos importados com sucesso ✅"
+                    st.success("✅ Candidatos importados com sucesso!")
                     st.rerun()
             except Exception as e:
                 st.error(f"Erro ao processar o arquivo: {e}")
@@ -737,8 +701,7 @@ def tela_candidatos():
                             st.session_state.candidatos_df = pd.concat([st.session_state.candidatos_df, novo], ignore_index=True)
                             save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
                             registrar_log("Candidatos", "Criar", item_id=prox_id, detalhe=f"Candidato criado (ID {prox_id}).")
-                            # programar toast para aparecer após rerun
-                            st.session_state["_toast"] = "Cadastrado com Sucesso ✅"
+                            st.success(f"✅ Candidato cadastrado com sucesso! ID: {prox_id}")
                             st.rerun()
 
         with col_info:
