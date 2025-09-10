@@ -144,7 +144,7 @@ if "candidatos_df" not in st.session_state:
     st.session_state.candidatos_df = load_csv(CANDIDATOS_CSV, CANDIDATOS_COLS)
 
 # ==============================
-# Estilo (CSS) + Fonte 11px para dataframes e os blocos customizados
+# Estilo (CSS) + Fonte 12px para dataframes e os blocos customizados
 # ==============================
 st.markdown(
     """
@@ -182,7 +182,7 @@ st.markdown(
         color:var(--parma-text-dark);
         border-radius:4px;
         text-align:center;
-        font-size:11px;
+        font-size:12px;
     }
     /* Estilo das células custom (usado em show_table) */
     .parma-cell {
@@ -190,18 +190,18 @@ st.markdown(
         text-align:center;
         color:var(--parma-text-dark);
         border-radius:4px;
-        font-size:11px;
+        font-size:12px;
     }
     /* Ajuste para st.dataframe (tabela gerada pelo Streamlit) */
     .stDataFrame div[data-testid="stStyledTable"] table {
-        font-size: 11px !important;
+        font-size: 12px !important;
     }
     .stDataFrame div[data-testid="stStyledTable"] th {
-        font-size: 11px !important;
+        font-size: 12px !important;
     }
     /* Tornar a área de textarea / markdown com fonte menor também (quando usado) */
     .streamlit-expanderHeader, .stMarkdown, .stText {
-        font-size:11px !important;
+        font-size:12px !important;
     }
     </style>
     """,
