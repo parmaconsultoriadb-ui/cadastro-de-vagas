@@ -41,6 +41,7 @@ LOGS_COLS = ["DataHora", "Usuario", "Aba", "Acao", "ItemID", "Campo", "ValorAnte
 USUARIOS = {
     "admin": {"senha": "Parma!123@", "permissoes": ["menu", "clientes", "vagas", "candidatos", "logs"]},
     "andre": {"senha": "And!123@", "permissoes": ["menu", "clientes", "vagas", "candidatos", "logs"]},
+    # lorrayne com acesso restrito a vagas e candidatos (menu incluso)
     "lorrayne": {"senha": "Lrn!123@", "permissoes": ["menu", "vagas", "candidatos"]},
 }
 
@@ -53,11 +54,9 @@ def load_csv(path, expected_cols):
         try:
             df = pd.read_csv(path, dtype=str)
             df = df.fillna("")
-            # Garantir colunas
             for col in expected_cols:
                 if col not in df.columns:
                     df[col] = ""
-            # Reordenar e devolver só as colunas esperadas
             df = df[expected_cols]
             if "ID" in df.columns:
                 df["ID"] = df["ID"].astype(str)
@@ -136,7 +135,7 @@ if "edit_record" not in st.session_state:
 if "confirm_delete" not in st.session_state:
     st.session_state.confirm_delete = {"df_name": None, "row_id": None}
 
-# Carregar DataFrames na sessão (somente se ainda não existirem — refresh manual recarrega)
+# Carregar DataFrames na sessão (somente se ainda não existirem — botão Refresh recarrega)
 if "clientes_df" not in st.session_state:
     st.session_state.clientes_df = load_csv(CLIENTES_CSV, CLIENTES_COLS)
 if "vagas_df" not in st.session_state:
@@ -145,7 +144,7 @@ if "candidatos_df" not in st.session_state:
     st.session_state.candidatos_df = load_csv(CANDIDATOS_CSV, CANDIDATOS_COLS)
 
 # ==============================
-# Estilo (CSS)
+# Estilo (CSS) + Fonte 10px para dataframes e os blocos customizados
 # ==============================
 st.markdown(
     """
@@ -160,12 +159,13 @@ st.markdown(
         --parma-text-dark: #333333;
         --parma-background-light: #F8F9FA;
     }
+    /* Botões */
     div.stButton > button {
         background-color: var(--parma-blue-dark) !important;
         color: white !important;
         border-radius: 8px;
         height: 2.5em;
-        font-size: 15px;
+        font-size: 14px;
         font-weight: bold;
         border: none;
         transition: background-color 0.3s ease;
@@ -174,8 +174,35 @@ st.markdown(
         background-color: var(--parma-blue-medium) !important;
         color: white !important;
     }
-    .st-emotion-cache-1r6r0jr { background-color: var(--parma-blue-light); border-radius: 8px; padding: 10px; border: 1px solid var(--parma-blue-medium);}    
-    h1, h2, h3, h4, h5, h6 { color: var(--parma-blue-dark); }
+    /* Estilo dos headers custom */
+    .parma-header {
+        background-color: var(--parma-blue-light);
+        padding:8px;
+        font-weight:bold;
+        color:var(--parma-text-dark);
+        border-radius:4px;
+        text-align:center;
+        font-size:10px;
+    }
+    /* Estilo das células custom (usado em show_table) */
+    .parma-cell {
+        padding:6px;
+        text-align:center;
+        color:var(--parma-text-dark);
+        border-radius:4px;
+        font-size:10px;
+    }
+    /* Ajuste para st.dataframe (tabela gerada pelo Streamlit) */
+    .stDataFrame div[data-testid="stStyledTable"] table {
+        font-size: 10px !important;
+    }
+    .stDataFrame div[data-testid="stStyledTable"] th {
+        font-size: 10px !important;
+    }
+    /* Tornar a área de textarea / markdown com fonte menor também (quando usado) */
+    .streamlit-expanderHeader, .stMarkdown, .stText {
+        font-size:10px !important;
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -189,28 +216,25 @@ def download_button(df, filename, label="⬇️ Baixar CSV"):
     st.download_button(label=label, data=csv, file_name=filename, mime="text/csv", use_container_width=True)
 
 def show_table(df, cols, df_name, csv_path):
-    """Exibe tabela com botões de editar e excluir."""
+    """Exibe tabela com botões de editar e excluir (render HTML com fonte 10px)."""
     if df is None or df.empty:
         st.info("Nenhum registro para exibir.")
         return
 
+    # Cabeçalho
     header_cols = st.columns(len(cols) + 2)
     for i, c in enumerate(cols):
-        header_cols[i].markdown(
-            f"<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); border-radius:4px; text-align:center;'>{c}</div>",
-            unsafe_allow_html=True,
-        )
-    header_cols[-2].markdown("<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); border-radius:4px; text-align:center;'>Editar</div>", unsafe_allow_html=True)
-    header_cols[-1].markdown("<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); border-radius:4px; text-align:center;'>Excluir</div>", unsafe_allow_html=True)
+        header_cols[i].markdown(f"<div class='parma-header'>{c}</div>", unsafe_allow_html=True)
+    header_cols[-2].markdown("<div class='parma-header'>Editar</div>", unsafe_allow_html=True)
+    header_cols[-1].markdown("<div class='parma-header'>Excluir</div>", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     for _, row in df.iterrows():
-        bg_color = "white"
         row_cols = st.columns(len(cols) + 2)
         for i, c in enumerate(cols):
             value = row.get(c, "")
-            row_cols[i].markdown(f"<div style='background-color:{bg_color}; padding:6px; text-align:center; color:var(--parma-text-dark); border-radius:4px;'>{value}</div>", unsafe_allow_html=True)
+            row_cols[i].markdown(f"<div class='parma-cell'>{value}</div>", unsafe_allow_html=True)
 
         with row_cols[-2]:
             if st.button("✏️", key=f"edit_{df_name}_{row['ID']}", use_container_width=True):
@@ -400,7 +424,7 @@ def show_edit_form(df_name, cols, csv_path):
         st.rerun()
 
 # ==============================
-# Telas
+# Telas principais (login/menu/clientes/vagas/candidatos/logs)
 # ==============================
 def tela_login():
     st.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=350)
@@ -412,12 +436,10 @@ def tela_login():
         submitted = st.form_submit_button("Entrar", use_container_width=True)
 
         if submitted:
-            # Verificar usuário no dicionário USUARIOS
             if usuario in USUARIOS and senha == USUARIOS[usuario]["senha"]:
                 st.session_state.usuario = usuario
                 st.session_state.logged_in = True
                 st.session_state.page = "menu"
-                # Guardar permissões (lista de keys de página)
                 st.session_state.permissoes = USUARIOS[usuario]["permissoes"]
                 registrar_log(aba="Login", acao="Login", detalhe=f"Usuário {usuario} entrou no sistema.")
                 st.success("✅ Login realizado com sucesso!")
@@ -448,10 +470,8 @@ def tela_clientes():
                     st.error(f"Colunas faltando: {missing}")
                 else:
                     df_upload = df_upload[CLIENTES_COLS].fillna("")
-                    # Evitar IDs duplicados: preferir manter os existentes do sistema
                     base = st.session_state.clientes_df.copy()
                     combined = pd.concat([base, df_upload], ignore_index=True)
-                    # Remover duplicatas por ID
                     combined = combined.drop_duplicates(subset=["ID"], keep="first")
                     st.session_state.clientes_df = combined
                     save_csv(combined, CLIENTES_CSV)
@@ -514,7 +534,6 @@ def tela_vagas():
     st.header("📋 Vagas")
     st.markdown("Gerencie as vagas de emprego da consultoria.")
 
-    # === filtros: Status, Cliente, Cargo ===
     df_all = st.session_state.vagas_df.copy()
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
@@ -535,7 +554,7 @@ def tela_vagas():
     if cargo_filter != "(todos)":
         df = df[df["Cargo"] == cargo_filter]
 
-    # Upload de vagas (aceita a nova estrutura com salários e descrição)
+    # Upload de vagas
     with st.expander("📤 Importar Vagas (CSV/XLSX)", expanded=False):
         arquivo = st.file_uploader("Selecione um arquivo com as colunas: " + ", ".join(VAGAS_COLS), type=["csv", "xlsx"], key="upload_vagas")
         if arquivo is not None:
@@ -561,7 +580,7 @@ def tela_vagas():
             except Exception as e:
                 st.error(f"Erro ao processar o arquivo: {e}")
 
-    # Cadastro de nova vaga (inclui Salário 1/2 e Descrição)
+    # Cadastro de nova vaga
     with st.expander("➕ Cadastrar Nova Vaga", expanded=False):
         data_abertura = date.today().strftime("%d/%m/%Y")
         with st.form("form_vaga", enter_to_submit=False):
@@ -608,7 +627,6 @@ def tela_vagas():
                         st.rerun()
 
     st.subheader("📋 Vagas Cadastradas")
-    # Não mostrar Salário 1/2 e Descrição na listagem principal (conforme solicitado)
     cols_show = [c for c in VAGAS_COLS if c not in ["Salário 1", "Salário 2", "Descrição / Observação"]]
     if df.empty:
         st.info("Nenhuma vaga cadastrada.")
@@ -624,7 +642,6 @@ def tela_candidatos():
     st.header("🧑‍💼 Candidatos")
     st.markdown("Gerencie os candidatos inscritos nas vagas.")
 
-    # ===== filtros: Status, Cliente, Cargo =====
     df_all = st.session_state.candidatos_df.copy()
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
@@ -785,7 +802,7 @@ def tela_logs():
 
     st.divider()
 
-def tela_menu():
+def tela_menu_interno():
     st.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=350)
     st.title("📊 Sistema Parma Consultoria")
     st.subheader("Bem-vindo! Escolha uma opção para começar.")
@@ -862,12 +879,7 @@ if st.session_state.logged_in:
     except Exception:
         index_initial = 0
 
-    selected_label = st.sidebar.radio(
-        "Selecione uma página",
-        labels,
-        index=index_initial,
-        key="sidebar_radio_menu"
-    )
+    selected_label = st.sidebar.radio("Selecione uma página", labels, index=index_initial, key="sidebar_radio_menu")
 
     # Botão de logout
     if st.sidebar.button("Sair", use_container_width=True):
@@ -885,7 +897,7 @@ if st.session_state.logged_in:
 
     # Renderizar página selecionada (verificar permissões por segurança)
     if current_page == "menu":
-        tela_menu()
+        tela_menu_interno()
     elif current_page == "clientes":
         if "clientes" in perms:
             tela_clientes()
