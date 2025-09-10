@@ -141,7 +141,7 @@ if "candidatos_df" not in st.session_state:
     st.session_state.candidatos_df = load_csv(CANDIDATOS_CSV, CANDIDATOS_COLS)
 
 # ==============================
-# Estilo (fonte 10px e linha horizontal contínua entre registros)
+# Estilo (fonte 13px e linha horizontal contínua entre registros)
 # ==============================
 st.markdown(
     """
@@ -175,7 +175,7 @@ st.markdown(
         color:var(--parma-text-dark);
         border-radius:4px;
         text-align:center;
-        font-size:10px;
+        font-size:13px;
         /* separador abaixo do header, contínuo */
         border-bottom: 1px solid #cfcfcf;
     }
@@ -183,7 +183,7 @@ st.markdown(
         padding:6px;
         text-align:center;
         color:var(--parma-text-dark);
-        font-size:10px;
+        font-size:13px;
         background-color: white;
         /* sem bordas individuais: a linha entre registros será um <hr> full-width */
         border: none;
@@ -191,11 +191,11 @@ st.markdown(
 
     /* Ajuste para st.dataframe (tabela padrão do Streamlit): fonte 10px, sem bordas verticais */
     .stDataFrame div[data-testid="stStyledTable"] table {
-        font-size: 10px !important;
+        font-size: 13px !important;
         border-collapse: collapse !important;
     }
     .stDataFrame div[data-testid="stStyledTable"] thead th {
-        font-size: 10px !important;
+        font-size: 13px !important;
         background-color: #f6f9fb !important;
         padding: 6px !important;
         border-bottom: 1px solid #cfcfcf !important; /* separador header -> linhas */
@@ -219,7 +219,7 @@ st.markdown(
 
     /* Ajustes para componentes menores */
     .streamlit-expanderHeader, .stMarkdown, .stText {
-        font-size:10px !important;
+        font-size:13px !important;
     }
     </style>
     """,
