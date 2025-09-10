@@ -6,7 +6,7 @@ import os
 # ==============================
 # Configuração inicial da página
 # ==============================
-st.set_page_config(page_title="Parma Consultoria - Sistema de Recrutamento", layout="wide")
+st.set_page_config(page_title="Parma Consultoria", layout="wide")
 
 # ==============================
 # Arquivos CSV
@@ -17,32 +17,26 @@ CANDIDATOS_CSV = "candidatos.csv"
 LOGS_CSV = "logs.csv"
 
 # ==============================
-# Colunas esperadas
+# Colunas esperadas (conforme solicitado)
 # ==============================
 CLIENTES_COLS = ["ID", "Data", "Cliente", "Nome", "Cidade", "UF", "Telefone", "E-mail"]
-VAGAS_COLS = ["ID", "Cliente", "Status", "Data de Abertura", "Cargo", "Recrutador", "Data de Início", "Descrição / Observação"]
+VAGAS_COLS = ["ID", "Cliente", "Status", "Data de Abertura", "Cargo", "Recrutador", "Data de Início"]
 CANDIDATOS_COLS = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "Status", "Data de Início"]
-LOGS_COLS = ["DataHora", "Usuario", "Aba", "Acao", "ItemID", "Campo", "ValorAnterior", "ValorNovo", "Detalhe"]
 
 # ==============================
-# Helpers de arquivo
+# Helpers de persistência
 # ==============================
-
 def load_csv(path, expected_cols):
-    """Carrega CSV garantindo a existência das colunas esperadas e preservando a ordem.
-    Retorna DataFrame com dtype string e colunas na ordem expected_cols."""
+    """Carrega um CSV garantindo as colunas esperadas (retorna DataFrame com as colunas na ordem esperada)."""
     if os.path.exists(path):
         try:
             df = pd.read_csv(path, dtype=str)
-            df = df.fillna("")
             # Garantir colunas
             for col in expected_cols:
                 if col not in df.columns:
                     df[col] = ""
-            # Reordenar
             df = df[expected_cols]
-            # Garantir IDs como string
-            df["ID"] = df["ID"].astype(str)
+            df = df.fillna("")
             return df
         except Exception:
             return pd.DataFrame(columns=expected_cols)
@@ -51,10 +45,12 @@ def load_csv(path, expected_cols):
 
 
 def save_csv(df, path):
+    """Salva DataFrame em CSV com encoding utf-8."""
     df.to_csv(path, index=False, encoding="utf-8")
 
 
 def next_id(df, id_col="ID"):
+    """Gera próximo ID sequencial baseado na coluna ID (assume inteiros)."""
     if df is None or df.empty:
         return 1
     try:
@@ -66,6 +62,8 @@ def next_id(df, id_col="ID"):
 # ==============================
 # Logs
 # ==============================
+LOGS_COLS = ["DataHora", "Usuario", "Aba", "Acao", "ItemID", "Campo", "ValorAnterior", "ValorNovo", "Detalhe"]
+
 
 def ensure_logs_file():
     if not os.path.exists(LOGS_CSV):
@@ -88,7 +86,8 @@ def registrar_log(aba, acao, item_id="", campo="", valor_anterior="", valor_novo
         "Detalhe": detalhe
     }])
     if os.path.exists(LOGS_CSV):
-        atual = pd.read_csv(LOGS_CSV, dtype=str).fillna("")
+        atual = pd.read_csv(LOGS_CSV, dtype=str)
+        atual = atual.fillna("")
         log_df = pd.concat([atual, log_df], ignore_index=True)
     save_csv(log_df, LOGS_CSV)
 
@@ -96,13 +95,13 @@ def registrar_log(aba, acao, item_id="", campo="", valor_anterior="", valor_novo
 def carregar_logs():
     ensure_logs_file()
     try:
-        df = pd.read_csv(LOGS_CSV, dtype=str).fillna("")
-        return df
+        df = pd.read_csv(LOGS_CSV, dtype=str)
+        return df.fillna("")
     except Exception:
         return pd.DataFrame(columns=LOGS_COLS)
 
 # ==============================
-# Inicialização do estado
+# Estado inicial do Streamlit
 # ==============================
 if "page" not in st.session_state:
     st.session_state.page = "login"
@@ -117,7 +116,7 @@ if "edit_record" not in st.session_state:
 if "confirm_delete" not in st.session_state:
     st.session_state.confirm_delete = {"df_name": None, "row_id": None}
 
-# Carregar DFs na sessão
+# Carregar DataFrames
 if "clientes_df" not in st.session_state:
     st.session_state.clientes_df = load_csv(CLIENTES_CSV, CLIENTES_COLS)
 if "vagas_df" not in st.session_state:
@@ -131,18 +130,39 @@ if "candidatos_df" not in st.session_state:
 st.markdown(
     """
     <style>
-    :root{--parma-blue-dark:#004488;--parma-blue-medium:#0066AA;--parma-blue-light:#E0F2F7;--parma-text-dark:#333333;--parma-background-light:#F8F9FA}
-    body{color:var(--parma-text-dark)}
-    div.stButton>button{background-color:var(--parma-blue-dark)!important;color:white!important;border-radius:8px;height:2.5em;font-size:15px;font-weight:600;border:none}
-    div.stButton>button:hover{background-color:var(--parma-blue-medium)!important}
-    .stApp .css-1v3fvcr{background-color:var(--parma-blue-light)}
+    :root {
+        --parma-blue-dark: #004488;
+        --parma-blue-medium: #0066AA;
+        --parma-blue-light: #E0F2F7;
+        --parma-green-success: #28A745;
+        --parma-yellow-warning: #FFC107;
+        --parma-red-error: #DC3545;
+        --parma-text-dark: #333333;
+        --parma-background-light: #F8F9FA;
+    }
+    div.stButton > button {
+        background-color: var(--parma-blue-dark) !important;
+        color: white !important;
+        border-radius: 8px;
+        height: 2.5em;
+        font-size: 15px;
+        font-weight: bold;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+    div.stButton > button:hover {
+        background-color: var(--parma-blue-medium) !important;
+        color: white !important;
+    }
+    .st-emotion-cache-1r6r0jr { background-color: var(--parma-blue-light); border-radius: 8px; padding: 10px; border: 1px solid var(--parma-blue-medium);}    
+    h1, h2, h3, h4, h5, h6 { color: var(--parma-blue-dark); }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 # ==============================
-# Helpers UI
+# Funções UI auxiliares
 # ==============================
 
 def download_button(df, filename, label="⬇️ Baixar CSV"):
@@ -151,24 +171,28 @@ def download_button(df, filename, label="⬇️ Baixar CSV"):
 
 
 def show_table(df, cols, df_name, csv_path):
+    """Exibe tabela com botões de editar e excluir."""
     if df is None or df.empty:
         st.info("Nenhum registro para exibir.")
         return
 
-    # Cabeçalho
     header_cols = st.columns(len(cols) + 2)
     for i, c in enumerate(cols):
-        header_cols[i].markdown(f"<div style='background-color:var(--parma-blue-light);padding:8px;font-weight:bold;text-align:center;border-radius:6px'>{c}</div>", unsafe_allow_html=True)
-    header_cols[-2].markdown("<div style='background-color:var(--parma-blue-light);padding:8px;font-weight:bold;text-align:center;border-radius:6px'>Editar</div>", unsafe_allow_html=True)
-    header_cols[-1].markdown("<div style='background-color:var(--parma-blue-light);padding:8px;font-weight:bold;text-align:center;border-radius:6px'>Excluir</div>", unsafe_allow_html=True)
+        header_cols[i].markdown(
+            f"<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); border-radius:4px; text-align:center;'>{c}</div>",
+            unsafe_allow_html=True,
+        )
+    header_cols[-2].markdown("<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); border-radius:4px; text-align:center;'>Editar</div>", unsafe_allow_html=True)
+    header_cols[-1].markdown("<div style='background-color:var(--parma-blue-light); padding:8px; font-weight:bold; color:var(--parma-text-dark); border-radius:4px; text-align:center;'>Excluir</div>", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     for _, row in df.iterrows():
+        bg_color = "white"
         row_cols = st.columns(len(cols) + 2)
         for i, c in enumerate(cols):
-            val = row.get(c, "")
-            row_cols[i].markdown(f"<div style='padding:6px;text-align:center;border-radius:4px'>{val}</div>", unsafe_allow_html=True)
+            value = row.get(c, "")
+            row_cols[i].markdown(f"<div style='background-color:{bg_color}; padding:6px; text-align:center; color:var(--parma-text-dark); border-radius:4px;'>{value}</div>", unsafe_allow_html=True)
 
         with row_cols[-2]:
             if st.button("✏️", key=f"edit_{df_name}_{row['ID']}", use_container_width=True):
@@ -184,55 +208,68 @@ def show_table(df, cols, df_name, csv_path):
     if st.session_state.confirm_delete["df_name"] == df_name:
         row_id = st.session_state.confirm_delete["row_id"]
         st.error(f"⚠️ Deseja realmente excluir o registro **ID {row_id}**? Esta ação é irreversível.")
-        c1, c2, c3 = st.columns([1,1,1])
-        with c1:
-            if st.button("✅ Sim, excluir", key=f"confirm_{df_name}_{row_id}"):
-                # Excluir dependendo do df
+        col_spacer1, col1, col2, col_spacer2 = st.columns([2, 1, 1, 2])
+        with col1:
+            if st.button("✅ Sim, excluir", key=f"confirm_{df_name}_{row_id}", use_container_width=True):
+                # Executar exclusão e ações em cascata quando necessário
                 if df_name == "clientes_df":
-                    # Encontrar cliente pelo ID
-                    cliente_row = st.session_state.clientes_df[st.session_state.clientes_df["ID"] == row_id]
-                    cliente_nome = cliente_row.iloc[0]["Cliente"] if not cliente_row.empty else None
+                    base_df = st.session_state.clientes_df.copy()
+                    cliente_row = base_df[base_df["ID"] == row_id]
+                    if not cliente_row.empty:
+                        cliente_nome = cliente_row.iloc[0]["Cliente"]
+                    else:
+                        cliente_nome = None
 
-                    # Excluir cliente
-                    st.session_state.clientes_df = st.session_state.clientes_df[st.session_state.clientes_df["ID"] != row_id]
+                    st.session_state.clientes_df = base_df[base_df["ID"] != row_id]
                     save_csv(st.session_state.clientes_df, CLIENTES_CSV)
 
-                    # Excluir vagas e candidatos relacionados ao cliente (campo 'Cliente' textual)
-                    vagas_removidas = st.session_state.vagas_df[st.session_state.vagas_df["Cliente"] == cliente_nome]["ID"].tolist() if cliente_nome else []
+                    # Excluir vagas e candidatos relacionados
+                    vagas_rel = st.session_state.vagas_df[st.session_state.vagas_df["Cliente"] == cliente_nome]["ID"].tolist() if cliente_nome else []
                     st.session_state.vagas_df = st.session_state.vagas_df[st.session_state.vagas_df["Cliente"] != cliente_nome]
                     save_csv(st.session_state.vagas_df, VAGAS_CSV)
 
                     st.session_state.candidatos_df = st.session_state.candidatos_df[st.session_state.candidatos_df["Cliente"] != cliente_nome]
                     save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
 
-                    registrar_log("Clientes", "Excluir", item_id=row_id, detalhe=f"Cliente {row_id} excluído. Vagas removidas: {vagas_removidas}")
+                    registrar_log(aba="Clientes", acao="Excluir", item_id=row_id, detalhe=f"Cliente {row_id} excluído. Vagas removidas: {vagas_rel}")
+                    registrar_log(aba="Vagas", acao="Excluir em Cascata", detalhe=f"Cliente {row_id} excluído. Vagas removidas: {vagas_rel}")
+                    registrar_log(aba="Candidatos", acao="Excluir em Cascata", detalhe=f"Cliente {row_id} excluído. Candidatos relacionados excluídos.")
 
                 elif df_name == "vagas_df":
-                    vaga_row = st.session_state.vagas_df[st.session_state.vagas_df["ID"] == row_id]
-                    vaga_cliente = vaga_row.iloc[0]["Cliente"] if not vaga_row.empty else None
-                    vaga_cargo = vaga_row.iloc[0]["Cargo"] if not vaga_row.empty else None
+                    base_df = st.session_state.vagas_df.copy()
+                    vaga_row = base_df[base_df["ID"] == row_id]
+                    if not vaga_row.empty:
+                        vaga_cliente = vaga_row.iloc[0]["Cliente"]
+                        vaga_cargo = vaga_row.iloc[0]["Cargo"]
+                    else:
+                        vaga_cliente = None
+                        vaga_cargo = None
 
-                    st.session_state.vagas_df = st.session_state.vagas_df[st.session_state.vagas_df["ID"] != row_id]
+                    st.session_state.vagas_df = base_df[base_df["ID"] != row_id]
                     save_csv(st.session_state.vagas_df, VAGAS_CSV)
 
                     # Excluir candidatos relacionados (por Cliente+Cargo)
-                    mask = ~((st.session_state.candidatos_df["Cliente"] == vaga_cliente) & (st.session_state.candidatos_df["Cargo"] == vaga_cargo))
-                    candidatos_removidos = st.session_state.candidatos_df[~mask]["ID"].tolist()
-                    st.session_state.candidatos_df = st.session_state.candidatos_df[mask]
-                    save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
+                    if vaga_cliente is not None and vaga_cargo is not None:
+                        candidatos_rel = st.session_state.candidatos_df[(st.session_state.candidatos_df["Cliente"] == vaga_cliente) & (st.session_state.candidatos_df["Cargo"] == vaga_cargo)]["ID"].tolist()
+                        st.session_state.candidatos_df = st.session_state.candidatos_df[~((st.session_state.candidatos_df["Cliente"] == vaga_cliente) & (st.session_state.candidatos_df["Cargo"] == vaga_cargo))]
+                        save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
+                    else:
+                        candidatos_rel = []
 
-                    registrar_log("Vagas", "Excluir", item_id=row_id, detalhe=f"Vaga {row_id} excluída. Candidatos removidos: {candidatos_removidos}")
+                    registrar_log(aba="Vagas", acao="Excluir", item_id=row_id, detalhe=f"Vaga {row_id} excluída. Candidatos removidos: {candidatos_rel}")
+                    registrar_log(aba="Candidatos", acao="Excluir em Cascata", detalhe=f"Vaga {row_id} excluída. Candidatos removidos: {candidatos_rel}")
 
                 elif df_name == "candidatos_df":
-                    st.session_state.candidatos_df = st.session_state.candidatos_df[st.session_state.candidatos_df["ID"] != row_id]
+                    base_df = st.session_state.candidatos_df.copy()
+                    st.session_state.candidatos_df = base_df[base_df["ID"] != row_id]
                     save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
-                    registrar_log("Candidatos", "Excluir", item_id=row_id, detalhe=f"Candidato {row_id} excluído.")
+                    registrar_log(aba="Candidatos", acao="Excluir", item_id=row_id, detalhe=f"Candidato {row_id} excluído.")
 
                 st.success(f"✅ Registro {row_id} excluído com sucesso!")
                 st.session_state.confirm_delete = {"df_name": None, "row_id": None}
                 st.rerun()
-        with c2:
-            if st.button("❌ Cancelar", key=f"cancel_{df_name}_{row_id}"):
+        with col2:
+            if st.button("❌ Cancelar", key=f"cancel_{df_name}_{row_id}", use_container_width=True):
                 st.session_state.confirm_delete = {"df_name": None, "row_id": None}
                 st.rerun()
 
@@ -240,8 +277,9 @@ def show_table(df, cols, df_name, csv_path):
 
 
 def show_edit_form(df_name, cols, csv_path):
+    """Formulário de edição para Clientes, Vagas e Candidatos."""
     record = st.session_state.edit_record
-    st.subheader(f"✏️ Editando {df_name.replace('_df','').capitalize()}")
+    st.subheader(f"✏️ Editando {df_name.replace('_df', '').capitalize()}")
 
     with st.form("edit_form", clear_on_submit=False):
         new_data = {}
@@ -250,83 +288,93 @@ def show_edit_form(df_name, cols, csv_path):
             if c == "ID":
                 new_data[c] = st.text_input(c, value=val, disabled=True)
             elif c == "Status" and df_name == "candidatos_df":
-                options = ["Enviado", "Não entrevistado", "Validado", "Não validado", "Desistência"]
-                idx = options.index(val) if val in options else 0
-                new_data[c] = st.selectbox(c, options=options, index=idx)
+                opcoes = ["Enviado", "Não entrevistado", "Validado", "Não validado", "Desistência"]
+                idx = opcoes.index(val) if val in opcoes else 0
+                new_data[c] = st.selectbox(c, options=opcoes, index=idx)
             elif c == "Status" and df_name == "vagas_df":
-                options = ["Aberta", "Ag. Inicio", "Cancelada", "Fechada", "Reaberta", "Pausada"]
-                idx = options.index(val) if val in options else 0
-                new_data[c] = st.selectbox(c, options=options, index=idx)
-            elif c == "Descrição / Observação":
-                new_data[c] = st.text_area(c, value=val)
+                opcoes = ["Aberta", "Ag. Inicio", "Cancelada", "Fechada", "Reaberta", "Pausada"]
+                idx = opcoes.index(val) if val in opcoes else 0
+                new_data[c] = st.selectbox(c, options=opcoes, index=idx)
+            elif c == "Data de Início":
+                new_data[c] = st.text_input(c, value=val, help="Formato: DD/MM/YYYY")
             else:
                 new_data[c] = st.text_input(c, value=val)
 
-        submitted = st.form_submit_button("✅ Salvar Alterações")
+        submitted = st.form_submit_button("✅ Salvar Alterações", use_container_width=True)
         if submitted:
-            # Validações básicas
-            if "Data de Início" in new_data and new_data.get("Data de Início"):
+            # Validações básicas de data
+            data_inicio_str = new_data.get("Data de Início")
+            if data_inicio_str:
                 try:
-                    datetime.strptime(new_data.get("Data de Início"), "%d/%m/%Y")
-                except Exception:
-                    st.error("Formato de Data de Início inválido. Use DD/MM/YYYY")
+                    di = datetime.strptime(data_inicio_str, "%d/%m/%Y").date()
+                    # não forçar data no futuro aqui — apenas valida formato
+                except ValueError:
+                    st.error("❌ Formato de data inválido. Use DD/MM/YYYY.")
                     return
 
             df = st.session_state[df_name].copy()
-            idx = df[df["ID"] == record.get("ID")].index
-            if idx.empty:
-                st.error("Registro não encontrado para edição.")
-                return
-            i = idx[0]
-            for c in cols:
-                if c in df.columns:
-                    antigo = df.at[i, c]
-                    novo = new_data.get(c, "")
-                    if str(antigo) != str(novo):
-                        registrar_log(aba=df_name.replace('_df','').capitalize(), acao="Editar", item_id=record.get("ID"), campo=c, valor_anterior=antigo, valor_novo=novo, detalhe=f"Registro {record.get('ID')} alterado em {c}.")
-                        df.at[i, c] = novo
+            idx = df[df["ID"] == record["ID"]].index
+            if not idx.empty:
+                idx0 = idx[0]
+                for c in cols:
+                    if c in df.columns:
+                        antigo = df.at[idx0, c]
+                        novo = new_data.get(c, "")
+                        if str(antigo) != str(novo):
+                            registrar_log(aba=df_name.replace('_df', '').capitalize(), acao="Editar", item_id=record["ID"], campo=c, valor_anterior=antigo, valor_novo=novo, detalhe=f"Registro {record['ID']} alterado em {c}.")
+                            df.at[idx0, c] = novo
 
-            st.session_state[df_name] = df
-            save_csv(df, csv_path)
+                st.session_state[df_name] = df
+                save_csv(df, csv_path)
 
-            # Se edição em candidatos, aplicar lógica de atualização de vaga
-            if df_name == "candidatos_df":
-                # encontrar vaga correspondente por Cliente+Cargo
-                vaga_mask = (st.session_state.vagas_df["Cliente"] == df.at[i, "Cliente"]) & (st.session_state.vagas_df["Cargo"] == df.at[i, "Cargo"])
-                if vaga_mask.any():
-                    v_idx = st.session_state.vagas_df[vaga_mask].index[0]
-                    antigo_status_vaga = st.session_state.vagas_df.at[v_idx, "Status"]
-                    novo_status_cand = df.at[i, "Status"]
-                    nova_data_inicio_str = df.at[i, "Data de Início"]
+                # Se editou candidato, aplicar lógica de atualização automática na vaga correspondente
+                if df_name == "candidatos_df":
+                    candidato_id = record.get("ID")
+                    antigo_status = record.get("Status")
+                    novo_status = new_data.get("Status")
                     nova_data_inicio = None
-                    if nova_data_inicio_str:
+                    if new_data.get("Data de Início"):
                         try:
-                            nova_data_inicio = datetime.strptime(nova_data_inicio_str, "%d/%m/%Y").date()
+                            nova_data_inicio = datetime.strptime(new_data.get("Data de Início"), "%d/%m/%Y").date()
                         except Exception:
                             nova_data_inicio = None
 
+                    # Encontrar vaga correspondente (primeira coincidência por Cliente+Cargo)
                     vagas_df = st.session_state.vagas_df.copy()
-                    if novo_status_cand == "Validado":
-                        if antigo_status_vaga == "Aberta":
-                            vagas_df.at[v_idx, "Status"] = "Ag. Inicio"
-                            registrar_log("Vagas", "Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Ag. Inicio", detalhe=f"Vaga alterada ao validar candidato {df.at[i,'ID']}")
-                        if nova_data_inicio and nova_data_inicio <= date.today() and vagas_df.at[v_idx, "Status"] != "Fechada":
-                            vagas_df.at[v_idx, "Status"] = "Fechada"
-                            registrar_log("Vagas", "Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Fechada", detalhe=f"Vaga fechada pela data de início do candidato {df.at[i,'ID']}")
+                    vaga_match = vagas_df[(vagas_df["Cliente"] == df.at[idx0, "Cliente"]) & (vagas_df["Cargo"] == df.at[idx0, "Cargo"])]
+                    if not vaga_match.empty:
+                        v_idx = vaga_match.index[0]
+                        antigo_status_vaga = vagas_df.at[v_idx, "Status"]
 
-                    if df.at[i, "Status"] == "Desistência" and antigo_status_vaga in ["Ag. Inicio", "Fechada"]:
-                        vagas_df.at[v_idx, "Status"] = "Reaberta"
-                        registrar_log("Vagas", "Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Reaberta", detalhe=f"Vaga reaberta por desistência do candidato {df.at[i,'ID']}")
+                        if novo_status == "Validado":
+                            if antigo_status_vaga == "Aberta":
+                                vagas_df.at[v_idx, "Status"] = "Ag. Inicio"
+                                registrar_log(aba="Vagas", acao="Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Ag. Inicio", detalhe=f"Vaga alterada automaticamente ao validar candidato {candidato_id}.")
+                                st.info("🔄 Status da vaga alterado para 'Ag. Inicio' (candidato validado).")
 
-                    st.session_state.vagas_df = vagas_df
-                    save_csv(vagas_df, VAGAS_CSV)
+                            if nova_data_inicio and nova_data_inicio <= date.today() and antigo_status_vaga != "Fechada":
+                                vagas_df.at[v_idx, "Status"] = "Fechada"
+                                registrar_log(aba="Vagas", acao="Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Fechada", detalhe=f"Vaga fechada automaticamente (data de início do candidato {candidato_id} já passou).")
+                                st.success("✅ Status da vaga alterado para 'Fechada' (data de início já passou).")
 
-            st.success("✅ Registro atualizado com sucesso!")
-            st.session_state.edit_mode = None
-            st.session_state.edit_record = {}
-            st.rerun()
+                        # Se o candidato era validado e agora desistiu, reabrir vaga
+                        if antigo_status == "Validado" and novo_status == "Desistência":
+                            if vagas_df.at[v_idx, "Status"] in ["Ag. Inicio", "Fechada"]:
+                                vagas_df.at[v_idx, "Status"] = "Reaberta"
+                                registrar_log(aba="Vagas", acao="Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Reaberta", detalhe=f"Vaga reaberta automaticamente por desistência do candidato {candidato_id}.")
+                                st.info("🔄 Vaga reaberta automaticamente!")
 
-    if st.button("❌ Cancelar Edição", use_container_width=True):
+                        st.session_state.vagas_df = vagas_df
+                        save_csv(vagas_df, VAGAS_CSV)
+
+                st.success("✅ Registro atualizado com sucesso!")
+                st.session_state.edit_mode = None
+                st.session_state.edit_record = {}
+                st.rerun()
+            else:
+                st.error("❌ Registro não encontrado para edição.")
+
+    if st.button("❌ Cancelar Edição", use_container_width=True, type="secondary"):
         st.session_state.edit_mode = None
         st.session_state.edit_record = {}
         st.rerun()
@@ -336,12 +384,14 @@ def show_edit_form(df_name, cols, csv_path):
 # ==============================
 
 def tela_login():
-    st.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=300)
+    st.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=350)
     st.title("🔒 Login - Parma Consultoria")
+
     with st.form("login_form"):
         usuario = st.text_input("Usuário")
         senha = st.text_input("Senha", type="password")
-        submitted = st.form_submit_button("Entrar")
+        submitted = st.form_submit_button("Entrar", use_container_width=True)
+
         if submitted:
             if (usuario == "admin" and senha == "Parma!123@") or (usuario == "andre" and senha == "And!123@"):
                 st.session_state.usuario = usuario
@@ -351,7 +401,7 @@ def tela_login():
                 st.success("✅ Login realizado com sucesso!")
                 st.rerun()
             else:
-                st.error("Usuário ou senha inválidos.")
+                st.error("❌ Usuário ou senha inválidos.")
 
 
 def tela_clientes():
@@ -362,34 +412,37 @@ def tela_clientes():
     st.header("👥 Clientes")
     st.markdown("Gerencie o cadastro e as informações dos seus clientes.")
 
-    with st.expander("📤 Importar Clientes (CSV/XLSX)"):
-        arquivo = st.file_uploader("Arquivo com colunas: ID, Data, Cliente, Nome, Cidade, UF, Telefone, E-mail", type=["csv","xlsx"], key="upload_clientes")
+    # Upload de arquivo (CSV/XLSX)
+    with st.expander("📤 Importar Clientes (CSV/XLSX)", expanded=False):
+        arquivo = st.file_uploader("Selecione um arquivo com as colunas: ID, Data, Cliente, Nome, Cidade, UF, Telefone, E-mail", type=["csv", "xlsx"], key="upload_clientes")
         if arquivo is not None:
             try:
                 if arquivo.name.lower().endswith('.csv'):
                     df_upload = pd.read_csv(arquivo, dtype=str)
                 else:
                     df_upload = pd.read_excel(arquivo, dtype=str)
+
                 missing = [c for c in CLIENTES_COLS if c not in df_upload.columns]
                 if missing:
-                    st.error(f"Colunas ausentes: {missing}")
+                    st.error(f"Colunas faltando: {missing}")
                 else:
                     df_upload = df_upload[CLIENTES_COLS].fillna("")
+                    # Evitar IDs duplicados: preferir manter os existentes do sistema
                     base = st.session_state.clientes_df.copy()
                     combined = pd.concat([base, df_upload], ignore_index=True)
-                    # Manter únicos por ID
+                    # Remover duplicatas por ID
                     combined = combined.drop_duplicates(subset=["ID"], keep="first")
                     st.session_state.clientes_df = combined
                     save_csv(combined, CLIENTES_CSV)
-                    registrar_log("Clientes", "Importar", detalhe=f"Importação via upload: {arquivo.name}")
+                    registrar_log("Clientes", "Importar", detalhe=f"Importação de clientes via upload ({arquivo.name}).")
                     st.success("✅ Clientes importados com sucesso!")
                     st.rerun()
             except Exception as e:
                 st.error(f"Erro ao processar o arquivo: {e}")
 
-    with st.expander("➕ Cadastrar Novo Cliente"):
+    with st.expander("➕ Cadastrar Novo Cliente", expanded=False):
         data_hoje = date.today().strftime("%d/%m/%Y")
-        with st.form("form_clientes"):
+        with st.form("form_clientes", enter_to_submit=False):
             col1, col2 = st.columns(2)
             with col1:
                 cliente = st.text_input("Cliente *")
@@ -399,13 +452,14 @@ def tela_clientes():
                 nome = st.text_input("Nome *")
                 uf = st.text_input("UF *", max_chars=2)
                 email = st.text_input("E-mail *")
-            submitted = st.form_submit_button("Salvar Cliente")
+
+            submitted = st.form_submit_button("✅ Salvar Cliente", use_container_width=True)
             if submitted:
-                if not all([cliente, cidade, telefone, nome, uf, email]):
-                    st.warning("Preencha todos os campos obrigatórios.")
+                if not all([cliente, nome, cidade, uf, telefone, email]):
+                    st.warning("⚠️ Preencha todos os campos obrigatórios.")
                 else:
-                    prox_id = str(next_id(st.session_state.clientes_df))
-                    novo = pd.DataFrame([{
+                    prox_id = str(next_id(st.session_state.clientes_df, "ID"))
+                    novo = pd.DataFrame([{    
                         "ID": prox_id,
                         "Data": data_hoje,
                         "Cliente": cliente,
@@ -418,7 +472,7 @@ def tela_clientes():
                     st.session_state.clientes_df = pd.concat([st.session_state.clientes_df, novo], ignore_index=True)
                     save_csv(st.session_state.clientes_df, CLIENTES_CSV)
                     registrar_log("Clientes", "Criar", item_id=prox_id, detalhe=f"Cliente criado (ID {prox_id}).")
-                    st.success(f"Cliente cadastrado! ID: {prox_id}")
+                    st.success(f"✅ Cliente cadastrado com sucesso! ID: {prox_id}")
                     st.rerun()
 
     st.subheader("📋 Clientes Cadastrados")
@@ -438,19 +492,21 @@ def tela_vagas():
         return
 
     st.header("📋 Vagas")
-    st.markdown("Gerencie as vagas de emprego.")
+    st.markdown("Gerencie as vagas de emprego da consultoria.")
 
-    with st.expander("📤 Importar Vagas (CSV/XLSX)"):
-        arquivo = st.file_uploader("Arquivo com colunas: ID, Cliente, Status, Data de Abertura, Cargo, Recrutador, Data de Início, Descrição / Observação", type=["csv","xlsx"], key="upload_vagas")
+    # Upload de vagas
+    with st.expander("📤 Importar Vagas (CSV/XLSX)", expanded=False):
+        arquivo = st.file_uploader("Selecione um arquivo com as colunas: ID, Cliente, Status, Data de Abertura, Cargo, Recrutador, Data de Início", type=["csv", "xlsx"], key="upload_vagas")
         if arquivo is not None:
             try:
                 if arquivo.name.lower().endswith('.csv'):
                     df_upload = pd.read_csv(arquivo, dtype=str)
                 else:
                     df_upload = pd.read_excel(arquivo, dtype=str)
+
                 missing = [c for c in VAGAS_COLS if c not in df_upload.columns]
                 if missing:
-                    st.error(f"Colunas ausentes: {missing}")
+                    st.error(f"Colunas faltando: {missing}")
                 else:
                     df_upload = df_upload[VAGAS_COLS].fillna("")
                     base = st.session_state.vagas_df.copy()
@@ -458,18 +514,18 @@ def tela_vagas():
                     combined = combined.drop_duplicates(subset=["ID"], keep="first")
                     st.session_state.vagas_df = combined
                     save_csv(combined, VAGAS_CSV)
-                    registrar_log("Vagas", "Importar", detalhe=f"Importação via upload: {arquivo.name}")
+                    registrar_log("Vagas", "Importar", detalhe=f"Importação de vagas via upload ({arquivo.name}).")
                     st.success("✅ Vagas importadas com sucesso!")
                     st.rerun()
             except Exception as e:
                 st.error(f"Erro ao processar o arquivo: {e}")
 
-    with st.expander("➕ Cadastrar Nova Vaga"):
+    with st.expander("➕ Cadastrar Nova Vaga", expanded=False):
         data_abertura = date.today().strftime("%d/%m/%Y")
-        with st.form("form_vaga"):
+        with st.form("form_vaga", enter_to_submit=False):
             clientes = st.session_state.clientes_df
             if clientes.empty:
-                st.warning("Cadastre um cliente antes de criar uma vaga.")
+                st.warning("⚠️ Cadastre um Cliente antes de cadastrar Vagas.")
             else:
                 col1, col2 = st.columns(2)
                 with col1:
@@ -477,33 +533,31 @@ def tela_vagas():
                     cliente_id = cliente_sel.split(" - ")[0]
                     cliente_nome = clientes[clientes['ID'] == cliente_id]['Cliente'].iloc[0]
                     cargo = st.text_input("Cargo *")
-                    descricao = st.text_area("Descrição / Observação")
                 with col2:
                     recrutador = st.text_input("Recrutador *")
                     status = st.selectbox("Status", options=["Aberta", "Ag. Inicio", "Cancelada", "Fechada", "Reaberta", "Pausada"], index=0)
                     data_inicio = st.text_input("Data de Início", value="", help="Formato: DD/MM/YYYY")
 
-            submitted = st.form_submit_button("Salvar Vaga")
-            if submitted:
-                if not cargo or not recrutador:
-                    st.warning("Preencha os campos obrigatórios.")
-                else:
-                    prox_id = str(next_id(st.session_state.vagas_df))
-                    nova = pd.DataFrame([{
-                        "ID": prox_id,
-                        "Cliente": cliente_nome,
-                        "Status": status,
-                        "Data de Abertura": data_abertura,
-                        "Cargo": cargo,
-                        "Recrutador": recrutador,
-                        "Data de Início": data_inicio,
-                        "Descrição / Observação": descricao,
-                    }])
-                    st.session_state.vagas_df = pd.concat([st.session_state.vagas_df, nova], ignore_index=True)
-                    save_csv(st.session_state.vagas_df, VAGAS_CSV)
-                    registrar_log("Vagas", "Criar", item_id=prox_id, detalhe=f"Vaga criada (ID {prox_id}).")
-                    st.success(f"Vaga cadastrada! ID: {prox_id}")
-                    st.rerun()
+                submitted = st.form_submit_button("✅ Salvar Vaga", use_container_width=True)
+                if submitted:
+                    if not cargo or not recrutador:
+                        st.warning("⚠️ Preencha todos os campos obrigatórios.")
+                    else:
+                        prox_id = str(next_id(st.session_state.vagas_df, "ID"))
+                        nova = pd.DataFrame([{
+                            "ID": prox_id,
+                            "Cliente": cliente_nome,
+                            "Status": status,
+                            "Data de Abertura": data_abertura,
+                            "Cargo": cargo,
+                            "Recrutador": recrutador,
+                            "Data de Início": data_inicio,
+                        }])
+                        st.session_state.vagas_df = pd.concat([st.session_state.vagas_df, nova], ignore_index=True)
+                        save_csv(st.session_state.vagas_df, VAGAS_CSV)
+                        registrar_log("Vagas", "Criar", item_id=prox_id, detalhe=f"Vaga criada (ID {prox_id}).")
+                        st.success(f"✅ Vaga cadastrada com sucesso! ID: {prox_id}")
+                        st.rerun()
 
     st.subheader("📋 Vagas Cadastradas")
     df = st.session_state.vagas_df.copy()
@@ -523,26 +577,28 @@ def tela_candidatos():
         return
 
     st.header("🧑‍💼 Candidatos")
-    st.markdown("Gerencie os candidatos vinculados às vagas.")
+    st.markdown("Gerencie os candidatos inscritos nas vagas.")
 
-    # carregar vagas para seleção
-    vagas_df = st.session_state.vagas_df.copy()
-    # Considerar vagas disponíveis para cadastro de candidato (não Ag. Inicio/Fechada)
-    vagas_disponiveis = vagas_df[~vagas_df['Status'].isin(['Ag. Inicio', 'Fechada'])].copy()
-    if not vagas_disponiveis.empty:
+    # Prepara lista de vagas disponíveis (status não em Ag. Inicio ou Fechada)
+    vagas_disponiveis = st.session_state.vagas_df[~st.session_state.vagas_df['Status'].isin(['Ag. Inicio', 'Fechada'])].copy()
+    if vagas_disponiveis.empty:
+        st.warning("⚠️ Não há vagas disponíveis para cadastrar candidatos. Cadastre ou reabra vagas.")
+    else:
         vagas_disponiveis['Opcao'] = vagas_disponiveis.apply(lambda x: f"{x['ID']} - {x['Cliente']} - {x['Cargo']}", axis=1)
 
-    with st.expander("📤 Importar Candidatos (CSV/XLSX)"):
-        arquivo = st.file_uploader("Arquivo com colunas: ID, Cliente, Cargo, Nome, Telefone, Recrutador, Status, Data de Início", type=["csv","xlsx"], key="upload_candidatos")
+    # Upload de candidatos
+    with st.expander("📤 Importar Candidatos (CSV/XLSX)", expanded=False):
+        arquivo = st.file_uploader("Selecione um arquivo com as colunas: ID, Cliente, Cargo, Nome, Telefone, Recrutador, Status, Data de Início", type=["csv", "xlsx"], key="upload_candidatos")
         if arquivo is not None:
             try:
                 if arquivo.name.lower().endswith('.csv'):
                     df_upload = pd.read_csv(arquivo, dtype=str)
                 else:
                     df_upload = pd.read_excel(arquivo, dtype=str)
+
                 missing = [c for c in CANDIDATOS_COLS if c not in df_upload.columns]
                 if missing:
-                    st.error(f"Colunas ausentes: {missing}")
+                    st.error(f"Colunas faltando: {missing}")
                 else:
                     df_upload = df_upload[CANDIDATOS_COLS].fillna("")
                     base = st.session_state.candidatos_df.copy()
@@ -550,37 +606,35 @@ def tela_candidatos():
                     combined = combined.drop_duplicates(subset=["ID"], keep="first")
                     st.session_state.candidatos_df = combined
                     save_csv(combined, CANDIDATOS_CSV)
-                    registrar_log("Candidatos", "Importar", detalhe=f"Importação via upload: {arquivo.name}")
+                    registrar_log("Candidatos", "Importar", detalhe=f"Importação de candidatos via upload ({arquivo.name}).")
                     st.success("✅ Candidatos importados com sucesso!")
                     st.rerun()
             except Exception as e:
                 st.error(f"Erro ao processar o arquivo: {e}")
 
-    with st.expander("➕ Cadastrar Novo Candidato"):
+    with st.expander("➕ Cadastrar Novo Candidato", expanded=False):
         col_form, col_info = st.columns([2, 1])
         with col_form:
             if vagas_disponiveis.empty:
-                st.info("Cadastre ou reabra uma vaga disponível primeiro.")
+                st.info("Cadastre uma vaga disponível primeiro.")
             else:
-                vaga_sel = st.selectbox("Vaga *", options=["-"] + vagas_disponiveis['Opcao'].tolist(), key="vaga_sel")
-                if vaga_sel and vaga_sel != "-":
-                    vaga_id = vaga_sel.split(' - ')[0].strip()
-                else:
-                    vaga_id = None
+                vaga_sel = st.selectbox("Vaga *", options=vagas_disponiveis['Opcao'].tolist())
+                vaga_id = vaga_sel.split(' - ')[0].strip()
 
-                with st.form("form_candidato"):
+                with st.form("form_candidato", enter_to_submit=False):
                     nome = st.text_input("Nome *")
                     telefone = st.text_input("Telefone *")
                     recrutador = st.text_input("Recrutador *")
-                    submitted = st.form_submit_button("Salvar Candidato")
+
+                    submitted = st.form_submit_button("✅ Salvar Candidato", use_container_width=True)
                     if submitted:
-                        if not nome or not telefone or not recrutador or not vaga_id:
-                            st.warning("Preencha todos os campos obrigatórios e selecione uma vaga.")
+                        if not nome or not telefone or not recrutador:
+                            st.warning("⚠️ Preencha todos os campos obrigatórios.")
                         else:
                             vaga_row = st.session_state.vagas_df[st.session_state.vagas_df['ID'] == vaga_id].iloc[0]
                             cliente_nome = vaga_row['Cliente']
                             cargo_nome = vaga_row['Cargo']
-                            prox_id = str(next_id(st.session_state.candidatos_df))
+                            prox_id = str(next_id(st.session_state.candidatos_df, "ID"))
                             novo = pd.DataFrame([{
                                 "ID": prox_id,
                                 "Cliente": cliente_nome,
@@ -593,26 +647,17 @@ def tela_candidatos():
                             }])
                             st.session_state.candidatos_df = pd.concat([st.session_state.candidatos_df, novo], ignore_index=True)
                             save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
-                            registrar_log("Candidatos", "Criar", item_id=prox_id, detalhe=f"Candidato criado (ID {prox_id})")
-                            st.success(f"Candidato cadastrado! ID: {prox_id}")
+                            registrar_log("Candidatos", "Criar", item_id=prox_id, detalhe=f"Candidato criado (ID {prox_id}).")
+                            st.success(f"✅ Candidato cadastrado com sucesso! ID: {prox_id}")
                             st.rerun()
 
         with col_info:
             st.subheader("Vaga Selecionada")
-            if vaga_id:
-                try:
-                    vaga_info = st.session_state.vagas_df[st.session_state.vagas_df['ID'] == vaga_id].iloc[0]
-                    st.markdown(f"- **Status:** {vaga_info['Status']}
-- **Cliente:** {vaga_info['Cliente']}
-- **Cargo:** {vaga_info['Cargo']}
-- **Recrutador:** {vaga_info['Recrutador']}
-- **Data de Abertura:** {vaga_info['Data de Abertura']}
-- **Data de Início:** {vaga_info.get('Data de Início','')}
-- **Descrição / Observação:** {vaga_info.get('Descrição / Observação','')}")
-                except Exception:
-                    st.info("Nenhuma vaga encontrada para exibir informações.")
-            else:
-                st.info("Selecione uma vaga para ver as informações.")
+            try:
+                vaga_row = st.session_state.vagas_df[st.session_state.vagas_df['ID'] == vaga_id].iloc[0]
+                st.markdown(f"- **Status:** {vaga_row['Status']}\n- **Cliente:** {vaga_row['Cliente']}\n- **Cargo:** {vaga_row['Cargo']}\n- **Recrutador:** {vaga_row['Recrutador']}\n- **Data de Abertura:** {vaga_row['Data de Abertura']}\n- **Data de Início:** {vaga_row.get('Data de Início', '')}")
+            except Exception:
+                st.info("Nenhuma vaga selecionada ou encontrada.")
 
     st.subheader("📋 Candidatos Cadastrados")
     df = st.session_state.candidatos_df.copy()
@@ -632,70 +677,109 @@ def tela_candidatos():
 
 def tela_logs():
     st.header("📜 Logs do Sistema")
+    st.markdown("Visualize todas as ações realizadas no sistema.")
     df_logs = carregar_logs()
+
     if df_logs.empty:
         st.info("Nenhum log registrado ainda.")
-        return
+    else:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            aba_f = st.selectbox("Filtrar por Aba", options=["(todas)"] + sorted(df_logs["Aba"].dropna().unique().tolist()))
+        with col2:
+            acao_f = st.selectbox("Filtrar por Ação", options=["(todas)"] + sorted(df_logs["Acao"].dropna().unique().tolist()))
+        with col3:
+            usuario_f = st.selectbox("Filtrar por Usuário", options=["(todos)"] + sorted(df_logs["Usuario"].dropna().unique().tolist()))
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        aba_f = st.selectbox("Filtrar por Aba", options=["(todas)"] + sorted(df_logs["Aba"].dropna().unique().tolist()))
-    with col2:
-        acao_f = st.selectbox("Filtrar por Ação", options=["(todas)"] + sorted(df_logs["Acao"].dropna().unique().tolist()))
-    with col3:
-        usuario_f = st.selectbox("Filtrar por Usuário", options=["(todos)"] + sorted(df_logs["Usuario"].dropna().unique().tolist()))
+        busca = st.text_input("🔎 Buscar (Campo/Detalhe/ItemID)")
 
-    busca = st.text_input("🔎 Buscar (Campo/Detalhe/ItemID)")
-    dfv = df_logs.copy()
-    if aba_f != "(todas)":
-        dfv = dfv[dfv["Aba"] == aba_f]
-    if acao_f != "(todas)":
-        dfv = dfv[dfv["Acao"] == acao_f]
-    if usuario_f != "(todos)":
-        dfv = dfv[dfv["Usuario"] == usuario_f]
-    if busca:
-        mask = (
-            dfv["Campo"].fillna("").str.contains(busca, case=False) |
-            dfv["Detalhe"].fillna("").str.contains(busca, case=False) |
-            dfv["ItemID"].fillna("").str.contains(busca, case=False)
-        )
-        dfv = dfv[mask]
+        dfv = df_logs.copy()
+        if aba_f != "(todas)":
+            dfv = dfv[dfv["Aba"] == aba_f]
+        if acao_f != "(todas)":
+            dfv = dfv[dfv["Acao"] == acao_f]
+        if usuario_f != "(todos)":
+            dfv = dfv[dfv["Usuario"] == usuario_f]
+        if busca:
+            mask = (
+                dfv["Campo"].fillna("").str.contains(busca, case=False) |
+                dfv["Detalhe"].fillna("").str.contains(busca, case=False) |
+                dfv["ItemID"].fillna("").str.contains(busca, case=False)
+            )
+            dfv = dfv[mask]
 
-    st.dataframe(dfv.sort_values("DataHora", ascending=False), use_container_width=True, height=480)
-    csv = dfv.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇️ Baixar Logs Filtrados", csv, "logs.csv", "text/csv")
+        st.dataframe(dfv.sort_values("DataHora", ascending=False), use_container_width=True, height=480)
+        csv = dfv.to_csv(index=False).encode("utf-8")
+        st.download_button("⬇️ Baixar Logs Filtrados", csv, "logs.csv", "text/csv", use_container_width=True)
+
+    st.divider()
 
 
 def tela_menu():
-    st.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=300)
+    st.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=350)
     st.title("📊 Sistema Parma Consultoria")
-    st.subheader("Escolha uma opção no menu lateral.")
+    st.subheader("Bem-vindo! Escolha uma opção para começar.")
+    st.divider()
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("👥 Clientes", use_container_width=True):
+            st.session_state.page = "clientes"
+            st.rerun()
+    with col2:
+        if st.button("📋 Vagas", use_container_width=True):
+            st.session_state.page = "vagas"
+            st.rerun()
+    with col3:
+        if st.button("🧑‍💼 Candidatos", use_container_width=True):
+            st.session_state.page = "candidatos"
+            st.rerun()
+
+    st.divider()
+
+    if st.button("📜 Logs do Sistema", use_container_width=True):
+        st.session_state.page = "logs"
+        st.rerun()
 
 # ==============================
-# Navegação principal
+# Lógica principal
 # ==============================
 if st.session_state.logged_in:
     st.sidebar.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=200)
     st.sidebar.title("Navegação")
-    options = ["Menu Principal", "Clientes", "Vagas", "Candidatos", "Logs do Sistema"]
-    selected = st.sidebar.radio("Selecione uma página", options, index=options.index("Menu Principal") if st.session_state.page=="menu" else (options.index(st.session_state.page.capitalize()) if st.session_state.page in ['clientes','vagas','candidatos','logs'] else 0))
 
-    if st.sidebar.button("Sair"):
+    menu_options = {
+        "Menu Principal": "menu",
+        "Clientes": "clientes",
+        "Vagas": "vagas",
+        "Candidatos": "candidatos",
+        "Logs do Sistema": "logs"
+    }
+
+    selected_page_label = st.sidebar.radio(
+        "Selecione uma página", 
+        list(menu_options.keys()), 
+        index=list(menu_options.values()).index(st.session_state.page),
+        key="sidebar_radio_menu"
+    )
+
+    if st.sidebar.button("Sair", use_container_width=True):
         registrar_log("Login", "Logout", detalhe=f"Usuário {st.session_state.usuario} saiu do sistema.")
         st.session_state.logged_in = False
         st.session_state.page = "login"
         st.rerun()
 
-    # Map selection to functions
-    if selected == "Menu Principal":
+    current_page = menu_options[selected_page_label]
+
+    if current_page == "menu":
         tela_menu()
-    elif selected == "Clientes":
+    elif current_page == "clientes":
         tela_clientes()
-    elif selected == "Vagas":
+    elif current_page == "vagas":
         tela_vagas()
-    elif selected == "Candidatos":
+    elif current_page == "candidatos":
         tela_candidatos()
-    elif selected == "Logs do Sistema":
+    elif current_page == "logs":
         tela_logs()
 
 else:
