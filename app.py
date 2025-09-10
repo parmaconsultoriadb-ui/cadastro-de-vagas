@@ -835,7 +835,7 @@ if st.session_state.logged_in:
     # Botão global de refresh (apenas na sidebar)
     if st.sidebar.button("🔄 Refresh dados"):
         refresh_data()
-        st.experimental_rerun()
+        st.rerun()
 
     # map page key -> label
     page_label_map = {
@@ -874,7 +874,7 @@ if st.session_state.logged_in:
         registrar_log(aba="Login", acao="Logout", detalhe=f"Usuário {st.session_state.usuario} saiu do sistema.")
         st.session_state.logged_in = False
         st.session_state.page = "login"
-        st.experimental_rerun()
+        st.rerun()
 
     # map selected label de volta ao page key
     try:
