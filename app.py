@@ -20,7 +20,18 @@ LOGS_CSV = "logs.csv"
 # Colunas esperadas
 # ==============================
 CLIENTES_COLS = ["ID", "Data", "Cliente", "Nome", "Cidade", "UF", "Telefone", "E-mail"]
-VAGAS_COLS = ["ID", "Cliente", "Status", "Data de Abertura", "Cargo", "Recrutador", "Data de Início", "Descrição / Observação"]
+VAGAS_COLS = [
+    "ID",
+    "Cliente",
+    "Status",
+    "Data de Abertura",
+    "Cargo",
+    "Recrutador",
+    "Data de Início",
+    "Salário 1",
+    "Salário 2",
+    "Descrição / Observação",
+]
 CANDIDATOS_COLS = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "Status", "Data de Início"]
 LOGS_COLS = ["DataHora", "Usuario", "Aba", "Acao", "ItemID", "Campo", "ValorAnterior", "ValorNovo", "Detalhe"]
 
@@ -298,6 +309,8 @@ def show_edit_form(df_name, cols, csv_path):
                 new_data[c] = st.selectbox(c, options=opcoes, index=idx)
             elif c == "Data de Início":
                 new_data[c] = st.text_input(c, value=val, help="Formato: DD/MM/YYYY")
+            elif c in ["Salário 1", "Salário 2"]:
+                new_data[c] = st.text_input(c, value=val)
             elif c == "Descrição / Observação":
                 new_data[c] = st.text_area(c, value=val)
             else:
@@ -497,7 +510,7 @@ def tela_vagas():
 
     # Upload de vagas
     with st.expander("📤 Importar Vagas (CSV/XLSX)", expanded=False):
-        arquivo = st.file_uploader("Selecione um arquivo com as colunas: ID, Cliente, Status, Data de Abertura, Cargo, Recrutador, Data de Início, Descrição / Observação", type=["csv", "xlsx"], key="upload_vagas")
+        arquivo = st.file_uploader("Selecione um arquivo com as colunas: ID, Cliente, Status, Data de Abertura, Cargo, Recrutador, Data de Início, Salário 1, Salário 2, Descrição / Observação", type=["csv", "xlsx"], key="upload_vagas")
         if arquivo is not None:
             try:
                 if arquivo.name.lower().endswith('.csv'):
@@ -534,6 +547,8 @@ def tela_vagas():
                     cliente_id = cliente_sel.split(" - ")[0]
                     cliente_nome = clientes[clientes['ID'] == cliente_id]['Cliente'].iloc[0]
                     cargo = st.text_input("Cargo *")
+                    salario1 = st.text_input("Salário 1 (R$)")
+                    salario2 = st.text_input("Salário 2 (R$)")
                     descricao = st.text_area("Descrição / Observação")
                 with col2:
                     recrutador = st.text_input("Recrutador *")
@@ -554,6 +569,8 @@ def tela_vagas():
                             "Cargo": cargo,
                             "Recrutador": recrutador,
                             "Data de Início": data_inicio,
+                            "Salário 1": salario1,
+                            "Salário 2": salario2,
                             "Descrição / Observação": descricao
                         }])
                         st.session_state.vagas_df = pd.concat([st.session_state.vagas_df, nova], ignore_index=True)
@@ -666,7 +683,7 @@ def tela_candidatos():
             if vaga_id:
                 try:
                     vaga_row = st.session_state.vagas_df[st.session_state.vagas_df['ID'] == vaga_id].iloc[0]
-                    st.markdown(f"- **Status:** {vaga_row['Status']}\n- **Cliente:** {vaga_row['Cliente']}\n- **Cargo:** {vaga_row['Cargo']}\n- **Recrutador:** {vaga_row['Recrutador']}\n- **Data de Abertura:** {vaga_row['Data de Abertura']}\n- **Data de Início:** {vaga_row.get('Data de Início', '')}\n- **Descrição / Observação:** {vaga_row.get('Descrição / Observação', '')}")
+                    st.markdown(f"- **Status:** {vaga_row['Status']}\n- **Cliente:** {vaga_row['Cliente']}\n- **Cargo:** {vaga_row['Cargo']}\n- **Recrutador:** {vaga_row['Recrutador']}\n- **Data de Abertura:** {vaga_row['Data de Abertura']}\n- **Data de Início:** {vaga_row.get('Data de Início', '')}\n- **Salário 1:** {vaga_row.get('Salário 1', '')}\n- **Salário 2:** {vaga_row.get('Salário 2', '')}\n- **Descrição / Observação:** {vaga_row.get('Descrição / Observação', '')}")
                 except Exception:
                     st.info("Nenhuma vaga selecionada ou encontrada.")
             else:
