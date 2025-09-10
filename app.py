@@ -36,6 +36,16 @@ CANDIDATOS_COLS = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "
 LOGS_COLS = ["DataHora", "Usuario", "Aba", "Acao", "ItemID", "Campo", "ValorAnterior", "ValorNovo", "Detalhe"]
 
 # ==============================
+# Controle de Usuários e Permissões
+# ==============================
+# As permissões aqui usam os nomes de página (keys): "menu","clientes","vagas","candidatos","logs"
+USUARIOS = {
+    "admin": {"senha": "Parma!123@", "permissoes": ["menu", "clientes", "vagas", "candidatos", "logs"]},
+    "andre": {"senha": "And!123@", "permissoes": ["menu", "clientes", "vagas", "candidatos", "logs"]},
+    "lorrayne": {"senha": "Lrn!123@", "permissoes": ["menu", "vagas", "candidatos"]},
+}
+
+# ==============================
 # Helpers de persistência
 # ==============================
 def load_csv(path, expected_cols):
@@ -118,6 +128,8 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "usuario" not in st.session_state:
     st.session_state.usuario = ""
+if "permissoes" not in st.session_state:
+    st.session_state.permissoes = []
 if "edit_mode" not in st.session_state:
     st.session_state.edit_mode = None
 if "edit_record" not in st.session_state:
@@ -401,11 +413,14 @@ def tela_login():
         submitted = st.form_submit_button("Entrar", use_container_width=True)
 
         if submitted:
-            if (usuario == "admin" and senha == "Parma!123@") or (usuario == "andre" and senha == "And!123@"):
+            # Verificar usuário no dicionário USUARIOS
+            if usuario in USUARIOS and senha == USUARIOS[usuario]["senha"]:
                 st.session_state.usuario = usuario
                 st.session_state.logged_in = True
                 st.session_state.page = "menu"
-                registrar_log("Login", "Login", detalhe=f"Usuário {usuario} entrou no sistema.")
+                # Guardar permissões (lista de keys de página)
+                st.session_state.permissoes = USUARIOS[usuario]["permissoes"]
+                registrar_log(aba="Login", acao="Login", detalhe=f"Usuário {usuario} entrou no sistema.")
                 st.success("✅ Login realizado com sucesso!")
                 st.rerun()
             else:
@@ -777,71 +792,108 @@ def tela_menu():
     st.subheader("Bem-vindo! Escolha uma opção para começar.")
     st.divider()
 
+    # Mostrar apenas botões das páginas que o usuário tem permissão
     col1, col2, col3 = st.columns(3)
     with col1:
-        if st.button("👥 Clientes", use_container_width=True):
-            st.session_state.page = "clientes"
-            st.rerun()
+        if "clientes" in st.session_state.permissoes:
+            if st.button("👥 Clientes", use_container_width=True):
+                st.session_state.page = "clientes"
+                st.rerun()
     with col2:
-        if st.button("📋 Vagas", use_container_width=True):
-            st.session_state.page = "vagas"
-            st.rerun()
+        if "vagas" in st.session_state.permissoes:
+            if st.button("📋 Vagas", use_container_width=True):
+                st.session_state.page = "vagas"
+                st.rerun()
     with col3:
-        if st.button("🧑‍💼 Candidatos", use_container_width=True):
-            st.session_state.page = "candidatos"
-            st.rerun()
+        if "candidatos" in st.session_state.permissoes:
+            if st.button("🧑‍💼 Candidatos", use_container_width=True):
+                st.session_state.page = "candidatos"
+                st.rerun()
 
     st.divider()
 
-    if st.button("📜 Logs do Sistema", use_container_width=True):
-        st.session_state.page = "logs"
-        st.rerun()
+    if "logs" in st.session_state.permissoes:
+        if st.button("📜 Logs do Sistema", use_container_width=True):
+            st.session_state.page = "logs"
+            st.rerun()
 
 # ==============================
-# Lógica principal
+# Lógica principal (menu lateral dinâmico por permissão)
 # ==============================
 if st.session_state.logged_in:
     st.sidebar.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=200)
     st.sidebar.title("Navegação")
+    st.sidebar.caption(f"Usuário: {st.session_state.usuario}")
 
-    menu_options = {
-        "Menu Principal": "menu",
-        "Clientes": "clientes",
-        "Vagas": "vagas",
-        "Candidatos": "candidatos",
-        "Logs do Sistema": "logs"
+    # map page key -> label
+    page_label_map = {
+        "menu": "Menu Principal",
+        "clientes": "Clientes",
+        "vagas": "Vagas",
+        "candidatos": "Candidatos",
+        "logs": "Logs do Sistema"
     }
 
+    # Garantir que o Menu Principal esteja sempre disponível (melhor UX)
+    perms = st.session_state.get("permissoes", [])
+    if "menu" not in perms:
+        perms = ["menu"] + perms
+
+    # Ordem fixa de páginas (para exibição consistente)
+    ordered_page_keys = ["menu", "clientes", "vagas", "candidatos", "logs"]
+    allowed_pages = [p for p in ordered_page_keys if p in perms]
+    labels = [page_label_map[p] for p in allowed_pages]
+
+    # calcular índice inicial conforme st.session_state.page
     try:
-        index_initial = list(menu_options.values()).index(st.session_state.page)
+        index_initial = allowed_pages.index(st.session_state.page)
     except Exception:
         index_initial = 0
 
-    selected_page_label = st.sidebar.radio(
+    selected_label = st.sidebar.radio(
         "Selecione uma página",
-        list(menu_options.keys()),
+        labels,
         index=index_initial,
         key="sidebar_radio_menu"
     )
 
+    # Botão de logout
     if st.sidebar.button("Sair", use_container_width=True):
-        registrar_log("Login", "Logout", detalhe=f"Usuário {st.session_state.usuario} saiu do sistema.")
+        registrar_log(aba="Login", acao="Logout", detalhe=f"Usuário {st.session_state.usuario} saiu do sistema.")
         st.session_state.logged_in = False
         st.session_state.page = "login"
         st.rerun()
 
-    current_page = menu_options[selected_page_label]
+    # map selected label de volta ao page key
+    try:
+        selected_idx = labels.index(selected_label)
+        current_page = allowed_pages[selected_idx]
+    except Exception:
+        current_page = "menu"
 
+    # Renderizar página selecionada (verificar permissões por segurança)
     if current_page == "menu":
         tela_menu()
     elif current_page == "clientes":
-        tela_clientes()
+        if "clientes" in perms:
+            tela_clientes()
+        else:
+            st.warning("⚠️ Você não tem permissão para acessar esta página.")
     elif current_page == "vagas":
-        tela_vagas()
+        if "vagas" in perms:
+            tela_vagas()
+        else:
+            st.warning("⚠️ Você não tem permissão para acessar esta página.")
     elif current_page == "candidatos":
-        tela_candidatos()
+        if "candidatos" in perms:
+            tela_candidatos()
+        else:
+            st.warning("⚠️ Você não tem permissão para acessar esta página.")
     elif current_page == "logs":
-        tela_logs()
+        if "logs" in perms:
+            tela_logs()
+        else:
+            st.warning("⚠️ Você não tem permissão para acessar esta página.")
 
 else:
     tela_login()
