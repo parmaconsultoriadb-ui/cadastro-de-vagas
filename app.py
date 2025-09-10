@@ -401,7 +401,7 @@ def tela_login():
         submitted = st.form_submit_button("Entrar", use_container_width=True)
 
         if submitted:
-            if (usuario == "admin" and senha == "Parma!123@") or (usuario == "andre" and senha == "And!123@") or (usuario == "lorrayne" and senha == "Lrn!123@":
+            if (usuario == "admin" and senha == "Parma!123@") or (usuario == "andre" and senha == "And!123@"):
                 st.session_state.usuario = usuario
                 st.session_state.logged_in = True
                 st.session_state.page = "menu"
