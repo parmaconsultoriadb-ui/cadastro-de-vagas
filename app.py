@@ -39,16 +39,14 @@ LOGS_COLS = ["DataHora", "Usuario", "Aba", "Acao", "ItemID", "Campo", "ValorAnte
 # Helpers de persistência
 # ==============================
 def load_csv(path, expected_cols):
-    """Carrega CSV garantindo as colunas esperadas (retorna DataFrame com as colunas na ordem esperada)."""
+    """Carrega um CSV garantindo que as colunas esperadas existam e na ordem."""
     if os.path.exists(path):
         try:
             df = pd.read_csv(path, dtype=str)
             df = df.fillna("")
-            # Garantir colunas
             for col in expected_cols:
                 if col not in df.columns:
                     df[col] = ""
-            # Reordenar e devolver só as colunas esperadas
             df = df[expected_cols]
             if "ID" in df.columns:
                 df["ID"] = df["ID"].astype(str)
@@ -65,7 +63,7 @@ def save_csv(df, path):
 
 
 def next_id(df, id_col="ID"):
-    """Gera próximo ID sequencial baseado na coluna ID (assume inteiros)."""
+    """Gera o próximo ID sequencial (inteiro)."""
     if df is None or df.empty:
         return 1
     try:
@@ -124,8 +122,10 @@ if "edit_record" not in st.session_state:
     st.session_state.edit_record = {}
 if "confirm_delete" not in st.session_state:
     st.session_state.confirm_delete = {"df_name": None, "row_id": None}
+if "_toast" not in st.session_state:
+    st.session_state["_toast"] = None
 
-# Carregar DataFrames na sessão
+# Carregar DataFrames
 if "clientes_df" not in st.session_state:
     st.session_state.clientes_df = load_csv(CLIENTES_CSV, CLIENTES_COLS)
 if "vagas_df" not in st.session_state:
@@ -169,6 +169,51 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+# ==============================
+# Toast (notificação) helper
+# ==============================
+def show_toast(message="Cadastrado com Sucesso ✅", bgcolor="#4BB543", duration=3500):
+    """Exibe um toast no canto inferior direito que desaparece automaticamente."""
+    # CSS + JS para auto-hide/remove
+    html = f"""
+    <div id="parma_toast" style="
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 9999;
+        ">
+      <div style="
+        min-width: 220px;
+        max-width: 360px;
+        background: {bgcolor};
+        color: white;
+        padding: 12px 16px;
+        border-radius: 10px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+        font-weight: 600;
+        font-size: 15px;
+        ">
+        {message}
+      </div>
+    </div>
+    <script>
+      setTimeout(function(){{
+        var t = document.getElementById('parma_toast');
+        if (t) {{
+          t.style.transition = 'opacity 400ms ease';
+          t.style.opacity = '0';
+          setTimeout(function(){{ if (t && t.remove) t.remove(); }}, 450);
+        }}
+      }}, {duration});
+    </script>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+# Mostrar toast se foi programado
+if st.session_state.get("_toast"):
+    show_toast(st.session_state["_toast"])
+    st.session_state["_toast"] = None
 
 # ==============================
 # UI helpers
@@ -283,7 +328,7 @@ def show_table(df, cols, df_name, csv_path):
     st.divider()
 
 def show_edit_form(df_name, cols, csv_path):
-    """Formulário de edição para Clientes, Vagas e Candidatos."""
+    """Exibe formulário de edição (Clientes, Vagas, Candidatos)."""
     record = st.session_state.edit_record
     st.subheader(f"✏️ Editando {df_name.replace('_df', '').capitalize()}")
 
@@ -312,7 +357,7 @@ def show_edit_form(df_name, cols, csv_path):
 
         submitted = st.form_submit_button("✅ Salvar Alterações", use_container_width=True)
         if submitted:
-            # Validações básicas de data
+            # Validar Data
             data_inicio_str = new_data.get("Data de Início")
             if data_inicio_str:
                 try:
@@ -336,7 +381,7 @@ def show_edit_form(df_name, cols, csv_path):
                 st.session_state[df_name] = df
                 save_csv(df, csv_path)
 
-                # Se editou candidato, aplicar lógica de atualização automática na vaga correspondente
+                # Lógica automática ao editar candidato (atualizar vaga)
                 if df_name == "candidatos_df":
                     candidato_id = record.get("ID")
                     antigo_status = record.get("Status")
@@ -348,7 +393,6 @@ def show_edit_form(df_name, cols, csv_path):
                         except Exception:
                             nova_data_inicio = None
 
-                    # Encontrar vaga correspondente (primeira coincidência por Cliente+Cargo)
                     vagas_df = st.session_state.vagas_df.copy()
                     vaga_match = vagas_df[(vagas_df["Cliente"] == df.at[idx0, "Cliente"]) & (vagas_df["Cargo"] == df.at[idx0, "Cargo"])]
                     if not vaga_match.empty:
@@ -366,7 +410,6 @@ def show_edit_form(df_name, cols, csv_path):
                                 registrar_log(aba="Vagas", acao="Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Fechada", detalhe=f"Vaga fechada automaticamente (data de início do candidato {candidato_id} já passou).")
                                 st.success("✅ Status da vaga alterado para 'Fechada' (data de início já passou).")
 
-                        # Se o candidato era validado e agora desistiu, reabrir vaga
                         if antigo_status == "Validado" and novo_status == "Desistência":
                             if vagas_df.at[v_idx, "Status"] in ["Ag. Inicio", "Fechada"]:
                                 vagas_df.at[v_idx, "Status"] = "Reaberta"
@@ -434,10 +477,8 @@ def tela_clientes():
                     st.error(f"Colunas faltando: {missing}")
                 else:
                     df_upload = df_upload[CLIENTES_COLS].fillna("")
-                    # Evitar IDs duplicados: preferir manter os existentes do sistema
                     base = st.session_state.clientes_df.copy()
                     combined = pd.concat([base, df_upload], ignore_index=True)
-                    # Remover duplicatas por ID
                     combined = combined.drop_duplicates(subset=["ID"], keep="first")
                     st.session_state.clientes_df = combined
                     save_csv(combined, CLIENTES_CSV)
@@ -590,7 +631,8 @@ def tela_vagas():
                         st.session_state.vagas_df = pd.concat([st.session_state.vagas_df, nova], ignore_index=True)
                         save_csv(st.session_state.vagas_df, VAGAS_CSV)
                         registrar_log("Vagas", "Criar", item_id=prox_id, detalhe=f"Vaga criada (ID {prox_id}).")
-                        st.success(f"✅ Vaga cadastrada com sucesso! ID: {prox_id}")
+                        # programar toast e rerun para exibir
+                        st.session_state["_toast"] = "Cadastrado com Sucesso ✅"
                         st.rerun()
 
     st.subheader("📋 Vagas Cadastradas")
@@ -701,7 +743,8 @@ def tela_candidatos():
                             st.session_state.candidatos_df = pd.concat([st.session_state.candidatos_df, novo], ignore_index=True)
                             save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
                             registrar_log("Candidatos", "Criar", item_id=prox_id, detalhe=f"Candidato criado (ID {prox_id}).")
-                            st.success(f"✅ Candidato cadastrado com sucesso! ID: {prox_id}")
+                            # programar toast para aparecer após rerun
+                            st.session_state["_toast"] = "Cadastrado com Sucesso ✅"
                             st.rerun()
 
         with col_info:
