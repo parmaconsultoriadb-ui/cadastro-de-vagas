@@ -45,19 +45,7 @@ USUARIOS = {
     "lorrayne": {"senha": "Lrn!123@", "permissoes": ["menu", "vagas", "candidatos"]},
 }
 
-usuario_logado = st.session_state.get("usuario", "guest")  # padrão "guest"
 
-st.title("Sistema de Vagas")
-
-if usuario_logado == "admin":
-    st.subheader("Importar Dados")
-    uploaded_file = st.file_uploader("Escolha o arquivo CSV", type="csv")
-    if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file)
-        st.write("Dados importados com sucesso!")
-        st.dataframe(df)
-else:
-    st.info("Você não tem permissão para importar dados.")
 
 # ==============================
 # Helpers de persistência
@@ -92,6 +80,22 @@ def next_id(df, id_col="ID"):
         return int(vals.max()) + 1
     except Exception:
         return 1
+
+# importação de arquivos"
+
+usuario_logado = st.session_state.get("usuario", "guest")  # padrão "guest"
+
+st.title("Sistema de Vagas")
+
+if usuario_logado == "admin":
+    st.subheader("Importar Dados")
+    uploaded_file = st.file_uploader("Escolha o arquivo CSV", type="csv")
+    if uploaded_file is not None:
+        df = pd.read_csv(uploaded_file)
+        st.write("Dados importados com sucesso!")
+        st.dataframe(df)
+else:
+    st.info("Você não tem permissão para importar dados.")
 
 # ==============================
 # Logs
