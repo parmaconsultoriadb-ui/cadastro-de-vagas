@@ -696,16 +696,19 @@ def tela_candidatos():
     st.markdown("Gerencie os candidatos inscritos nas vagas.")
 
     df_all = st.session_state.candidatos_df.copy()
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+    with col4:
         status_opts = ["(todos)"] + sorted(df_all["Status"].dropna().unique().tolist())
         status_filter = st.selectbox("Filtrar por Status", status_opts, index=0)
-    with col2:
+    with col1:
         cliente_opts = ["(todos)"] + sorted(df_all["Cliente"].dropna().unique().tolist())
         cliente_filter = st.selectbox("Filtrar por Cliente", cliente_opts, index=0)
-    with col3:
+    with col2:
         cargo_opts = ["(todos)"] + sorted(df_all["Cargo"].dropna().unique().tolist())
         cargo_filter = st.selectbox("Filtrar por Cargo", cargo_opts, index=0)
+    with col3:
+        recrutador_opts = ["(todos)"] + sorted(df_all["Recrutador"].dropna().unique().tolist())
+        recrutador_filter = st.selectbox("Filtrar por Recrutador", recrutador_opts, index=0)
 
     df = df_all.copy()
     if status_filter != "(todos)":
@@ -714,6 +717,8 @@ def tela_candidatos():
         df = df[df["Cliente"] == cliente_filter]
     if cargo_filter != "(todos)":
         df = df[df["Cargo"] == cargo_filter]
+    if recrutador_filter != "(todos)":
+        df = df[df["Recrutador"] == recrutador_filter]
 
     # Prepara lista de vagas disponíveis (status não em Ag. Inicio ou Fechada)
     vagas_disponiveis = st.session_state.vagas_df[~st.session_state.vagas_df["Status"].isin(["Ag. Inicio", "Fechada"])].copy()
