@@ -413,11 +413,19 @@ def show_edit_form(df_name, cols, csv_path):
                         v_idx = vaga_match.index[0]
                         antigo_status_vaga = vagas_df.at[v_idx, "Status"]
 
-                        if novo_status == "Validado":
-                            if antigo_status_vaga == "Aberta":
-                                vagas_df.at[v_idx, "Status"] = "Ag. Inicio"
-                                registrar_log(aba="Vagas", acao="Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Ag. Inicio", detalhe=f"Vaga alterada automaticamente ao validar candidato {candidato_id}.")
-                                st.info("🔄 Status da vaga alterado para 'Ag. Inicio' (candidato validado).")
+                        nova_data_inicio = new_data.get("Data de Início")
+    if novo_status == "Validado" and nova_data_inicio:
+        vagas_df.at[v_idx, "Status"] = "Ag. Inicio"
+        registrar_log(
+            aba="Vagas",
+            acao="Atualização Automática",
+            item_id=vagas_df.at[v_idx, "ID"],
+            campo="Status",
+            valor_anterior=antigo_status_vaga,
+            valor_novo="Ag. Inicio",
+            detalhe=f"Vaga alterada automaticamente ao validar candidato {candidato_id} com Data de Início preenchida."
+        )
+        st.info("🔄 Status da vaga alterado para 'Ag. Inicio' (candidato validado com Data de Início).")
 
                         # Se o candidato era validado e agora desistiu, reabrir vaga
                         if antigo_status == "Validado" and novo_status == "Desistência":
