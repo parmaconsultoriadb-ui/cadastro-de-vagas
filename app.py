@@ -19,9 +19,8 @@ LOGS_CSV = "logs.csv"
 # ==============================
 # Colunas esperadas
 # ==============================
-CLIENTES_COLS = ["ID", "Data", "Cliente", "Nome", "Cidade", "UF", "Telefone", "E-mail"]
+CLIENTES_COLS = ["Cliente", "Nome", "Cidade", "UF", "Telefone", "E-mail"]
 VAGAS_COLS = [
-    "ID",
     "Cliente",
     "Status",
     "Data de Abertura",
@@ -32,7 +31,7 @@ VAGAS_COLS = [
     "Salário 2",
     "Descrição / Observação",
 ]
-CANDIDATOS_COLS = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "Status", "Data de Início"]
+CANDIDATOS_COLS = ["Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "Status", "Data de Início"]
 LOGS_COLS = ["DataHora", "Usuario", "Aba", "Acao", "ItemID", "Campo", "ValorAnterior", "ValorNovo", "Detalhe"]
 
 # ==============================
