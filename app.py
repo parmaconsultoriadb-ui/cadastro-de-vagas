@@ -45,6 +45,16 @@ USUARIOS = {
     "lorrayne": {"senha": "Lrn!123@", "permissoes": ["menu", "vagas", "candidatos"]},
 }
 
+if usuario_logado == "admin":
+    st.subheader("Importar Dados")
+    uploaded_file = st.file_uploader("Escolha o arquivo CSV", type="csv")
+    if uploaded_file is not None:
+        df = pd.read_csv(uploaded_file)
+        st.write("Dados importados com sucesso!")
+        st.dataframe(df)
+else:
+    st.info("Você não tem permissão para importar dados.")
+
 # ==============================
 # Helpers de persistência
 # ==============================
