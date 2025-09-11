@@ -3,6 +3,10 @@ import pandas as pd
 from datetime import date, datetime
 import os
 
+usuario_logado = st.session_state.get("usuario", "guest")  # padrão "guest"
+
+st.title("Sistema de Vagas")
+
 # ==============================
 # Configuração inicial da página
 # ==============================
