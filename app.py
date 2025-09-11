@@ -419,11 +419,6 @@ def show_edit_form(df_name, cols, csv_path):
                                 registrar_log(aba="Vagas", acao="Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Ag. Inicio", detalhe=f"Vaga alterada automaticamente ao validar candidato {candidato_id}.")
                                 st.info("🔄 Status da vaga alterado para 'Ag. Inicio' (candidato validado).")
 
-                            if nova_data_inicio and nova_data_inicio <= date.today() and antigo_status_vaga != "Fechada":
-                                vagas_df.at[v_idx, "Status"] = "Fechada"
-                                registrar_log(aba="Vagas", acao="Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Fechada", detalhe=f"Vaga fechada automaticamente (data de início do candidato {candidato_id} já passou).")
-                                st.success("✅ Status da vaga alterado para 'Fechada' (data de início já passou).")
-
                         # Se o candidato era validado e agora desistiu, reabrir vaga
                         if antigo_status == "Validado" and novo_status == "Desistência":
                             if vagas_df.at[v_idx, "Status"] in ["Ag. Inicio", "Fechada"]:
