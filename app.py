@@ -269,8 +269,8 @@ def show_table(df, cols, df_name, csv_path):
                 st.session_state.edit_record = row.to_dict()
                 st.rerun()
         with row_cols[-1]:
-            if st.button("🗑️", key=f"del_{df_name}_{str(row.get('ID',''))}", use_container_width=True):
-                st.session_state.confirm_delete = {"df_name": df_name, "row_id": row["ID"]}
+            if st.button("🗑️", key=f"del_{df_name}_{str(row.get('Cliente',''))}", use_container_width=True):
+                st.session_state.confirm_delete = {"df_name": df_name, "row_cliente": row["Cliente"]}
                 st.rerun()
 
         # Linha horizontal contínua full-width (separa este registro do próximo)
