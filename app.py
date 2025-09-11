@@ -428,14 +428,6 @@ if novo_status == "Validado" and nova_data_inicio not in (None, "", pd.NaT):
         detalhe=f"Vaga alterada automaticamente ao validar candidato {candidato_id} com Data de Início preenchida.")
     st.info("🔄 Status da vaga alterado para 'Ag. Inicio' (candidato validado com Data de Início).")
 
-                    
-                st.success("✅ Registro atualizado com sucesso!")
-                st.session_state.edit_mode = None
-                st.session_state.edit_record = {}
-                st.rerun()
-            else:
-                st.error("❌ Registro não encontrado para edição.")
-
     if st.button("❌ Cancelar Edição", use_container_width=True):
         st.session_state.edit_mode = None
         st.session_state.edit_record = {}
