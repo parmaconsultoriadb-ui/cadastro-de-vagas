@@ -394,6 +394,25 @@ def show_edit_form(df_name, cols, csv_path):
                 st.session_state[df_name] = df
                 save_csv(df, csv_path)
 
+                # Se editou candidato, aplicar lógica de atualização automática na vaga correspondente
+                if df_name == "candidatos_df":
+                    candidato_id = record.get("ID")
+                    antigo_status = record.get("Status")
+                    novo_status = new_data.get("Status")
+                    nova_data_inicio = None
+                    if new_data.get("Data de Início"):
+                        try:
+                            nova_data_inicio = datetime.strptime(new_data.get("Data de Início"), "%d/%m/%Y").date()
+                        except Exception:
+                            nova_data_inicio = None
+
+                    # Encontrar vaga correspondente (primeira coincidência por Cliente+Cargo)
+                    vagas_df = st.session_state.vagas_df.copy()
+                    vaga_match = vagas_df[(vagas_df["Cliente"] == df.at[idx0, "Cliente"]) & (vagas_df["Cargo"] == df.at[idx0, "Cargo"])]
+                    if not vaga_match.empty:
+                        v_idx = vaga_match.index[0]
+                        antigo_status_vaga = vagas_df.at[v_idx, "Status"]
+
                         if novo_status == "Validado":
                             if antigo_status_vaga == "Aberta":
                                 vagas_df.at[v_idx, "Status"] = "Ag. Inicio"
