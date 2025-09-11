@@ -810,6 +810,7 @@ def tela_candidatos():
     else:
         download_button(df, "candidatos.csv", "⬇️ Baixar Lista de Candidatos")
         cols_show = [c for c in CANDIDATOS_COLS if c != "ID"]
+        df_sorted = df.sort_values("ID", ascending=False)
         show_table(df, cols_show, "candidatos_df", CANDIDATOS_CSV)
 
 def tela_logs():
