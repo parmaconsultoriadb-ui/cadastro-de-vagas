@@ -598,7 +598,7 @@ def tela_vagas():
         recrutador_filter = st.selectbox("Filtrar por Recrutador", recrutador_opts, index=0)
 
     df = df_all.copy()
-    if status_filter != "("Aberta")":
+    if status_filter != "(Aberta)":
         df = df[df["Status"] == status_filter]
     if cliente_filter != "(todos)":
         df = df[df["Cliente"] == cliente_filter]
