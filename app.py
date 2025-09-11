@@ -3,10 +3,6 @@ import pandas as pd
 from datetime import date, datetime
 import os
 
-usuario_logado = st.session_state.get("usuario", "guest")  # padrão "guest"
-
-st.title("Sistema de Vagas")
-
 # ==============================
 # Configuração inicial da página
 # ==============================
@@ -48,6 +44,10 @@ USUARIOS = {
     # lorrayne: apenas Vagas e Candidatos (menu incluso)
     "lorrayne": {"senha": "Lrn!123@", "permissoes": ["menu", "vagas", "candidatos"]},
 }
+
+usuario_logado = st.session_state.get("usuario", "guest")  # padrão "guest"
+
+st.title("Sistema de Vagas")
 
 if usuario_logado == "admin":
     st.subheader("Importar Dados")
