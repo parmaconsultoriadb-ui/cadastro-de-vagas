@@ -570,9 +570,8 @@ def tela_clientes():
         filtro = st.text_input("🔎 Buscar por Cliente")
         df_filtrado = df[df["Cliente"].str.contains(filtro, case=False, na=False)] if filtro else df
         download_button(df_filtrado, "clientes.csv", "⬇️ Baixar Lista de Clientes")
-        cols_show = [c for c in CLIENTES_COLS if c != "ID"]
-        show_table(df_filtrado, cols_show, "clientes_df", CLIENTES_CSV)
-        
+        show_table(df_filtrado, CLIENTES_COLS, "clientes_df", CLIENTES_CSV)
+
 def tela_vagas():
     if st.session_state.edit_mode == "vagas_df":
         show_edit_form("vagas_df", VAGAS_COLS, VAGAS_CSV)
@@ -674,13 +673,13 @@ def tela_vagas():
                         st.rerun()
 
     st.subheader("📋 Vagas Cadastradas")
-    cols_show = [c for c in VAGAS_COLS if c not in ["ID", "Salário 1", "Salário 2", "Descrição / Observação"]]
+    cols_show = [c for c in VAGAS_COLS if c not in ["Salário 1", "Salário 2", "Descrição / Observação"]]
     if df.empty:
-       st.info("Nenhuma vaga cadastrada.")
+        st.info("Nenhuma vaga cadastrada.")
     else:
-       download_button(df[cols_show], "vagas.csv", "⬇️ Baixar Lista de Vagas")
-       show_table(df[cols_show], cols_show, "vagas_df", VAGAS_CSV)
-        
+        download_button(df[cols_show], "vagas.csv", "⬇️ Baixar Lista de Vagas")
+        show_table(df[cols_show], cols_show, "vagas_df", VAGAS_CSV)
+
 def tela_candidatos():
     if st.session_state.edit_mode == "candidatos_df":
         show_edit_form("candidatos_df", CANDIDATOS_COLS, CANDIDATOS_CSV)
@@ -804,12 +803,11 @@ def tela_candidatos():
                 st.info("Selecione uma vaga para ver as informações.")
 
     st.subheader("📋 Candidatos Cadastrados")
-    cols_show = [c for c in CANDIDATOS_COLS if c != "ID"]
     if df.empty:
-     st.info("Nenhum candidato cadastrado.")
+        st.info("Nenhum candidato cadastrado.")
     else:
-      download_button(df, "candidatos.csv", "⬇️ Baixar Lista de Candidatos")
-      show_table(df[cols_show], cols_show, "candidatos_df", CANDIDATOS_CSV)
+        download_button(df, "candidatos.csv", "⬇️ Baixar Lista de Candidatos")
+        show_table(df, CANDIDATOS_COLS, "candidatos_df", CANDIDATOS_CSV)
 
 def tela_logs():
     st.header("📜 Logs do Sistema")
