@@ -804,11 +804,12 @@ def tela_candidatos():
                 st.info("Selecione uma vaga para ver as informações.")
 
     st.subheader("📋 Candidatos Cadastrados")
+    cols_show = [c for c in CANDIDATOS_COLS if c != "ID"]
     if df.empty:
-        st.info("Nenhum candidato cadastrado.")
+     st.info("Nenhum candidato cadastrado.")
     else:
-        download_button(df, "candidatos.csv", "⬇️ Baixar Lista de Candidatos")
-        show_table(df, CANDIDATOS_COLS, "candidatos_df", CANDIDATOS_CSV)
+      download_button(df, "candidatos.csv", "⬇️ Baixar Lista de Candidatos")
+      show_table(df[cols_show], cols_show, "candidatos_df", CANDIDATOS_CSV)
 
 def tela_logs():
     st.header("📜 Logs do Sistema")
