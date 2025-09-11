@@ -425,8 +425,7 @@ if novo_status == "Validado" and nova_data_inicio not in (None, "", pd.NaT):
         campo="Status",
         valor_anterior=antigo_status_vaga,
         valor_novo="Ag. Inicio",
-        detalhe=f"Vaga alterada automaticamente ao validar candidato {candidato_id} com Data de Início preenchida."
-    )
+        detalhe=f"Vaga alterada automaticamente ao validar candidato {candidato_id} com Data de Início preenchida.")
     st.info("🔄 Status da vaga alterado para 'Ag. Inicio' (candidato validado com Data de Início).")
 
                     
