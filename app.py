@@ -141,7 +141,7 @@ if "candidatos_df" not in st.session_state:
     st.session_state.candidatos_df = load_csv(CANDIDATOS_CSV, CANDIDATOS_COLS)
 
 # ==============================
-# Estilo (fonte 10px e linha horizontal contínua entre registros)
+# Estilo (fonte 13px e linha horizontal contínua entre registros)
 # ==============================
 st.markdown(
     """
@@ -175,7 +175,7 @@ st.markdown(
         color:var(--parma-text-dark);
         border-radius:4px;
         text-align:center;
-        font-size:10px;
+        font-size:13px;
         /* separador abaixo do header, contínuo */
         border-bottom: 1px solid #cfcfcf;
     }
@@ -183,7 +183,7 @@ st.markdown(
         padding:6px;
         text-align:center;
         color:var(--parma-text-dark);
-        font-size:10px;
+        font-size:13px;
         background-color: white;
         /* sem bordas individuais: a linha entre registros será um <hr> full-width */
         border: none;
@@ -191,11 +191,11 @@ st.markdown(
 
     /* Ajuste para st.dataframe (tabela padrão do Streamlit): fonte 10px, sem bordas verticais */
     .stDataFrame div[data-testid="stStyledTable"] table {
-        font-size: 10px !important;
+        font-size: 13px !important;
         border-collapse: collapse !important;
     }
     .stDataFrame div[data-testid="stStyledTable"] thead th {
-        font-size: 10px !important;
+        font-size: 13px !important;
         background-color: #f6f9fb !important;
         padding: 6px !important;
         border-bottom: 1px solid #cfcfcf !important; /* separador header -> linhas */
@@ -219,7 +219,7 @@ st.markdown(
 
     /* Ajustes para componentes menores */
     .streamlit-expanderHeader, .stMarkdown, .stText {
-        font-size:10px !important;
+        font-size:13px !important;
     }
     </style>
     """,
@@ -418,11 +418,6 @@ def show_edit_form(df_name, cols, csv_path):
                                 vagas_df.at[v_idx, "Status"] = "Ag. Inicio"
                                 registrar_log(aba="Vagas", acao="Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Ag. Inicio", detalhe=f"Vaga alterada automaticamente ao validar candidato {candidato_id}.")
                                 st.info("🔄 Status da vaga alterado para 'Ag. Inicio' (candidato validado).")
-
-                            if nova_data_inicio and nova_data_inicio <= date.today() and antigo_status_vaga != "Fechada":
-                                vagas_df.at[v_idx, "Status"] = "Fechada"
-                                registrar_log(aba="Vagas", acao="Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Fechada", detalhe=f"Vaga fechada automaticamente (data de início do candidato {candidato_id} já passou).")
-                                st.success("✅ Status da vaga alterado para 'Fechada' (data de início já passou).")
 
                         # Se o candidato era validado e agora desistiu, reabrir vaga
                         if antigo_status == "Validado" and novo_status == "Desistência":
