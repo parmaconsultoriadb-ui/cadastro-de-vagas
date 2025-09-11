@@ -675,7 +675,7 @@ def tela_vagas():
 
     st.subheader("📋 Vagas Cadastradas")
     cols_show = [c for c in VAGAS_COLS if c not in ["ID", "Salário 1", "Salário 2", "Descrição / Observação"]]
-if df.empty:
+    if df.empty:
     st.info("Nenhuma vaga cadastrada.")
     if df.empty:
         st.info("Nenhuma vaga cadastrada.")
