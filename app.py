@@ -570,7 +570,7 @@ def tela_clientes():
         filtro = st.text_input("🔎 Buscar por Cliente")
         df_filtrado = df[df["Cliente"].str.contains(filtro, case=False, na=False)] if filtro else df
         download_button(df_filtrado, "clientes.csv", "⬇️ Baixar Lista de Clientes")
-        cols_show = [c for c in CLIENTES_COLS if c != "ID", "Data"]
+        cols_show = [c for c in CLIENTES_COLS if c not in ["ID", "Data"]]
         show_table(df_filtrado, cols_show, "clientes_df", CLIENTES_CSV)
 
 
