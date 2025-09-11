@@ -420,8 +420,6 @@ def show_edit_form(df_name, cols, csv_path):
                      registrar_log(aba="Vagas", acao="Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Ag. Inicio", detalhe=f"Vaga alterada automaticamente ao validar candidato {candidato_id} com Data de Início preenchida." )
                      st.info("🔄 Status da vaga alterado para 'Ag. Inicio' (candidato validado com Data de Início).")
 
-                        save_csv(vagas_df, VAGAS_CSV)
-
                 st.success("✅ Registro atualizado com sucesso!")
                 st.session_state.edit_mode = None
                 st.session_state.edit_record = {}
