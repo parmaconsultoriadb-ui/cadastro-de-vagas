@@ -674,13 +674,12 @@ def tela_vagas():
                         st.rerun()
 
     st.subheader("📋 Vagas Cadastradas")
+    
     cols_show = [c for c in VAGAS_COLS if c not in ["ID", "Salário 1", "Salário 2", "Descrição / Observação"]]
-    if df.empty:
-    st.info("Nenhuma vaga cadastrada.")
     if df.empty:
         st.info("Nenhuma vaga cadastrada.")
     else:
-        download_button(df[cols_show], "vagas.csv", "⬇️ Baixar Lista de Vagas")
+    download_button(df[cols_show], "vagas.csv", "⬇️ Baixar Lista de Vagas")
     show_table(df[cols_show], cols_show, "vagas_df", VAGAS_CSV)
 
 def tela_candidatos():
