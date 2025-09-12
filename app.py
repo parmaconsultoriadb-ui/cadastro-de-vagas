@@ -875,16 +875,14 @@ def refresh_data():
 # Lógica principal (menu lateral com refresh apenas na sidebar)
 # ==============================
 if st.session_state.logged_in:
-    st.sidebar.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=200)
-    st.sidebar.title("Navegação")
-    st.sidebar.caption(f"Usuário: {st.session_state.usuario}")
-
-    # Botão de refresh somente na sidebar
-    if st.sidebar.button("🔄 Refresh dados"):
-        refresh_data()
-        st.rerun()
-
-    # map page key -> label
+    # Barra superior
+    top_col1, top_col2, top_col3, top_col4 = st.columns([2, 3, 3, 1])
+    
+    # Logo
+    with top_col1:
+        st.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=150)
+    
+    # Menu de navegação (radio buttons)
     page_label_map = {
         "menu": "Menu Principal",
         "clientes": "Clientes",
@@ -892,6 +890,39 @@ if st.session_state.logged_in:
         "candidatos": "Candidatos",
         "logs": "Logs do Sistema"
     }
+    perms = st.session_state.get("permissoes", [])
+    if "menu" not in perms:
+        perms = ["menu"] + perms
+    ordered_page_keys = ["menu", "clientes", "vagas", "candidatos", "logs"]
+    allowed_pages = [p for p in ordered_page_keys if p in perms]
+    labels = [page_label_map[p] for p in allowed_pages]
+    try:
+        index_initial = allowed_pages.index(st.session_state.page)
+    except Exception:
+        index_initial = 0
+    with top_col2:
+        selected_label = st.radio("Navegação", labels, index=index_initial, horizontal=True, key="topbar_radio_menu")
+
+    # Refresh
+    with top_col3:
+        if st.button("🔄 Refresh dados"):
+            refresh_data()
+            st.experimental_rerun()
+
+    # Logout
+    with top_col4:
+        if st.button("Sair"):
+            registrar_log("Login", "Logout", detalhe=f"Usuário {st.session_state.usuario} saiu do sistema.")
+            st.session_state.logged_in = False
+            st.session_state.page = "login"
+            st.experimental_rerun()
+    
+    # map label -> page key
+    try:
+        selected_idx = labels.index(selected_label)
+        current_page = allowed_pages[selected_idx]
+    except Exception:
+        current_page = "menu"
 
     perms = st.session_state.get("permissoes", [])
     if "menu" not in perms:
@@ -905,15 +936,6 @@ if st.session_state.logged_in:
         index_initial = allowed_pages.index(st.session_state.page)
     except Exception:
         index_initial = 0
-
-    selected_label = st.sidebar.radio("Selecione uma página", labels, index=index_initial, key="sidebar_radio_menu")
-
-    # logout
-    if st.sidebar.button("Sair", use_container_width=True):
-        registrar_log("Login", "Logout", detalhe=f"Usuário {st.session_state.usuario} saiu do sistema.")
-        st.session_state.logged_in = False
-        st.session_state.page = "login"
-        st.rerun()
 
     # map label -> page key
     try:
