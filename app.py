@@ -362,9 +362,6 @@ def show_edit_form(df_name, cols, csv_path):
         st.session_state.edit_record = {}
         st.rerun()
 
-# ==============================
-# Telas principais
-# ==============================
 def tela_login():
     st.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=250)
     st.title("🔒 Login - Parma Consultoria")
@@ -417,29 +414,30 @@ def tela_clientes():
         return
     st.header("👥 Clientes")
     st.markdown("Gerencie o cadastro e as informações dos seus clientes.")
-    with st.expander("📤 Importar Clientes (CSV/XLSX)", expanded=False):
-        arquivo = st.file_uploader("Selecione um arquivo com as colunas: ID, Data, Cliente, Nome, Cidade, UF, Telefone, E-mail", type=["csv", "xlsx"], key="upload_clientes")
-        if arquivo is not None:
-            try:
-                if arquivo.name.lower().endswith('.csv'):
-                    df_upload = pd.read_csv(arquivo, dtype=str)
-                else:
-                    df_upload = pd.read_excel(arquivo, dtype=str)
-                missing = [c for c in CLIENTES_COLS if c not in df_upload.columns]
-                if missing:
-                    st.error(f"Colunas faltando: {missing}")
-                else:
-                    df_upload = df_upload[CLIENTES_COLS].fillna("")
-                    base = st.session_state.clientes_df.copy()
-                    combined = pd.concat([base, df_upload], ignore_index=True)
-                    combined = combined.drop_duplicates(subset=["ID"], keep="first")
-                    st.session_state.clientes_df = combined
-                    save_csv(combined, CLIENTES_CSV)
-                    registrar_log("Clientes", "Importar", detalhe=f"Importação de clientes via upload ({arquivo.name}).")
-                    st.success("✅ Clientes importados com sucesso!")
-                    st.rerun()
-            except Exception as e:
-                st.error(f"Erro ao processar o arquivo: {e}")
+    if st.session_state.usuario == "admin":
+        with st.expander("📤 Importar Clientes (CSV/XLSX)", expanded=False):
+            arquivo = st.file_uploader("Selecione um arquivo com as colunas: ID, Data, Cliente, Nome, Cidade, UF, Telefone, E-mail", type=["csv", "xlsx"], key="upload_clientes")
+            if arquivo is not None:
+                try:
+                    if arquivo.name.lower().endswith('.csv'):
+                        df_upload = pd.read_csv(arquivo, dtype=str)
+                    else:
+                        df_upload = pd.read_excel(arquivo, dtype=str)
+                    missing = [c for c in CLIENTES_COLS if c not in df_upload.columns]
+                    if missing:
+                        st.error(f"Colunas faltando: {missing}")
+                    else:
+                        df_upload = df_upload[CLIENTES_COLS].fillna("")
+                        base = st.session_state.clientes_df.copy()
+                        combined = pd.concat([base, df_upload], ignore_index=True)
+                        combined = combined.drop_duplicates(subset=["ID"], keep="first")
+                        st.session_state.clientes_df = combined
+                        save_csv(combined, CLIENTES_CSV)
+                        registrar_log("Clientes", "Importar", detalhe=f"Importação de clientes via upload ({arquivo.name}).")
+                        st.success("✅ Clientes importados com sucesso!")
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"Erro ao processar o arquivo: {e}")
     with st.expander("➕ Cadastrar Novo Cliente", expanded=False):
         data_hoje = date.today().strftime("%d/%m/%Y")
         with st.form("form_clientes", enter_to_submit=False):
@@ -518,29 +516,30 @@ def tela_vagas():
     if status_filter != "(todos)":
         df = df[df["Status"] == status_filter]
 
-    with st.expander("📤 Importar Vagas (CSV/XLSX)", expanded=False):
-        arquivo = st.file_uploader("Selecione um arquivo com as colunas: " + ", ".join(VAGAS_COLS), type=["csv", "xlsx"], key="upload_vagas")
-        if arquivo is not None:
-            try:
-                if arquivo.name.lower().endswith('.csv'):
-                    df_upload = pd.read_csv(arquivo, dtype=str)
-                else:
-                    df_upload = pd.read_excel(arquivo, dtype=str)
-                missing = [c for c in VAGAS_COLS if c not in df_upload.columns]
-                if missing:
-                    st.error(f"Colunas faltando: {missing}")
-                else:
-                    df_upload = df_upload[VAGAS_COLS].fillna("")
-                    base = st.session_state.vagas_df.copy()
-                    combined = pd.concat([base, df_upload], ignore_index=True)
-                    combined = combined.drop_duplicates(subset=["ID"], keep="first")
-                    st.session_state.vagas_df = combined
-                    save_csv(combined, VAGAS_CSV)
-                    registrar_log("Vagas", "Importar", detalhe=f"Importação de vagas via upload ({arquivo.name}).")
-                    st.success("✅ Vagas importadas com sucesso!")
-                    st.rerun()
-            except Exception as e:
-                st.error(f"Erro ao processar o arquivo: {e}")
+    if st.session_state.usuario == "admin":
+        with st.expander("📤 Importar Vagas (CSV/XLSX)", expanded=False):
+            arquivo = st.file_uploader("Selecione um arquivo com as colunas: " + ", ".join(VAGAS_COLS), type=["csv", "xlsx"], key="upload_vagas")
+            if arquivo is not None:
+                try:
+                    if arquivo.name.lower().endswith('.csv'):
+                        df_upload = pd.read_csv(arquivo, dtype=str)
+                    else:
+                        df_upload = pd.read_excel(arquivo, dtype=str)
+                    missing = [c for c in VAGAS_COLS if c not in df_upload.columns]
+                    if missing:
+                        st.error(f"Colunas faltando: {missing}")
+                    else:
+                        df_upload = df_upload[VAGAS_COLS].fillna("")
+                        base = st.session_state.vagas_df.copy()
+                        combined = pd.concat([base, df_upload], ignore_index=True)
+                        combined = combined.drop_duplicates(subset=["ID"], keep="first")
+                        st.session_state.vagas_df = combined
+                        save_csv(combined, VAGAS_CSV)
+                        registrar_log("Vagas", "Importar", detalhe=f"Importação de vagas via upload ({arquivo.name}).")
+                        st.success("✅ Vagas importadas com sucesso!")
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"Erro ao processar o arquivo: {e}")
     with st.expander("➕ Cadastrar Nova Vaga", expanded=False):
         data_abertura = date.today().strftime("%d/%m/%Y")
         with st.form("form_vaga", enter_to_submit=False):
@@ -627,38 +626,38 @@ def tela_candidatos():
     if status_filter != "(todos)":
         df = df[df["Status"] == status_filter]
 
-    vagas_disponiveis = st.session_state.vagas_df[~st.session_state.vagas_df["Status"].isin(["Ag. Inicio", "Fechada"])].copy()
-    if not vagas_disponiveis.empty:
-        vagas_disponiveis["Opcao"] = vagas_disponiveis.apply(lambda x: f"{x['ID']} - {x['Cliente']} - {x['Cargo']}", axis=1)
-    with st.expander("📤 Importar Candidatos (CSV/XLSX)", expanded=False):
-        arquivo = st.file_uploader("Selecione um arquivo com as colunas: " + ", ".join(CANDIDATOS_COLS), type=["csv", "xlsx"], key="upload_candidatos")
-        if arquivo is not None:
-            try:
-                if arquivo.name.lower().endswith('.csv'):
-                    df_upload = pd.read_csv(arquivo, dtype=str)
-                else:
-                    df_upload = pd.read_excel(arquivo, dtype=str)
-                missing = [c for c in CANDIDATOS_COLS if c not in df_upload.columns]
-                if missing:
-                    st.error(f"Colunas faltando: {missing}")
-                else:
-                    df_upload = df_upload[CANDIDATOS_COLS].fillna("")
-                    base = st.session_state.candidatos_df.copy()
-                    combined = pd.concat([base, df_upload], ignore_index=True)
-                    combined = combined.drop_duplicates(subset=["ID"], keep="first")
-                    st.session_state.candidatos_df = combined
-                    save_csv(combined, CANDIDATOS_CSV)
-                    registrar_log("Candidatos", "Importar", detalhe=f"Importação de candidatos via upload ({arquivo.name}).")
-                    st.success("✅ Candidatos importados com sucesso!")
-                    st.rerun()
-            except Exception as e:
-                st.error(f"Erro ao processar o arquivo: {e}")
+    if st.session_state.usuario == "admin":
+        with st.expander("📤 Importar Candidatos (CSV/XLSX)", expanded=False):
+            arquivo = st.file_uploader("Selecione um arquivo com as colunas: " + ", ".join(CANDIDATOS_COLS), type=["csv", "xlsx"], key="upload_candidatos")
+            if arquivo is not None:
+                try:
+                    if arquivo.name.lower().endswith('.csv'):
+                        df_upload = pd.read_csv(arquivo, dtype=str)
+                    else:
+                        df_upload = pd.read_excel(arquivo, dtype=str)
+                    missing = [c for c in CANDIDATOS_COLS if c not in df_upload.columns]
+                    if missing:
+                        st.error(f"Colunas faltando: {missing}")
+                    else:
+                        df_upload = df_upload[CANDIDATOS_COLS].fillna("")
+                        base = st.session_state.candidatos_df.copy()
+                        combined = pd.concat([base, df_upload], ignore_index=True)
+                        combined = combined.drop_duplicates(subset=["ID"], keep="first")
+                        st.session_state.candidatos_df = combined
+                        save_csv(combined, CANDIDATOS_CSV)
+                        registrar_log("Candidatos", "Importar", detalhe=f"Importação de candidatos via upload ({arquivo.name}).")
+                        st.success("✅ Candidatos importados com sucesso!")
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"Erro ao processar o arquivo: {e}")
     with st.expander("➕ Cadastrar Novo Candidato", expanded=False):
         col_form, col_info = st.columns([2, 1])
         with col_form:
+            vagas_disponiveis = st.session_state.vagas_df[~st.session_state.vagas_df["Status"].isin(["Ag. Inicio", "Fechada"])].copy()
             if vagas_disponiveis.empty:
                 st.info("Cadastre uma vaga disponível primeiro.")
             else:
+                vagas_disponiveis["Opcao"] = vagas_disponiveis.apply(lambda x: f"{x['ID']} - {x['Cliente']} - {x['Cargo']}", axis=1)
                 vaga_sel = st.selectbox("Vaga *", options=vagas_disponiveis["Opcao"].tolist(), key="vaga_sel")
                 try:
                     vaga_id = vaga_sel.split(" - ")[0].strip()
