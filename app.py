@@ -170,20 +170,20 @@ st.markdown(
     /* Parâmetros para show_table (headers/cells sem bordas verticais) */
     .parma-header {
         background-color: var(--parma-blue-light);
-        padding:5px;
+        padding:6px;
         font-weight:bold;
         color:var(--parma-text-dark);
-        border-radius:3px;
+        border-radius:4px;
         text-align:center;
-        font-size:12px;
+        font-size:13px;
         /* separador abaixo do header, contínuo */
         border-bottom: 1px solid #cfcfcf;
     }
     .parma-cell {
-        padding:5px;
+        padding:6px;
         text-align:center;
         color:var(--parma-text-dark);
-        font-size:12px;
+        font-size:13px;
         background-color: white;
         /* sem bordas individuais: a linha entre registros será um <hr> full-width */
         border: none;
@@ -191,13 +191,13 @@ st.markdown(
 
     /* Ajuste para st.dataframe (tabela padrão do Streamlit): fonte 10px, sem bordas verticais */
     .stDataFrame div[data-testid="stStyledTable"] table {
-        font-size: 12px !important;
+        font-size: 13px !important;
         border-collapse: collapse !important;
     }
     .stDataFrame div[data-testid="stStyledTable"] thead th {
-        font-size: 12px !important;
+        font-size: 13px !important;
         background-color: #f6f9fb !important;
-        padding: 5px !important;
+        padding: 6px !important;
         border-bottom: 1px solid #cfcfcf !important; /* separador header -> linhas */
         border-left: none !important;
         border-right: none !important;
@@ -206,7 +206,7 @@ st.markdown(
         /* não colocamos bordas nas células; a linha de separação é um <hr> inserido entre as linhas */
     }
     .stDataFrame div[data-testid="stStyledTable"] td {
-        padding: 5px !important;
+        padding: 6px !important;
         border: none !important;
     }
 
@@ -219,7 +219,7 @@ st.markdown(
 
     /* Ajustes para componentes menores */
     .streamlit-expanderHeader, .stMarkdown, .stText {
-        font-size:12px !important;
+        font-size:13px !important;
     }
     </style>
     """,
@@ -444,7 +444,7 @@ def show_edit_form(df_name, cols, csv_path):
 # Telas principais (login/menu/clientes/vagas/candidatos/logs)
 # ==============================
 def tela_login():
-    st.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=350)
+    st.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=350)
     st.title("🔒 Login - Parma Consultoria")
 
     with st.form("login_form"):
@@ -465,7 +465,7 @@ def tela_login():
                 st.error("❌ Usuário ou senha inválidos.")
 
 def tela_menu_interno():
-    st.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=350)
+    st.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=350)
     st.title("📊 Sistema Parma Consultoria")
     st.subheader("Bem-vindo! Escolha uma opção para começar.")
     st.divider()
@@ -680,7 +680,7 @@ def tela_vagas():
                         st.rerun()
 
     st.subheader("📋 Vagas Cadastradas")
-    cols_show = [c for c in VAGAS_COLS if c not in ["ID", "Salário 1", "Salário 2", "Descrição / Observação"]]
+    cols_show = [c for c in VAGAS_COLS if c not in ["Salário 1", "Salário 2", "Descrição / Observação"]]
     if df.empty:
         st.info("Nenhuma vaga cadastrada.")
     else:
@@ -875,7 +875,7 @@ def refresh_data():
 # Lógica principal (menu lateral com refresh apenas na sidebar)
 # ==============================
 if st.session_state.logged_in:
-    st.sidebar.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=200)
+    st.sidebar.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=200)
     st.sidebar.title("Navegação")
     st.sidebar.caption(f"Usuário: {st.session_state.usuario}")
 
