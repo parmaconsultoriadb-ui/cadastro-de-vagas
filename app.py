@@ -44,6 +44,11 @@ USUARIOS = {
     "lorrayne": {"senha": "Lrn!123@", "permissoes": ["menu", "vagas", "candidatos"]},
 }
 
+# ==============================
+# Recrutadores padrão
+# ==============================
+RECRUTADORES_PADRAO = ["Lorrayne", "Kaline", "Nikole", "Leila", "Julia"]
+
 def load_csv(path, expected_cols):
     if os.path.exists(path):
         try:
@@ -316,6 +321,12 @@ def show_edit_form(df_name, cols, csv_path):
                 new_data[c] = st.selectbox(c, options=opcoes, index=idx)
             elif c == "Atualização":
                 new_data[c] = st.text_input(c, value=val, help="Formato: DD/MM/YYYY", disabled=True)
+            elif df_name == "vagas_df" and c == "Recrutador":
+                idx = RECRUTADORES_PADRAO.index(val) if val in RECRUTADORES_PADRAO else 0
+                new_data[c] = st.selectbox(c, options=RECRUTADORES_PADRAO, index=idx)
+            elif df_name == "candidatos_df" and c == "Recrutador":
+                idx = RECRUTADORES_PADRAO.index(val) if val in RECRUTADORES_PADRAO else 0
+                new_data[c] = st.selectbox(c, options=RECRUTADORES_PADRAO, index=idx)
             elif df_name == "vagas_df" and c in campos_vagas_admin:
                 new_data[c] = st.text_input(
                     c, value=val, disabled=(usuario != "admin")
@@ -343,7 +354,7 @@ def show_edit_form(df_name, cols, csv_path):
                         antigo = df.at[idx0, c]
                         novo = new_data.get(c, "")
                         if str(antigo) != str(novo):
-                            registrar_log(aba=df_name.replace('_df','').capitalize(), acao="Editar", item_id=record["ID"], campo=c, valor_anterior=antigo, valor_novo=novo, detalhe=f"Registro {record['ID']} editado.")
+                            registrar_log(aba=df_name.replace('_df','').capitalize(), acao="Editar", item_id=record["ID"], campo=c, valor_anterior=antigo, valor_novo=novo, detalhe=f"Registro {record['ID']} alterado.")
                             df.at[idx0, c] = novo
                 st.session_state[df_name] = df
                 save_csv(df, csv_path)
@@ -557,7 +568,7 @@ def tela_vagas():
                     salario2 = st.text_input("Salário 2 (R$)")
                     descricao = st.text_area("Descrição / Observação")
                 with col2f:
-                    recrutador = st.text_input("Recrutador *")
+                    recrutador = st.selectbox("Recrutador *", options=RECRUTADORES_PADRAO)
                     status = st.selectbox("Status", options=["Aberta", "Ag. Inicio", "Cancelada", "Fechada", "Reaberta", "Pausada"], index=0)
                     atualizacao = ""  # Preenche vazio
                 submitted = st.form_submit_button("✅ Salvar Vaga", use_container_width=True)
@@ -666,7 +677,7 @@ def tela_candidatos():
                 with st.form("form_candidato", enter_to_submit=False):
                     nome = st.text_input("Nome *")
                     telefone = st.text_input("Telefone *")
-                    recrutador = st.text_input("Recrutador *")
+                    recrutador = st.selectbox("Recrutador *", options=RECRUTADORES_PADRAO)
                     submitted = st.form_submit_button("✅ Salvar Candidato", use_container_width=True)
                     if submitted:
                         if not nome or not telefone or not recrutador or not vaga_id:
