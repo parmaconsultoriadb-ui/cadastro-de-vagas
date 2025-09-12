@@ -27,7 +27,7 @@ VAGAS_COLS = [
     "Data de Abertura",
     "Cargo",
     "Recrutador",
-    "Data de Início",
+    "Atualização",     # Alterado para "Atualização"
     "Salário 1",
     "Salário 2",
     "Descrição / Observação",
@@ -293,6 +293,21 @@ def show_table(df, cols, df_name, csv_path):
     st.divider()
 
 # ==============================
+# Função para atualizar "Atualização" da vaga
+# ==============================
+def atualizar_vaga_data_atualizacao(cliente, cargo):
+    vagas_df = st.session_state.vagas_df.copy()
+    vaga_match = vagas_df[(vagas_df["Cliente"] == cliente) & (vagas_df["Cargo"] == cargo)]
+    if not vaga_match.empty:
+        idx = vaga_match.index[0]
+        hoje = datetime.now().strftime("%d/%m/%Y")
+        antigo = vagas_df.at[idx, "Atualização"]
+        vagas_df.at[idx, "Atualização"] = hoje
+        st.session_state.vagas_df = vagas_df
+        save_csv(vagas_df, VAGAS_CSV)
+        registrar_log("Vagas", "Atualização", item_id=vagas_df.at[idx, "ID"], campo="Atualização", valor_anterior=antigo, valor_novo=hoje, detalhe=f"Atualização de status de candidato atrelado à vaga.")
+
+# ==============================
 # Formulário de edição
 # ==============================
 def show_edit_form(df_name, cols, csv_path):
@@ -312,8 +327,8 @@ def show_edit_form(df_name, cols, csv_path):
                 opcoes = ["Aberta", "Ag. Inicio", "Cancelada", "Fechada", "Reaberta", "Pausada"]
                 idx = opcoes.index(val) if val in opcoes else 0
                 new_data[c] = st.selectbox(c, options=opcoes, index=idx)
-            elif c == "Data de Início":
-                new_data[c] = st.text_input(c, value=val, help="Formato: DD/MM/YYYY")
+            elif c == "Atualização":
+                new_data[c] = st.text_input(c, value=val, help="Formato: DD/MM/YYYY", disabled=True)
             elif c in ["Salário 1", "Salário 2"]:
                 new_data[c] = st.text_input(c, value=val)
             elif c == "Descrição / Observação":
@@ -322,19 +337,13 @@ def show_edit_form(df_name, cols, csv_path):
                 new_data[c] = st.text_input(c, value=val)
         submitted = st.form_submit_button("✅ Salvar Alterações", use_container_width=True)
         if submitted:
-            data_inicio_str = new_data.get("Data de Início")
-            if data_inicio_str:
-                try:
-                    datetime.strptime(data_inicio_str, "%d/%m/%Y")
-                except ValueError:
-                    st.error("❌ Formato de data inválido. Use DD/MM/YYYY.")
-                    return
             df = st.session_state[df_name].copy()
             idx = df[df["ID"] == record["ID"]].index
             if not idx.empty:
                 idx0 = idx[0]
                 for c in cols:
-                    if c in df.columns:
+                    # Não permitir edição manual de "Atualização"
+                    if c in df.columns and c != "Atualização":
                         antigo = df.at[idx0, c]
                         novo = new_data.get(c, "")
                         if str(antigo) != str(novo):
@@ -342,32 +351,11 @@ def show_edit_form(df_name, cols, csv_path):
                             df.at[idx0, c] = novo
                 st.session_state[df_name] = df
                 save_csv(df, csv_path)
+                # Se for candidato, atualiza a vaga (mesmo na edição)
                 if df_name == "candidatos_df":
-                    candidato_id = record.get("ID")
-                    antigo_status = record.get("Status")
-                    novo_status = new_data.get("Status")
-                    nova_data_inicio = None
-                    if new_data.get("Data de Início"):
-                        try:
-                            nova_data_inicio = datetime.strptime(new_data.get("Data de Início"), "%d/%m/%Y").date()
-                        except Exception:
-                            nova_data_inicio = None
-                    vagas_df = st.session_state.vagas_df.copy()
-                    vaga_match = vagas_df[(vagas_df["Cliente"] == df.at[idx0, "Cliente"]) & (vagas_df["Cargo"] == df.at[idx0, "Cargo"])]
-                    if not vaga_match.empty:
-                        v_idx = vaga_match.index[0]
-                        antigo_status_vaga = vagas_df.at[v_idx, "Status"]
-                        if novo_status == "Validado" and nova_data_inicio not in (None, "", pd.NaT):
-                            vagas_df.at[v_idx, "Status"] = "Ag. Inicio"
-                            registrar_log(aba="Vagas", acao="Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Ag. Inicio", detalhe=f"Registro {vagas_df.at[v_idx, 'ID']} atualizado por candidato validado.")
-                            st.info("🔄 Status da vaga alterado para 'Ag. Inicio' (candidato validado).")
-                        if antigo_status == "Validado" and novo_status == "Desistência":
-                            if vagas_df.at[v_idx, "Status"] in ["Ag. Inicio", "Fechada"]:
-                                vagas_df.at[v_idx, "Status"] = "Reaberta"
-                                registrar_log(aba="Vagas", acao="Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Reaberta", detalhe=f"Registro {vagas_df.at[v_idx, 'ID']} reaberto por desistência de candidato.")
-                                st.info("🔄 Vaga reaberta automaticamente!")
-                        st.session_state.vagas_df = vagas_df
-                        save_csv(vagas_df, VAGAS_CSV)
+                    cliente_nome = df.at[idx0, "Cliente"]
+                    cargo_nome = df.at[idx0, "Cargo"]
+                    atualizar_vaga_data_atualizacao(cliente_nome, cargo_nome)
                 st.success("✅ Registro atualizado com sucesso!")
                 st.session_state.edit_mode = None
                 st.session_state.edit_record = {}
@@ -511,7 +499,6 @@ def tela_vagas():
     with col1:
         cliente_opts = ["(todos)"] + sorted(df_all["Cliente"].dropna().unique().tolist())
         cliente_filter = st.selectbox("Filtrar por Cliente", cliente_opts, index=0)
-    # Cargo condicionado ao Cliente
     if cliente_filter != "(todos)":
         cargos_do_cliente = df_all[df_all["Cliente"] == cliente_filter]["Cargo"].dropna().unique().tolist()
         cargo_opts = ["(todos)"] + sorted(cargos_do_cliente)
@@ -578,7 +565,7 @@ def tela_vagas():
                 with col2f:
                     recrutador = st.text_input("Recrutador *")
                     status = st.selectbox("Status", options=["Aberta", "Ag. Inicio", "Cancelada", "Fechada", "Reaberta", "Pausada"], index=0)
-                    data_inicio = st.text_input("Data de Início", value="", help="Formato: DD/MM/YYYY")
+                    atualizacao = ""  # Preenche vazio
                 submitted = st.form_submit_button("✅ Salvar Vaga", use_container_width=True)
                 if submitted:
                     if not cargo or not recrutador:
@@ -592,7 +579,7 @@ def tela_vagas():
                             "Data de Abertura": data_abertura,
                             "Cargo": cargo,
                             "Recrutador": recrutador,
-                            "Data de Início": data_inicio,
+                            "Atualização": atualizacao,
                             "Salário 1": salario1,
                             "Salário 2": salario2,
                             "Descrição / Observação": descricao
@@ -621,7 +608,6 @@ def tela_candidatos():
     with col1:
         cliente_opts = ["(todos)"] + sorted(df_all["Cliente"].dropna().unique().tolist())
         cliente_filter = st.selectbox("Filtrar por Cliente", cliente_opts, index=0)
-    # Cargo condicionado ao Cliente
     if cliente_filter != "(todos)":
         cargos_do_cliente = df_all[df_all["Cliente"] == cliente_filter]["Cargo"].dropna().unique().tolist()
         cargo_opts = ["(todos)"] + sorted(cargos_do_cliente)
@@ -709,6 +695,7 @@ def tela_candidatos():
                             st.session_state.candidatos_df = pd.concat([st.session_state.candidatos_df, novo], ignore_index=True)
                             save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
                             registrar_log("Candidatos", "Criar", item_id=prox_id, detalhe=f"Candidato criado (ID {prox_id}).")
+                            atualizar_vaga_data_atualizacao(cliente_nome, cargo_nome)
                             st.success(f"✅ Candidato cadastrado com sucesso! ID: {prox_id}")
                             st.rerun()
         with col_info:
@@ -722,7 +709,7 @@ def tela_candidatos():
                         f"- **Cargo:** {vaga_row['Cargo']}\n"
                         f"- **Recrutador:** {vaga_row['Recrutador']}\n"
                         f"- **Data de Abertura:** {vaga_row['Data de Abertura']}\n"
-                        f"- **Data de Início:** {vaga_row.get('Data de Início', '')}\n"
+                        f"- **Atualização:** {vaga_row.get('Atualização', '')}\n"
                         f"- **Salário 1:** {vaga_row.get('Salário 1', '')}\n"
                         f"- **Salário 2:** {vaga_row.get('Salário 2', '')}\n"
                         f"- **Descrição / Observação:** {vaga_row.get('Descrição / Observação', '')}"
