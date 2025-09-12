@@ -27,7 +27,7 @@ VAGAS_COLS = [
     "Data de Abertura",
     "Cargo",
     "Recrutador",
-    "Atualização",     # Alterado para "Atualização"
+    "Atualização",
     "Salário 1",
     "Salário 2",
     "Descrição / Observação",
@@ -44,9 +44,6 @@ USUARIOS = {
     "lorrayne": {"senha": "Lrn!123@", "permissoes": ["menu", "vagas", "candidatos"]},
 }
 
-# ==============================
-# Helpers de persistência
-# ==============================
 def load_csv(path, expected_cols):
     if os.path.exists(path):
         try:
@@ -76,9 +73,6 @@ def next_id(df, id_col="ID"):
     except Exception:
         return 1
 
-# ==============================
-# Logs
-# ==============================
 def ensure_logs_file():
     if not os.path.exists(LOGS_CSV):
         save_csv(pd.DataFrame(columns=LOGS_COLS), LOGS_CSV)
@@ -111,9 +105,6 @@ def carregar_logs():
     except Exception:
         return pd.DataFrame(columns=LOGS_COLS)
 
-# ==============================
-# Inicialização do estado
-# ==============================
 for key, default in [
     ("page", "login"),
     ("logged_in", False),
@@ -134,9 +125,6 @@ for df_key, csv_path, cols in [
     if df_key not in st.session_state:
         st.session_state[df_key] = load_csv(csv_path, cols)
 
-# ==============================
-# Estilo
-# ==============================
 st.markdown(
     """
     <style>
@@ -205,9 +193,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ==============================
-# UI helpers
-# ==============================
 def download_button(df, filename, label="⬇️ Baixar CSV"):
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button(label=label, data=csv, file_name=filename, mime="text/csv", use_container_width=True)
@@ -242,7 +227,6 @@ def show_table(df, cols, df_name, csv_path):
                 st.rerun()
         st.markdown("<hr class='parma-hr' />", unsafe_allow_html=True)
 
-    # Confirmação de exclusão
     if st.session_state.confirm_delete["df_name"] == df_name:
         row_id = st.session_state.confirm_delete["row_id"]
         st.error(f"⚠️ Deseja realmente excluir o registro **ID {row_id}**? Esta ação é irreversível.")
@@ -292,9 +276,6 @@ def show_table(df, cols, df_name, csv_path):
                 st.rerun()
     st.divider()
 
-# ==============================
-# Função para atualizar "Atualização" da vaga
-# ==============================
 def atualizar_vaga_data_atualizacao(cliente, cargo):
     vagas_df = st.session_state.vagas_df.copy()
     vaga_match = vagas_df[(vagas_df["Cliente"] == cliente) & (vagas_df["Cargo"] == cargo)]
@@ -307,15 +288,11 @@ def atualizar_vaga_data_atualizacao(cliente, cargo):
         save_csv(vagas_df, VAGAS_CSV)
         registrar_log("Vagas", "Atualização", item_id=vagas_df.at[idx, "ID"], campo="Atualização", valor_anterior=antigo, valor_novo=hoje, detalhe=f"Atualização de status de candidato atrelado à vaga.")
 
-# ==============================
-# Formulário de edição
-# ==============================
 def show_edit_form(df_name, cols, csv_path):
     record = st.session_state.edit_record
     usuario = st.session_state.get("usuario", "")
     st.subheader(f"✏️ Editando {df_name.replace('_df','').capitalize()}")
 
-    # Define quais campos só o admin pode editar
     campos_vagas_admin = [
         "Cliente", "Data de Abertura", "Cargo", "Recrutador", "Salário 1", "Salário 2"
     ]
@@ -358,7 +335,6 @@ def show_edit_form(df_name, cols, csv_path):
             if not idx.empty:
                 idx0 = idx[0]
                 for c in cols:
-                    # Não permitir edição manual de "Atualização"
                     if c in df.columns and c != "Atualização":
                         if df_name == "vagas_df" and c in campos_vagas_admin and usuario != "admin":
                             continue
@@ -371,7 +347,6 @@ def show_edit_form(df_name, cols, csv_path):
                             df.at[idx0, c] = novo
                 st.session_state[df_name] = df
                 save_csv(df, csv_path)
-                # Se for candidato, atualiza a vaga (mesmo na edição)
                 if df_name == "candidatos_df":
                     cliente_nome = df.at[idx0, "Cliente"]
                     cargo_nome = df.at[idx0, "Cargo"]
@@ -779,18 +754,12 @@ def tela_logs():
         st.download_button("⬇️ Baixar Logs Filtrados", csv, "logs.csv", "text/csv", use_container_width=True)
     st.divider()
 
-# ==============================
-# Refresh (recarrega CSVs na sessão)
-# ==============================
 def refresh_data():
     st.session_state.clientes_df = load_csv(CLIENTES_CSV, CLIENTES_COLS)
     st.session_state.vagas_df = load_csv(VAGAS_CSV, VAGAS_COLS)
     st.session_state.candidatos_df = load_csv(CANDIDATOS_CSV, CANDIDATOS_COLS)
     registrar_log("Sistema", "Refresh", detalhe="Dados recarregados via botão Refresh.")
 
-# ==============================
-# Menu superior suspenso
-# ==============================
 if st.session_state.logged_in:
     st.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=180)
     st.caption(f"Usuário: {st.session_state.usuario}")
@@ -842,4 +811,10 @@ if st.session_state.logged_in:
             tela_candidatos()
         else:
             st.warning("⚠️ Você não tem permissão para acessar esta página.")
-    elif current_page:
+    elif current_page == "logs":
+        if "logs" in perms:
+            tela_logs()
+        else:
+            st.warning("⚠️ Você não tem permissão para acessar esta página.")
+else:
+    tela_login()
