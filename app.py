@@ -117,20 +117,14 @@ def carregar_logs():
 # ==============================
 # Inicialização do estado
 # ==============================
-if "page" not in st.session_state:
-    st.session_state.page = "login"
-if "logged_in" not in st.session_state:
+if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
-if "usuario" not in st.session_state:
+if 'page' not in st.session_state:
+    st.session_state.page = "login"
+if 'usuario' not in st.session_state:
     st.session_state.usuario = ""
-if "permissoes" not in st.session_state:
-    st.session_state.permissoes = []
-if "edit_mode" not in st.session_state:
-    st.session_state.edit_mode = None
-if "edit_record" not in st.session_state:
-    st.session_state.edit_record = {}
-if "confirm_delete" not in st.session_state:
-    st.session_state.confirm_delete = {"df_name": None, "row_id": None}
+if 'permissoes' not in st.session_state:
+    st.session_state.permissoes = ["menu", "clientes", "vagas", "candidatos", "logs"] 
 
 # Carregar DataFrames na sessão (somente na primeira carga; use Refresh na sidebar para recarregar)
 if "clientes_df" not in st.session_state:
@@ -225,6 +219,125 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+# ==============================
+# Login
+# ==============================
+if not st.session_state.logged_in:
+    st.markdown("<h1 style='text-align: center; color: #003366;'>Parma Consultoria</h1>", unsafe_allow_html=True)
+    usuario_input = st.text_input("Usuário")
+    senha_input = st.text_input("Senha", type="password")
+    if st.button("Entrar"):
+        if usuario_input == "admin" and senha_input == "Parma!123@":
+            st.session_state.logged_in = True
+            st.session_state.usuario = usuario_input
+            st.session_state.page = "menu"
+            st.experimental_rerun()
+        else:
+            st.error("Usuário ou senha incorretos")
+else:
+    # ==============================
+    # Barra superior elegante
+    # ==============================
+    st.markdown("""
+        <style>
+            .top-bar {
+                background-color: #003366;
+                padding: 10px 20px;
+                border-radius: 0 0 10px 10px;
+                color: white;
+            }
+            .top-bar .logo {
+                display: inline-block;
+                vertical-align: middle;
+            }
+            .top-bar .menu {
+                display: inline-block;
+                margin-left: 50px;
+                vertical-align: middle;
+            }
+            .top-bar .buttons {
+                float: right;
+                vertical-align: middle;
+            }
+            .top-bar button {
+                margin-left: 10px;
+                background-color: #0055a5;
+                color: white;
+                border-radius: 5px;
+                padding: 5px 10px;
+                border: none;
+                cursor: pointer;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Layout da barra superior com colunas
+    top_col1, top_col2, top_col3 = st.columns([2, 6, 2])
+
+    # Logo
+    with top_col1:
+        st.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=120)
+
+    # Menu de navegação horizontal
+    page_label_map = {
+        "menu": "Menu Principal",
+        "clientes": "Clientes",
+        "vagas": "Vagas",
+        "candidatos": "Candidatos",
+        "logs": "Logs"
+    }
+    perms = st.session_state.get("permissoes", [])
+    allowed_pages = [p for p in ["menu", "clientes", "vagas", "candidatos", "logs"] if p in perms]
+    labels = [page_label_map[p] for p in allowed_pages]
+    
+    try:
+        index_initial = allowed_pages.index(st.session_state.page)
+    except Exception:
+        index_initial = 0
+
+    with top_col2:
+        selected_label = st.radio("", labels, index=index_initial, horizontal=True, key="topbar_radio_menu")
+
+    # Botões Refresh e Logout
+    with top_col3:
+        refresh_clicked = st.button("🔄 Refresh")
+        logout_clicked = st.button("Sair", key="logout_btn")
+
+        if refresh_clicked:
+            refresh_data()
+        if logout_clicked:
+            st.session_state.logged_in = False
+            st.session_state.page = "login"
+            st.session_state.usuario = ""
+            st.experimental_rerun()
+
+    # Atualiza a página atual
+    try:
+        selected_idx = labels.index(selected_label)
+        st.session_state.page = allowed_pages[selected_idx]
+    except Exception:
+        st.session_state.page = "menu"
+
+    # ==============================
+    # Conteúdo da página
+    # ==============================
+    st.markdown("<hr style='margin-top:0px; margin-bottom:20px;'>", unsafe_allow_html=True)  # separador elegante
+    if st.session_state.page == "menu":
+        st.subheader("Menu Principal")
+        st.write("Aqui vai o conteúdo do menu principal")
+    elif st.session_state.page == "clientes":
+        st.subheader("Clientes")
+        st.write("Aqui vai a tela de clientes")
+    elif st.session_state.page == "vagas":
+        st.subheader("Vagas")
+        st.write("Aqui vai a tela de vagas")
+    elif st.session_state.page == "candidatos":
+        st.subheader("Candidatos")
+        st.write("Aqui vai a tela de candidatos")
+    elif st.session_state.page == "logs":
+        st.subheader("Logs do Sistema")
+        st.write("Aqui vão os logs do sistema")
 
 # ==============================
 # UI helpers
@@ -866,11 +979,8 @@ def tela_logs():
 # Refresh (recarrega CSVs na sessão)
 # ==============================
 def refresh_data():
-    st.session_state.clientes_df = load_csv(CLIENTES_CSV, CLIENTES_COLS)
-    st.session_state.vagas_df = load_csv(VAGAS_CSV, VAGAS_COLS)
-    st.session_state.candidatos_df = load_csv(CANDIDATOS_CSV, CANDIDATOS_COLS)
-    registrar_log("Sistema", "Refresh", detalhe="Dados recarregados via botão Refresh na sidebar.")
-
+    st.experimental_rerun()
+    
 # ==============================
 # Lógica principal (menu lateral com refresh apenas na sidebar)
 # ==============================
