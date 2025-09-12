@@ -46,6 +46,17 @@ USUARIOS = {
     "lorrayne": {"senha": "Lrn!123@", "permissoes": ["menu", "vagas", "candidatos"]},
 }
 
+# --- Importar candidatos (apenas admin) ---
+    if eh_admin:
+        if st.button("Importar Candidatos"):
+            arquivo = st.file_uploader("Selecione um CSV de Candidatos", type="csv")
+            if arquivo is not None:
+                candidatos_df = pd.read_csv(arquivo)
+                if "Atualizado" not in candidatos_df.columns:
+                    candidatos_df["Atualizado"] = ""
+                salvar_csv(candidatos_df, CANDIDATOS_CSV)
+                st.success("Candidatos importados com sucesso!")
+
 # ==============================
 # Helpers de persistência
 # ==============================
