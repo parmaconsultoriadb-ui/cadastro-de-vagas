@@ -779,12 +779,16 @@ if st.session_state.logged_in:
         index_initial = allowed_pages.index(st.session_state.page)
     except Exception:
         index_initial = 0
-    menu_cols = st.columns(len(labels) + 2)
+
+    # Ajuste: todos os botões da barra superior têm o mesmo tamanho
+    total_buttons = len(labels) + 2
+    menu_cols = st.columns([1] * total_buttons)  # cada coluna tem o mesmo peso/tamanho
+
     for i, label in enumerate(labels):
         if menu_cols[i].button(label, use_container_width=True):
             st.session_state.page = allowed_pages[i]
             st.rerun()
-    if menu_cols[-2].button("🔄 Refresh"):
+    if menu_cols[-2].button("🔄 Refresh", use_container_width=True):
         refresh_data()
         st.rerun()
     if menu_cols[-1].button("Sair", use_container_width=True):
