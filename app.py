@@ -842,4 +842,4 @@ if st.session_state.logged_in:
             tela_candidatos()
         else:
             st.warning("⚠️ Você não tem permissão para acessar esta página.")
-    elif current_page
+    elif current_page:
