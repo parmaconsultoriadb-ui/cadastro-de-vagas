@@ -245,7 +245,7 @@ def show_table(df, cols, df_name, csv_path):
 
     Define largura das colunas 
         n_cols = len(cols)
-        widths = [1]*n_cols + [0.5, 0.5]
+        widths = [1]*n_cols + [0.4, 0.4]
 
     # Cabeçalho (colunas + Editar + Excluir)
     header_cols = st.columns(len(cols) + 2)
