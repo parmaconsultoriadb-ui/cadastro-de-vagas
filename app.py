@@ -312,7 +312,17 @@ def atualizar_vaga_data_atualizacao(cliente, cargo):
 # ==============================
 def show_edit_form(df_name, cols, csv_path):
     record = st.session_state.edit_record
+    usuario = st.session_state.get("usuario", "")
     st.subheader(f"✏️ Editando {df_name.replace('_df','').capitalize()}")
+
+    # Define quais campos só o admin pode editar
+    campos_vagas_admin = [
+        "Cliente", "Data de Abertura", "Cargo", "Recrutador", "Salário 1", "Salário 2"
+    ]
+    campos_candidatos_admin = [
+        "Cliente", "Cargo", "Nome", "Telefone", "Recrutador"
+    ]
+
     with st.form("edit_form", clear_on_submit=False):
         new_data = {}
         for c in cols:
@@ -329,8 +339,14 @@ def show_edit_form(df_name, cols, csv_path):
                 new_data[c] = st.selectbox(c, options=opcoes, index=idx)
             elif c == "Atualização":
                 new_data[c] = st.text_input(c, value=val, help="Formato: DD/MM/YYYY", disabled=True)
-            elif c in ["Salário 1", "Salário 2"]:
-                new_data[c] = st.text_input(c, value=val)
+            elif df_name == "vagas_df" and c in campos_vagas_admin:
+                new_data[c] = st.text_input(
+                    c, value=val, disabled=(usuario != "admin")
+                )
+            elif df_name == "candidatos_df" and c in campos_candidatos_admin:
+                new_data[c] = st.text_input(
+                    c, value=val, disabled=(usuario != "admin")
+                )
             elif c == "Descrição / Observação":
                 new_data[c] = st.text_area(c, value=val)
             else:
@@ -344,6 +360,10 @@ def show_edit_form(df_name, cols, csv_path):
                 for c in cols:
                     # Não permitir edição manual de "Atualização"
                     if c in df.columns and c != "Atualização":
+                        if df_name == "vagas_df" and c in campos_vagas_admin and usuario != "admin":
+                            continue
+                        if df_name == "candidatos_df" and c in campos_candidatos_admin and usuario != "admin":
+                            continue
                         antigo = df.at[idx0, c]
                         novo = new_data.get(c, "")
                         if str(antigo) != str(novo):
@@ -822,10 +842,4 @@ if st.session_state.logged_in:
             tela_candidatos()
         else:
             st.warning("⚠️ Você não tem permissão para acessar esta página.")
-    elif current_page == "logs":
-        if "logs" in perms:
-            tela_logs()
-        else:
-            st.warning("⚠️ Você não tem permissão para acessar esta página.")
-else:
-    tela_login()
+    elif current_page
