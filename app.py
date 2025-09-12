@@ -570,9 +570,7 @@ def tela_clientes():
         filtro = st.text_input("🔎 Buscar por Cliente")
         df_filtrado = df[df["Cliente"].str.contains(filtro, case=False, na=False)] if filtro else df
         download_button(df_filtrado, "clientes.csv", "⬇️ Baixar Lista de Clientes")
-        cols_show = [c for c in CLIENTES_COLS if c not in ["ID", "Data"]]
-        show_table(df_filtrado, cols_show, "clientes_df", CLIENTES_CSV)
-
+        show_table(df_filtrado, CLIENTES_COLS, "clientes_df", CLIENTES_CSV)
 
 def tela_vagas():
     if st.session_state.edit_mode == "vagas_df":
@@ -583,19 +581,16 @@ def tela_vagas():
     st.markdown("Gerencie as vagas de emprego da consultoria.")
 
     df_all = st.session_state.vagas_df.copy()
-    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
-    with col4:
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
         status_opts = ["(todos)"] + sorted(df_all["Status"].dropna().unique().tolist())
         status_filter = st.selectbox("Filtrar por Status", status_opts, index=0)
-    with col1:
+    with col2:
         cliente_opts = ["(todos)"] + sorted(df_all["Cliente"].dropna().unique().tolist())
         cliente_filter = st.selectbox("Filtrar por Cliente", cliente_opts, index=0)
-    with col2:
+    with col3:
         cargo_opts = ["(todos)"] + sorted(df_all["Cargo"].dropna().unique().tolist())
         cargo_filter = st.selectbox("Filtrar por Cargo", cargo_opts, index=0)
-    with col3:
-        recrutador_opts = ["(todos)"] + sorted(df_all["Recrutador"].dropna().unique().tolist())
-        recrutador_filter = st.selectbox("Filtrar por Recrutador", recrutador_opts, index=0)
 
     df = df_all.copy()
     if status_filter != "(todos)":
@@ -604,8 +599,6 @@ def tela_vagas():
         df = df[df["Cliente"] == cliente_filter]
     if cargo_filter != "(todos)":
         df = df[df["Cargo"] == cargo_filter]
-    if recrutador_filter != "(todos)":
-        df = df[df["Recrutador"] == recrutador_filter]
 
     # Upload de vagas
     with st.expander("📤 Importar Vagas (CSV/XLSX)", expanded=False):
@@ -696,19 +689,16 @@ def tela_candidatos():
     st.markdown("Gerencie os candidatos inscritos nas vagas.")
 
     df_all = st.session_state.candidatos_df.copy()
-    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
-    with col4:
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
         status_opts = ["(todos)"] + sorted(df_all["Status"].dropna().unique().tolist())
         status_filter = st.selectbox("Filtrar por Status", status_opts, index=0)
-    with col1:
+    with col2:
         cliente_opts = ["(todos)"] + sorted(df_all["Cliente"].dropna().unique().tolist())
         cliente_filter = st.selectbox("Filtrar por Cliente", cliente_opts, index=0)
-    with col2:
+    with col3:
         cargo_opts = ["(todos)"] + sorted(df_all["Cargo"].dropna().unique().tolist())
         cargo_filter = st.selectbox("Filtrar por Cargo", cargo_opts, index=0)
-    with col3:
-        recrutador_opts = ["(todos)"] + sorted(df_all["Recrutador"].dropna().unique().tolist())
-        recrutador_filter = st.selectbox("Filtrar por Recrutador", recrutador_opts, index=0)
 
     df = df_all.copy()
     if status_filter != "(todos)":
@@ -717,8 +707,6 @@ def tela_candidatos():
         df = df[df["Cliente"] == cliente_filter]
     if cargo_filter != "(todos)":
         df = df[df["Cargo"] == cargo_filter]
-    if recrutador_filter != "(todos)":
-        df = df[df["Recrutador"] == recrutador_filter]
 
     # Prepara lista de vagas disponíveis (status não em Ag. Inicio ou Fechada)
     vagas_disponiveis = st.session_state.vagas_df[~st.session_state.vagas_df["Status"].isin(["Ag. Inicio", "Fechada"])].copy()
@@ -819,9 +807,7 @@ def tela_candidatos():
         st.info("Nenhum candidato cadastrado.")
     else:
         download_button(df, "candidatos.csv", "⬇️ Baixar Lista de Candidatos")
-        cols_show = [c for c in CANDIDATOS_COLS if c != "ID"]
-        df_sorted = df.sort_values("ID", ascending=False)
-        show_table(df_sorted, cols_show, "candidatos_df", CANDIDATOS_CSV)
+        show_table(df, CANDIDATOS_COLS, "candidatos_df", CANDIDATOS_CSV)
 
 def tela_logs():
     st.header("📜 Logs do Sistema")
