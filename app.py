@@ -875,7 +875,7 @@ def refresh_data():
 # Lógica principal (menu lateral com refresh apenas na sidebar)
 # ==============================
 if st.session_state.logged_in:
-    st.sidebar.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=200)
+    st.sidebar.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=200)
     st.sidebar.title("Navegação")
     st.sidebar.caption(f"Usuário: {st.session_state.usuario}")
 
