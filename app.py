@@ -233,45 +233,45 @@ def download_button(df, filename, label="⬇️ Baixar CSV"):
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button(label=label, data=csv, file_name=filename, mime="text/csv", use_container_width=True)
 
-def show_table(df, cols, df_name, csv_path):
+def show_table_generic(df, csv_file, table_name):
     """
-    Exibe tabela com botões de editar e excluir.
-    A separação entre registros é feita por uma linha horizontal contínua (<hr>) full-width,
-    para que a linha vá de ID até Excluir.
+    Exibe uma tabela com botões Editar e Excluir.
+    - df: DataFrame que será exibido
+    - csv_file: caminho do CSV para salvar alterações
+    - table_name: string para exibir mensagens específicas (ex: 'Cliente', 'Vaga', 'Candidato')
     """
-    if df is None or df.empty:
-        st.info("Nenhum registro para exibir.")
+    if df.empty:
+        st.info(f"Nenhum registro de {table_name.lower()} encontrado.")
         return
-        
+
     cols = df.columns.tolist()
 
-    # Cabeçalho (colunas + Editar + Excluir)
+    # Cabeçalho da tabela
     header_cols = st.columns([1]*len(cols) + [0.5, 0.5])
     for i, col_name in enumerate(cols):
         header_cols[i].markdown(f"**{col_name}**")
     header_cols[-2].markdown("**Editar**")
     header_cols[-1].markdown("**Excluir**")
 
-    # Linhas
-    
     # Linhas da tabela
     for index, row in df.iterrows():
         row_cols = st.columns([1]*len(cols) + [0.5, 0.5])
         for i, col_name in enumerate(cols):
             row_cols[i].write(row[col_name])
-        
+
         # Botão Editar
-        if row_cols[-2].button("✏️", key=f"edit_{index}"):
+        if row_cols[-2].button("✏️", key=f"{table_name}_edit_{index}"):
             st.session_state['edit_index'] = index
             st.session_state['edit_data'] = row.to_dict()
+            st.session_state['edit_table'] = table_name
             st.experimental_rerun()
 
         # Botão Excluir
-        if row_cols[-1].button("🗑️", key=f"delete_{index}"):
+        if row_cols[-1].button("🗑️", key=f"{table_name}_delete_{index}"):
             df.drop(index, inplace=True)
-            df.to_csv(CLIENTES_CSV, index=False)
-            st.success("Registro excluído com sucesso!")
-            st.experimental_rerun(
+            df.to_csv(csv_file, index=False)
+            st.success(f"{table_name} excluído(a) com sucesso!")
+            st.experimental_rerun()
 
         # Linha horizontal contínua full-width (separa este registro do próximo)
         st.markdown("<hr class='parma-hr' />", unsafe_allow_html=True)
