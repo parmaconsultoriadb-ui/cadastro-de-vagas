@@ -29,11 +29,12 @@ VAGAS_COLS = [
     "Cargo",
     "Recrutador",
     "Data de Início",
+    "Atualizado",
     "Salário 1",
     "Salário 2",
     "Descrição / Observação",
 ]
-CANDIDATOS_COLS = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "Status", "Data de Início"]
+CANDIDATOS_COLS = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "Status", "Data de Início","Atualizado"]
 LOGS_COLS = ["DataHora", "Usuario", "Aba", "Acao", "ItemID", "Campo", "ValorAnterior", "ValorNovo", "Detalhe"]
 
 # ==============================
@@ -79,6 +80,14 @@ def next_id(df, id_col="ID"):
         return int(vals.max()) + 1
     except Exception:
         return 1
+def carregar_csv(caminho, colunas=None):
+    if os.path.exists(caminho):
+        return pd.read_csv(caminho)
+    else:
+        return pd.DataFrame(columns=colunas if colunas else [])
+
+def salvar_csv(df, caminho):
+    df.to_csv(caminho, index=False)
 
 # ==============================
 # Logs
@@ -584,44 +593,36 @@ def tela_vagas():
     st.markdown("Gerencie as vagas de emprego da consultoria.")
 
     df_all = st.session_state.vagas_df.copy()
-    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
-    with col4:
-        status_opts = ["(todos)"] + sorted(df_all["Status"].dropna().unique().tolist())
-        status_filter = st.selectbox("Filtrar por Status", status_opts, index=0)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
-        cliente_opts = ["(todos)"] + sorted(df_all["Cliente"].dropna().unique().tolist())
-        cliente_filter = st.selectbox("Filtrar por Cliente", cliente_opts, index=0)
+        filtro_cliente = st.selectbox("Cliente", [""] + sorted(vagas_df["Cliente"].dropna().unique().tolist()))
     with col2:
-        cargo_opts = ["(todos)"] + sorted(df_all["Cargo"].dropna().unique().tolist())
-        cargo_filter = st.selectbox("Filtrar por Cargo", cargo_opts, index=0)
+        filtro_cargo = st.selectbox("Cargo", [""] + sorted(vagas_df["Cargo"].dropna().unique().tolist()))
     with col3:
-        recrutador_opts = ["(todos)"] + sorted(df_all["Recrutador"].dropna().unique().tolist())
-        recrutador_filter = st.selectbox("Filtrar por Recrutador", recrutador_opts, index=0)
+        filtro_recrutador = st.selectbox("Recrutador", [""] + sorted(vagas_df["Recrutador"].dropna().unique().tolist()))
+    with col4:
+        filtro_status = st.selectbox("Status", [""] + sorted(vagas_df["Status"].dropna().unique().tolist()))
 
-    df = df_all.copy()
-    if status_filter != "(todos)":
-        df = df[df["Status"] == status_filter]
-    if cliente_filter != "(todos)":
-        df = df[df["Cliente"] == cliente_filter]
-    if cargo_filter != "(todos)":
-        df = df[df["Cargo"] == cargo_filter]
-    if recrutador_filter != "(todos)":
-        df = df[df["Recrutador"] == recrutador_filter]
+    filtrado = vagas_df.copy()
+    if filtro_cliente: filtrado = filtrado[filtrado["Cliente"] == filtro_cliente]
+    if filtro_cargo: filtrado = filtrado[filtrado["Cargo"] == filtro_cargo]
+    if filtro_recrutador: filtrado = filtrado[filtrado["Recrutador"] == filtro_recrutador]
+    if filtro_status: filtrado = filtrado[filtrado["Status"] == filtro_status]
 
     # Upload de vagas
     with st.expander("📤 Importar Vagas (CSV/XLSX)", expanded=False):
         arquivo = st.file_uploader("Selecione um arquivo com as colunas: " + ", ".join(VAGAS_COLS), type=["csv", "xlsx"], key="upload_vagas")
         if arquivo is not None:
             try:
-                if arquivo.name.lower().endswith('.csv'):
+        if arquivo.name.lower().endswith('.csv'):
                     df_upload = pd.read_csv(arquivo, dtype=str)
-                else:
+        else:
                     df_upload = pd.read_excel(arquivo, dtype=str)
 
                 missing = [c for c in VAGAS_COLS if c not in df_upload.columns]
-                if missing:
+        if missing:
                     st.error(f"Colunas faltando: {missing}")
-                else:
+        else:
                     df_upload = df_upload[VAGAS_COLS].fillna("")
                     base = st.session_state.vagas_df.copy()
                     combined = pd.concat([base, df_upload], ignore_index=True)
@@ -631,54 +632,37 @@ def tela_vagas():
                     registrar_log("Vagas", "Importar", detalhe=f"Importação de vagas via upload ({arquivo.name}).")
                     st.success("✅ Vagas importadas com sucesso!")
                     st.rerun()
-            except Exception as e:
+        except Exception as e:
                 st.error(f"Erro ao processar o arquivo: {e}")
 
     # Cadastro de nova vaga
     with st.expander("➕ Cadastrar Nova Vaga", expanded=False):
         data_abertura = date.today().strftime("%d/%m/%Y")
-        with st.form("form_vaga", enter_to_submit=False):
-            clientes = st.session_state.clientes_df
-            if clientes.empty:
-                st.warning("⚠️ Cadastre um Cliente antes de cadastrar Vagas.")
-            else:
-                col1f, col2f = st.columns(2)
-                with col1f:
-                    cliente_sel = st.selectbox("Cliente *", options=clientes.apply(lambda x: f"{x['ID']} - {x['Cliente']}", axis=1))
-                    cliente_id = cliente_sel.split(" - ")[0]
-                    cliente_nome = clientes[clientes['ID'] == cliente_id]['Cliente'].iloc[0]
-                    cargo = st.text_input("Cargo *")
-                    salario1 = st.text_input("Salário 1 (R$)")
-                    salario2 = st.text_input("Salário 2 (R$)")
-                    descricao = st.text_area("Descrição / Observação")
-                with col2f:
-                    recrutador = st.text_input("Recrutador *")
-                    status = st.selectbox("Status", options=["Aberta", "Ag. Inicio", "Cancelada", "Fechada", "Reaberta", "Pausada"], index=0)
-                    data_inicio = st.text_input("Data de Início", value="", help="Formato: DD/MM/YYYY")
+        with st.form("form_vaga"):
+            cliente = st.selectbox("Cliente", clientes_df["Nome"].unique())
+            cargo = st.text_input("Cargo")
+            recruta = st.text_input("Recrutador")
+            data_abertura = date.today()
 
-                submitted = st.form_submit_button("✅ Salvar Vaga", use_container_width=True)
-                if submitted:
-                    if not cargo or not recrutador:
-                        st.warning("⚠️ Preencha todos os campos obrigatórios.")
-                    else:
-                        prox_id = str(next_id(st.session_state.vagas_df, "ID"))
-                        nova = pd.DataFrame([{
-                            "ID": prox_id,
-                            "Cliente": cliente_nome,
-                            "Status": status,
-                            "Data de Abertura": data_abertura,
-                            "Cargo": cargo,
-                            "Recrutador": recrutador,
-                            "Data de Início": data_inicio,
-                            "Salário 1": salario1,
-                            "Salário 2": salario2,
-                            "Descrição / Observação": descricao
-                        }])
-                        st.session_state.vagas_df = pd.concat([st.session_state.vagas_df, nova], ignore_index=True)
-                        save_csv(st.session_state.vagas_df, VAGAS_CSV)
-                        registrar_log("Vagas", "Criar", item_id=prox_id, detalhe=f"Vaga criada (ID {prox_id}).")
-                        st.success(f"✅ Vaga cadastrada com sucesso! ID: {prox_id}")
-                        st.rerun()
+            # Status travado como "Aberta"
+            status = "Aberta"
+            st.text_input("Status", value=status, disabled=True)
+
+            if st.form_submit_button("Salvar"):
+                nova = {
+                    "ID": len(vagas_df) + 1,
+                    "Cliente": cliente,
+                    "Cargo": cargo,
+                    "Status": status,
+                    "Recrutador": recruta,
+                    "Data de Abertura": data_abertura,
+                    "Data de Início": "",
+                    "Atualizado": datetime.now().strftime("%d/%m/%Y %H:%M")
+                }
+                vagas_df = pd.concat([vagas_df, pd.DataFrame([nova])], ignore_index=True)
+                salvar_csv(vagas_df, VAGAS_CSV)
+                st.success("Vaga cadastrada!")
+
 
     st.subheader("📋 Vagas Cadastradas")
     cols_show = [c for c in VAGAS_COLS if c not in ["Salário 1", "Salário 2", "Descrição / Observação"]]
