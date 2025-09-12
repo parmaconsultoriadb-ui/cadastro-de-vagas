@@ -159,8 +159,8 @@ st.markdown(
         background-color: var(--parma-blue-dark) !important;
         color: white !important;
         border-radius: 8px;
-        height: 2.5em;
-        font-size: 14px;
+        height: 1.8em;
+        font-size: 12px;
         font-weight: bold;
         border: none;
     }
