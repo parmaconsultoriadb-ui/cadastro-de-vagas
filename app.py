@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 from datetime import date, datetime
@@ -159,8 +158,8 @@ st.markdown(
         background-color: var(--parma-blue-dark) !important;
         color: white !important;
         border-radius: 8px;
-        height: 1.8em;
-        font-size: 12px;
+        height: 2.5em;
+        font-size: 14px;
         font-weight: bold;
         border: none;
     }
@@ -264,15 +263,15 @@ def show_table(df, cols, df_name, csv_path):
             row_cols[i].markdown(f"<div class='parma-cell'>{value}</div>", unsafe_allow_html=True)
 
         # Botões Editar / Excluir
-    with row_cols[-2]:
-    if st.button("✏️", key=f"edit_{df_name}_{str(row.get('ID',''))}"):
-        st.session_state.edit_mode = df_name
-        st.session_state.edit_record = row.to_dict()
-        st.rerun()
-    with row_cols[-1]:
-    if st.button("🗑️", key=f"del_{df_name}_{str(row.get('ID',''))}"):
-        st.session_state.confirm_delete = {"df_name": df_name, "row_id": row["ID"]}
-        st.rerun()
+        with row_cols[-2]:
+            if st.button("✏️", key=f"edit_{df_name}_{str(row.get('ID',''))}", use_container_width=True):
+                st.session_state.edit_mode = df_name
+                st.session_state.edit_record = row.to_dict()
+                st.rerun()
+        with row_cols[-1]:
+            if st.button("🗑️", key=f"del_{df_name}_{str(row.get('ID',''))}", use_container_width=True):
+                st.session_state.confirm_delete = {"df_name": df_name, "row_id": row["ID"]}
+                st.rerun()
 
         # Linha horizontal contínua full-width (separa este registro do próximo)
         st.markdown("<hr class='parma-hr' />", unsafe_allow_html=True)
