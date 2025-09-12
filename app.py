@@ -233,45 +233,45 @@ def download_button(df, filename, label="⬇️ Baixar CSV"):
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button(label=label, data=csv, file_name=filename, mime="text/csv", use_container_width=True)
 
-def show_table_generic(df, csv_file, table_name):
+def show_table(df, cols, df_name, csv_path):
     """
-    Exibe uma tabela com botões Editar e Excluir.
-    - df: DataFrame que será exibido
-    - csv_file: caminho do CSV para salvar alterações
-    - table_name: string para exibir mensagens específicas (ex: 'Cliente', 'Vaga', 'Candidato')
+    Exibe tabela com botões de editar e excluir.
+    A separação entre registros é feita por uma linha horizontal contínua (<hr>) full-width,
+    para que a linha vá de ID até Excluir.
     """
-    if df.empty:
-        st.info(f"Nenhum registro de {table_name.lower()} encontrado.")
+    if df is None or df.empty:
+        st.info("Nenhum registro para exibir.")
         return
 
-    cols = df.columns.tolist()
+    # Cabeçalho (colunas + Editar + Excluir)
+    header_cols = st.columns(len(cols) + 2)
+    for i, c in enumerate(cols):
+        header_cols[i].markdown(f"<div class='parma-header'>{c}</div>", unsafe_allow_html=True)
+    header_cols[-2].markdown("<div class='parma-header'>Editar</div>", unsafe_allow_html=True)
+    header_cols[-1].markdown("<div class='parma-header'>Excluir</div>", unsafe_allow_html=True)
 
-    # Cabeçalho da tabela
-    header_cols = st.columns([1]*len(cols) + [0.5, 0.5])
-    for i, col_name in enumerate(cols):
-        header_cols[i].markdown(f"**{col_name}**")
-    header_cols[-2].markdown("**Editar**")
-    header_cols[-1].markdown("**Excluir**")
+    st.markdown("<br>", unsafe_allow_html=True)
 
-    # Linhas da tabela
-    for index, row in df.iterrows():
-        row_cols = st.columns([1]*len(cols) + [0.5, 0.5])
-        for i, col_name in enumerate(cols):
-            row_cols[i].write(row[col_name])
+    # Linhas
+    for _, row in df.iterrows():
+        row_cols = st.columns(len(cols) + 2)
+        for i, c in enumerate(cols):
+            value = row.get(c, "")
+            if pd.isna(value):
+                value = ""
+            # renderizamos o conteúdo da célula com css sem bordas; a linha contínua vem em seguida (hr)
+            row_cols[i].markdown(f"<div class='parma-cell'>{value}</div>", unsafe_allow_html=True)
 
-        # Botão Editar
-        if row_cols[-2].button("✏️", key=f"{table_name}_edit_{index}"):
-            st.session_state['edit_index'] = index
-            st.session_state['edit_data'] = row.to_dict()
-            st.session_state['edit_table'] = table_name
-            st.experimental_rerun()
-
-        # Botão Excluir
-        if row_cols[-1].button("🗑️", key=f"{table_name}_delete_{index}"):
-            df.drop(index, inplace=True)
-            df.to_csv(csv_file, index=False)
-            st.success(f"{table_name} excluído(a) com sucesso!")
-            st.experimental_rerun()
+        # Botões Editar / Excluir
+        with row_cols[-2]:
+            if st.button("✏️", key=f"edit_{df_name}_{str(row.get('ID',''))}", use_container_width=True):
+                st.session_state.edit_mode = df_name
+                st.session_state.edit_record = row.to_dict()
+                st.rerun()
+        with row_cols[-1]:
+            if st.button("🗑️", key=f"del_{df_name}_{str(row.get('ID',''))}", use_container_width=True):
+                st.session_state.confirm_delete = {"df_name": df_name, "row_id": row["ID"]}
+                st.rerun()
 
         # Linha horizontal contínua full-width (separa este registro do próximo)
         st.markdown("<hr class='parma-hr' />", unsafe_allow_html=True)
