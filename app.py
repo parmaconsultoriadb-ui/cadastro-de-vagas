@@ -999,7 +999,10 @@ def tela_logs():
 # Refresh (recarrega CSVs na sessão)
 # ==============================
 def refresh_data():
-    st.experimental_rerun()
+    st.session_state.clientes_df = load_csv(CLIENTES_CSV, CLIENTES_COLS)
+    st.session_state.vagas_df = load_csv(VAGAS_CSV, VAGAS_COLS)
+    st.session_state.candidatos_df = load_csv(CANDIDATOS_CSV, CANDIDATOS_COLS)
+    st.success("🔄 Dados recarregados!")
     
 # ==============================
 # Lógica principal (menu lateral com refresh apenas na sidebar)
