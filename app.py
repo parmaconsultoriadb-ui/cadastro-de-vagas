@@ -444,7 +444,7 @@ def show_edit_form(df_name, cols, csv_path):
 # Telas principais (login/menu/clientes/vagas/candidatos/logs)
 # ==============================
 def tela_login():
-    st.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=350)
+    st.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=250)
     st.title("🔒 Login - Parma Consultoria")
 
     with st.form("login_form"):
@@ -465,7 +465,7 @@ def tela_login():
                 st.error("❌ Usuário ou senha inválidos.")
 
 def tela_menu_interno():
-    st.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=350)
+    st.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=250)
     st.title("📊 Sistema Parma Consultoria")
     st.subheader("Bem-vindo! Escolha uma opção para começar.")
     st.divider()
@@ -861,7 +861,7 @@ def refresh_data():
 # Lógica principal (menu lateral com refresh apenas na sidebar)
 # ==============================
 if st.session_state.logged_in:
-    st.sidebar.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=200)
+    st.sidebar.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=150)
     st.sidebar.title("Navegação")
     st.sidebar.caption(f"Usuário: {st.session_state.usuario}")
 
