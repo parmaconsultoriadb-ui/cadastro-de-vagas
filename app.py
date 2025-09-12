@@ -362,12 +362,12 @@ def show_edit_form(df_name, cols, csv_path):
                         antigo_status_vaga = vagas_df.at[v_idx, "Status"]
                         if novo_status == "Validado" and nova_data_inicio not in (None, "", pd.NaT):
                             vagas_df.at[v_idx, "Status"] = "Ag. Inicio"
-                            registrar_log(aba="Vagas", acao="Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Ag. Inicio", detalhe="Candidato validado.")
+                            registrar_log(aba="Vagas", acao="Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Ag. Inicio", detalhe=f"Registro {vagas_df.at[v_idx, 'ID']} atualizado por candidato validado.")
                             st.info("🔄 Status da vaga alterado para 'Ag. Inicio' (candidato validado).")
                         if antigo_status == "Validado" and novo_status == "Desistência":
                             if vagas_df.at[v_idx, "Status"] in ["Ag. Inicio", "Fechada"]:
                                 vagas_df.at[v_idx, "Status"] = "Reaberta"
-                                registrar_log(aba="Vagas", acao="Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Reaberta", detalhe="Candidato desistiu.")
+                                registrar_log(aba="Vagas", acao="Atualização Automática", item_id=vagas_df.at[v_idx, "ID"], campo="Status", valor_anterior=antigo_status_vaga, valor_novo="Reaberta", detalhe=f"Registro {vagas_df.at[v_idx, 'ID']} reaberto por desistência de candidato.")
                                 st.info("🔄 Vaga reaberta automaticamente!")
                         st.session_state.vagas_df = vagas_df
                         save_csv(vagas_df, VAGAS_CSV)
@@ -510,23 +510,31 @@ def tela_vagas():
     st.header("📋 Vagas")
     st.markdown("Gerencie as vagas de emprego da consultoria.")
     df_all = st.session_state.vagas_df.copy()
-    col1, col2, col3 = st.columns([1, 1, 1])
+    # Ordem dos filtros: Cliente, Cargo, Recrutador, Status
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     with col1:
-        status_opts = ["(todos)"] + sorted(df_all["Status"].dropna().unique().tolist())
-        status_filter = st.selectbox("Filtrar por Status", status_opts, index=0)
-    with col2:
         cliente_opts = ["(todos)"] + sorted(df_all["Cliente"].dropna().unique().tolist())
         cliente_filter = st.selectbox("Filtrar por Cliente", cliente_opts, index=0)
-    with col3:
+    with col2:
         cargo_opts = ["(todos)"] + sorted(df_all["Cargo"].dropna().unique().tolist())
         cargo_filter = st.selectbox("Filtrar por Cargo", cargo_opts, index=0)
+    with col3:
+        recrutador_opts = ["(todos)"] + sorted(df_all["Recrutador"].dropna().unique().tolist())
+        recrutador_filter = st.selectbox("Filtrar por Recrutador", recrutador_opts, index=0)
+    with col4:
+        status_opts = ["(todos)"] + sorted(df_all["Status"].dropna().unique().tolist())
+        status_filter = st.selectbox("Filtrar por Status", status_opts, index=0)
+
     df = df_all.copy()
-    if status_filter != "(todos)":
-        df = df[df["Status"] == status_filter]
     if cliente_filter != "(todos)":
         df = df[df["Cliente"] == cliente_filter]
     if cargo_filter != "(todos)":
         df = df[df["Cargo"] == cargo_filter]
+    if recrutador_filter != "(todos)":
+        df = df[df["Recrutador"] == recrutador_filter]
+    if status_filter != "(todos)":
+        df = df[df["Status"] == status_filter]
+
     with st.expander("📤 Importar Vagas (CSV/XLSX)", expanded=False):
         arquivo = st.file_uploader("Selecione um arquivo com as colunas: " + ", ".join(VAGAS_COLS), type=["csv", "xlsx"], key="upload_vagas")
         if arquivo is not None:
@@ -608,23 +616,31 @@ def tela_candidatos():
     st.header("🧑‍💼 Candidatos")
     st.markdown("Gerencie os candidatos inscritos nas vagas.")
     df_all = st.session_state.candidatos_df.copy()
-    col1, col2, col3 = st.columns([1, 1, 1])
+    # Ordem dos filtros: Cliente, Cargo, Recrutador, Status
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     with col1:
-        status_opts = ["(todos)"] + sorted(df_all["Status"].dropna().unique().tolist())
-        status_filter = st.selectbox("Filtrar por Status", status_opts, index=0)
-    with col2:
         cliente_opts = ["(todos)"] + sorted(df_all["Cliente"].dropna().unique().tolist())
         cliente_filter = st.selectbox("Filtrar por Cliente", cliente_opts, index=0)
-    with col3:
+    with col2:
         cargo_opts = ["(todos)"] + sorted(df_all["Cargo"].dropna().unique().tolist())
         cargo_filter = st.selectbox("Filtrar por Cargo", cargo_opts, index=0)
+    with col3:
+        recrutador_opts = ["(todos)"] + sorted(df_all["Recrutador"].dropna().unique().tolist())
+        recrutador_filter = st.selectbox("Filtrar por Recrutador", recrutador_opts, index=0)
+    with col4:
+        status_opts = ["(todos)"] + sorted(df_all["Status"].dropna().unique().tolist())
+        status_filter = st.selectbox("Filtrar por Status", status_opts, index=0)
+
     df = df_all.copy()
-    if status_filter != "(todos)":
-        df = df[df["Status"] == status_filter]
     if cliente_filter != "(todos)":
         df = df[df["Cliente"] == cliente_filter]
     if cargo_filter != "(todos)":
         df = df[df["Cargo"] == cargo_filter]
+    if recrutador_filter != "(todos)":
+        df = df[df["Recrutador"] == recrutador_filter]
+    if status_filter != "(todos)":
+        df = df[df["Status"] == status_filter]
+
     vagas_disponiveis = st.session_state.vagas_df[~st.session_state.vagas_df["Status"].isin(["Ag. Inicio", "Fechada"])].copy()
     if not vagas_disponiveis.empty:
         vagas_disponiveis["Opcao"] = vagas_disponiveis.apply(lambda x: f"{x['ID']} - {x['Cliente']} - {x['Cargo']}", axis=1)
