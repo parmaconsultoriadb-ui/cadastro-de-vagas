@@ -207,7 +207,9 @@ def show_table(df, cols, df_name, csv_path):
         st.info("Nenhum registro para exibir.")
         return
 
-    header_cols = st.columns(len(cols) + 2)
+    # Diminua as colunas de Editar e Excluir para largura 0.5 cada
+    col_widths = [1] * len(cols) + [0.5, 0.5]
+    header_cols = st.columns(col_widths)
     for i, c in enumerate(cols):
         header_cols[i].markdown(f"<div class='parma-header'>{c}</div>", unsafe_allow_html=True)
     header_cols[-2].markdown("<div class='parma-header'>Editar</div>", unsafe_allow_html=True)
@@ -215,7 +217,7 @@ def show_table(df, cols, df_name, csv_path):
     st.markdown("<br>", unsafe_allow_html=True)
 
     for _, row in df.iterrows():
-        row_cols = st.columns(len(cols) + 2)
+        row_cols = st.columns(col_widths)
         for i, c in enumerate(cols):
             value = row.get(c, "")
             if pd.isna(value):
