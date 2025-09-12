@@ -243,7 +243,7 @@ def show_table(df, cols, df_name, csv_path):
         st.info("Nenhum registro para exibir.")
         return
 
-    Define largura das colunas 
+    # Define larguras relativas: últimas duas colunas com metade da largura das demais
         n_cols = len(cols)
         widths = [1]*n_cols + [0.4, 0.4]
 
