@@ -210,16 +210,20 @@ def show_table(df, cols, df_name, csv_path):
     # Mostra DataFrame interativo (permite ordenar clicando no nome da coluna)
     st.dataframe(df[cols], use_container_width=True)
 
-    # Botões de edição e exclusão (exibidos abaixo da tabela)
-    for _, row in df.iterrows():
-        cols_action = st.columns([2, 1, 1, 2])
+    # Botões de edição e exclusão na lateral de cada linha
+    for idx, row in df.iterrows():
+        # Gera a linha textual para visualização (opcional, pode remover se não quiser)
+        linha_texto = " | ".join([str(row[c]) for c in cols])
+        cols_action = st.columns([8, 1, 1])
+        with cols_action[0]:
+            st.markdown(f"<span style='font-size:13px'>{linha_texto}</span>", unsafe_allow_html=True)
         with cols_action[1]:
-            if st.button("✏️ Editar", key=f"edit_{df_name}_{str(row.get('ID',''))}"):
+            if st.button("✏️", key=f"edit_{df_name}_{str(row.get('ID',''))}"):
                 st.session_state.edit_mode = df_name
                 st.session_state.edit_record = row.to_dict()
                 st.rerun()
         with cols_action[2]:
-            if st.button("🗑️ Excluir", key=f"del_{df_name}_{str(row.get('ID',''))}"):
+            if st.button("🗑️", key=f"del_{df_name}_{str(row.get('ID',''))}"):
                 st.session_state.confirm_delete = {"df_name": df_name, "row_id": row["ID"]}
                 st.rerun()
         st.markdown("<hr class='parma-hr' />", unsafe_allow_html=True)
