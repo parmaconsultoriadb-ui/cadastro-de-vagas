@@ -847,9 +847,14 @@ def tela_candidatos():
     if status_filter != "(todos)":
         df = df[df["Status"] == status_filter]
     if cliente_filter != "(todos)":
-        df = df[df["Cliente"] == cliente_filter]
-    if cargo_filter != "(todos)":
-        df = df[df["Cargo"] == cargo_filter]
+    df = df[df["Cliente"] == cliente_filter]
+    cargos_disponiveis = sorted(df["Cargo"].dropna().unique())
+       else:
+           cargos_disponiveis = sorted(df_all["Cargo"].dropna().unique())
+
+cargo_filter = st.selectbox("Filtrar por Cargo", ["(todos)"] + cargos_disponiveis, index=0)
+if cargo_filter != "(todos)":
+    df = df[df["Cargo"] == cargo_filter]
     if recrutador_filter != "(todos)":
         df = df[df["Recrutador"] == recrutador_filter]
 
