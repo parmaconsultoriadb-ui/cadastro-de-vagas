@@ -48,7 +48,6 @@ USUARIOS = {
 # Helpers de persistência
 # ==============================
 def load_csv(path, expected_cols):
-    """Carrega CSV garantindo as colunas esperadas e a ordem."""
     if os.path.exists(path):
         try:
             df = pd.read_csv(path, dtype=str)
@@ -69,7 +68,6 @@ def save_csv(df, path):
     df.to_csv(path, index=False, encoding="utf-8")
 
 def next_id(df, id_col="ID"):
-    """Gera próximo ID sequencial baseado na coluna ID (assume inteiros)."""
     if df is None or df.empty:
         return 1
     try:
@@ -128,7 +126,6 @@ for key, default in [
     if key not in st.session_state:
         st.session_state[key] = default
 
-# Carregar DataFrames na sessão (somente na primeira carga; use Refresh para recarregar)
 for df_key, csv_path, cols in [
     ("clientes_df", CLIENTES_CSV, CLIENTES_COLS),
     ("vagas_df", VAGAS_CSV, VAGAS_COLS),
@@ -138,7 +135,7 @@ for df_key, csv_path, cols in [
         st.session_state[df_key] = load_csv(csv_path, cols)
 
 # ==============================
-# Estilo (fonte 13px e linha horizontal contínua entre registros)
+# Estilo
 # ==============================
 st.markdown(
     """
@@ -510,13 +507,17 @@ def tela_vagas():
     st.header("📋 Vagas")
     st.markdown("Gerencie as vagas de emprego da consultoria.")
     df_all = st.session_state.vagas_df.copy()
-    # Ordem dos filtros: Cliente, Cargo, Recrutador, Status
     col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     with col1:
         cliente_opts = ["(todos)"] + sorted(df_all["Cliente"].dropna().unique().tolist())
         cliente_filter = st.selectbox("Filtrar por Cliente", cliente_opts, index=0)
-    with col2:
+    # Cargo condicionado ao Cliente
+    if cliente_filter != "(todos)":
+        cargos_do_cliente = df_all[df_all["Cliente"] == cliente_filter]["Cargo"].dropna().unique().tolist()
+        cargo_opts = ["(todos)"] + sorted(cargos_do_cliente)
+    else:
         cargo_opts = ["(todos)"] + sorted(df_all["Cargo"].dropna().unique().tolist())
+    with col2:
         cargo_filter = st.selectbox("Filtrar por Cargo", cargo_opts, index=0)
     with col3:
         recrutador_opts = ["(todos)"] + sorted(df_all["Recrutador"].dropna().unique().tolist())
@@ -616,13 +617,17 @@ def tela_candidatos():
     st.header("🧑‍💼 Candidatos")
     st.markdown("Gerencie os candidatos inscritos nas vagas.")
     df_all = st.session_state.candidatos_df.copy()
-    # Ordem dos filtros: Cliente, Cargo, Recrutador, Status
     col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     with col1:
         cliente_opts = ["(todos)"] + sorted(df_all["Cliente"].dropna().unique().tolist())
         cliente_filter = st.selectbox("Filtrar por Cliente", cliente_opts, index=0)
-    with col2:
+    # Cargo condicionado ao Cliente
+    if cliente_filter != "(todos)":
+        cargos_do_cliente = df_all[df_all["Cliente"] == cliente_filter]["Cargo"].dropna().unique().tolist()
+        cargo_opts = ["(todos)"] + sorted(cargos_do_cliente)
+    else:
         cargo_opts = ["(todos)"] + sorted(df_all["Cargo"].dropna().unique().tolist())
+    with col2:
         cargo_filter = st.selectbox("Filtrar por Cargo", cargo_opts, index=0)
     with col3:
         recrutador_opts = ["(todos)"] + sorted(df_all["Recrutador"].dropna().unique().tolist())
