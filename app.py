@@ -207,6 +207,14 @@ def show_table(df, cols, df_name, csv_path):
         st.info("Nenhum registro para exibir.")
         return
 
+    # Escolha coluna para ordenar
+    col_sort = st.selectbox("Ordenar por coluna", cols, index=0, key=f"sort_col_{df_name}")
+    dir_sort = st.selectbox("Ordem", ["A-Z", "Z-A"], index=0, key=f"sort_dir_{df_name}")
+    ascending = True if dir_sort == "A-Z" else False
+
+    # Ordena o DataFrame
+    df = df.sort_values(col_sort, ascending=ascending)
+
     # Diminua as colunas de Editar e Excluir para largura 0.5 cada
     col_widths = [1] * len(cols) + [0.5, 0.5]
     header_cols = st.columns(col_widths)
