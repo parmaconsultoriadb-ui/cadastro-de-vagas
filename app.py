@@ -207,29 +207,19 @@ def show_table(df, cols, df_name, csv_path):
         st.info("Nenhum registro para exibir.")
         return
 
-    # Diminua as colunas de Editar e Excluir para largura 0.5 cada
-    col_widths = [1] * len(cols) + [0.5, 0.5]
-    header_cols = st.columns(col_widths)
-    for i, c in enumerate(cols):
-        header_cols[i].markdown(f"<div class='parma-header'>{c}</div>", unsafe_allow_html=True)
-    header_cols[-2].markdown("<div class='parma-header'>Editar</div>", unsafe_allow_html=True)
-    header_cols[-1].markdown("<div class='parma-header'>Excluir</div>", unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
+    # Mostra DataFrame interativo (permite ordenar clicando no nome da coluna)
+    st.dataframe(df[cols], use_container_width=True)
 
+    # Botões de edição e exclusão (exibidos abaixo da tabela)
     for _, row in df.iterrows():
-        row_cols = st.columns(col_widths)
-        for i, c in enumerate(cols):
-            value = row.get(c, "")
-            if pd.isna(value):
-                value = ""
-            row_cols[i].markdown(f"<div class='parma-cell'>{value}</div>", unsafe_allow_html=True)
-        with row_cols[-2]:
-            if st.button("✏️", key=f"edit_{df_name}_{str(row.get('ID',''))}", use_container_width=True):
+        cols_action = st.columns([2, 1, 1, 2])
+        with cols_action[1]:
+            if st.button("✏️ Editar", key=f"edit_{df_name}_{str(row.get('ID',''))}"):
                 st.session_state.edit_mode = df_name
                 st.session_state.edit_record = row.to_dict()
                 st.rerun()
-        with row_cols[-1]:
-            if st.button("🗑️", key=f"del_{df_name}_{str(row.get('ID',''))}", use_container_width=True):
+        with cols_action[2]:
+            if st.button("🗑️ Excluir", key=f"del_{df_name}_{str(row.get('ID',''))}"):
                 st.session_state.confirm_delete = {"df_name": df_name, "row_id": row["ID"]}
                 st.rerun()
         st.markdown("<hr class='parma-hr' />", unsafe_allow_html=True)
@@ -239,7 +229,7 @@ def show_table(df, cols, df_name, csv_path):
         st.error(f"⚠️ Deseja realmente excluir o registro **ID {row_id}**? Esta ação é irreversível.")
         col_sp1, col_yes, col_no, col_sp2 = st.columns([2, 1, 1, 2])
         with col_yes:
-            if st.button("✅ Sim, excluir", key=f"confirm_{df_name}_{row_id}", use_container_width=True):
+            if st.button("✅ Sim, excluir", key=f"confirm_{df_name}_{row_id}"):
                 if df_name == "clientes_df":
                     base = st.session_state.clientes_df.copy()
                     cliente_row = base[base["ID"] == row_id]
@@ -278,7 +268,7 @@ def show_table(df, cols, df_name, csv_path):
                 st.session_state.confirm_delete = {"df_name": None, "row_id": None}
                 st.rerun()
         with col_no:
-            if st.button("❌ Cancelar", key=f"cancel_{df_name}_{row_id}", use_container_width=True):
+            if st.button("❌ Cancelar", key=f"cancel_{df_name}_{row_id}"):
                 st.session_state.confirm_delete = {"df_name": None, "row_id": None}
                 st.rerun()
     st.divider()
