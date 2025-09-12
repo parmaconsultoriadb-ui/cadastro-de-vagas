@@ -115,16 +115,22 @@ def carregar_logs():
         return pd.DataFrame(columns=LOGS_COLS)
 
 # ==============================
-# Inicializa sessão de usuário
+# Inicialização do estado
 # ==============================
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-if 'page' not in st.session_state:
+if "page" not in st.session_state:
     st.session_state.page = "login"
-if 'usuario' not in st.session_state:
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+if "usuario" not in st.session_state:
     st.session_state.usuario = ""
-if 'permissoes' not in st.session_state:
-    st.session_state.permissoes = ["menu", "clientes", "vagas", "candidatos", "logs"]
+if "permissoes" not in st.session_state:
+    st.session_state.permissoes = []
+if "edit_mode" not in st.session_state:
+    st.session_state.edit_mode = None
+if "edit_record" not in st.session_state:
+    st.session_state.edit_record = {}
+if "confirm_delete" not in st.session_state:
+    st.session_state.confirm_delete = {"df_name": None, "row_id": None}
 
 # Carregar DataFrames na sessão (somente na primeira carga; use Refresh na sidebar para recarregar)
 if "clientes_df" not in st.session_state:
@@ -164,20 +170,20 @@ st.markdown(
     /* Parâmetros para show_table (headers/cells sem bordas verticais) */
     .parma-header {
         background-color: var(--parma-blue-light);
-        padding:5px;
+        padding:6px;
         font-weight:bold;
         color:var(--parma-text-dark);
-        border-radius:3px;
+        border-radius:4px;
         text-align:center;
-        font-size:12px;
+        font-size:13px;
         /* separador abaixo do header, contínuo */
         border-bottom: 1px solid #cfcfcf;
     }
     .parma-cell {
-        padding:5px;
+        padding:6px;
         text-align:center;
         color:var(--parma-text-dark);
-        font-size:12px;
+        font-size:13px;
         background-color: white;
         /* sem bordas individuais: a linha entre registros será um <hr> full-width */
         border: none;
@@ -185,13 +191,13 @@ st.markdown(
 
     /* Ajuste para st.dataframe (tabela padrão do Streamlit): fonte 10px, sem bordas verticais */
     .stDataFrame div[data-testid="stStyledTable"] table {
-        font-size: 12px !important;
+        font-size: 13px !important;
         border-collapse: collapse !important;
     }
     .stDataFrame div[data-testid="stStyledTable"] thead th {
-        font-size: 12px !important;
+        font-size: 13px !important;
         background-color: #f6f9fb !important;
-        padding: 5px !important;
+        padding: 6px !important;
         border-bottom: 1px solid #cfcfcf !important; /* separador header -> linhas */
         border-left: none !important;
         border-right: none !important;
@@ -200,7 +206,7 @@ st.markdown(
         /* não colocamos bordas nas células; a linha de separação é um <hr> inserido entre as linhas */
     }
     .stDataFrame div[data-testid="stStyledTable"] td {
-        padding: 5px !important;
+        padding: 6px !important;
         border: none !important;
     }
 
@@ -213,152 +219,13 @@ st.markdown(
 
     /* Ajustes para componentes menores */
     .streamlit-expanderHeader, .stMarkdown, .stText {
-        font-size:12px !important;
+        font-size:13px !important;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# ==============================
-# Login
-# ==============================
-if not st.session_state.logged_in:
-    st.markdown("<h1 style='text-align: center; color: #003366;'>Parma Consultoria</h1>", unsafe_allow_html=True)
-    usuario_input = st.text_input("Usuário")
-    senha_input = st.text_input("Senha", type="password")
-    if st.button("Entrar"):
-        if usuario_input == "admin" and senha_input == "Parma!123@":
-            st.session_state.logged_in = True
-            st.session_state.usuario = usuario_input
-            st.session_state.page = "menu"
-            st.experimental_rerun()
-        else:
-            st.error("Usuário ou senha incorretos")
-else:
-    # ==============================
-    # Barra superior elegante
-    # ==============================
-st.markdown("""
-        <style>
-            /* Barra superior */
-            .top-bar {
-                background-color: #003366;
-                padding: 10px 20px;
-                border-radius: 0 0 10px 10px;
-                color: white;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-            }
-
-            /* Logo */
-            .logo img {
-                height: 50px;
-            }
-
-            /* Menu horizontal */
-            .menu-item {
-                display: inline-block;
-                margin: 0 15px;
-                padding: 8px 12px;
-                border-radius: 5px;
-                cursor: pointer;
-                transition: all 0.2s ease-in-out;
-                font-weight: 500;
-                color: white;
-                text-decoration: none;
-            }
-            .menu-item:hover {
-                background-color: #0055a5;
-            }
-            .menu-item.active {
-                background-color: #0077cc;
-                font-weight: 700;
-            }
-
-            /* Botões */
-            .top-buttons button {
-                margin-left: 10px;
-                background-color: #0055a5;
-                color: white;
-                border-radius: 5px;
-                padding: 5px 12px;
-                border: none;
-                cursor: pointer;
-                transition: all 0.15s ease-in-out;
-            }
-            .top-buttons button:hover {
-                background-color: #0077cc;
-            }
-            .top-buttons button:active {
-                transform: scale(0.95);
-            }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # Layout da barra superior
-    st.markdown("<div class='top-bar'>", unsafe_allow_html=True)
-
-    # Logo
-    st.markdown("<div class='logo'><img src='https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true'></div>", unsafe_allow_html=True)
-
-    # Menu horizontal
-    page_label_map = {
-        "menu": "Menu Principal",
-        "clientes": "Clientes",
-        "vagas": "Vagas",
-        "candidatos": "Candidatos",
-        "logs": "Logs"
-    }
-    perms = st.session_state.get("permissoes", [])
-    allowed_pages = [p for p in ["menu", "clientes", "vagas", "candidatos", "logs"] if p in perms]
-
-    # Função para mudar página via botão
-    def set_page(page_name):
-        st.session_state.page = page_name
-
-    # Exibe menu como botões Streamlit para atualização sem recarregar
-    cols = st.columns([1]*len(allowed_pages))
-    for idx, p in enumerate(allowed_pages):
-        label = page_label_map[p]
-        if cols[idx].button(label):
-            set_page(p)
-        
-    # Botões Refresh e Logout
-    col_refresh, col_logout = st.columns([1,1])
-    with col_refresh:
-        if st.button("🔄 Refresh"):
-            refresh_data()
-    with col_logout:
-        if st.button("🚪 Sair"):
-            st.session_state.logged_in = False
-            st.session_state.page = "login"
-            st.session_state.usuario = ""
-            st.experimental_rerun()
-
-    st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("<hr style='margin-top:0px; margin-bottom:20px;'>", unsafe_allow_html=True)
-
-       # ==============================
-    # Conteúdo da página
-    # ==============================
-    if st.session_state.page == "menu":
-        st.subheader("Menu Principal")
-        st.write("Conteúdo do menu principal")
-    elif st.session_state.page == "clientes":
-        st.subheader("Clientes")
-        st.write("Tela de clientes")
-    elif st.session_state.page == "vagas":
-        st.subheader("Vagas")
-        st.write("Tela de vagas")
-    elif st.session_state.page == "candidatos":
-        st.subheader("Candidatos")
-        st.write("Tela de candidatos")
-    elif st.session_state.page == "logs":
-        st.subheader("Logs do Sistema")
-        st.write("Logs do sistema")
-        
 # ==============================
 # UI helpers
 # ==============================
@@ -577,7 +444,7 @@ def show_edit_form(df_name, cols, csv_path):
 # Telas principais (login/menu/clientes/vagas/candidatos/logs)
 # ==============================
 def tela_login():
-    st.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=350)
+    st.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=350)
     st.title("🔒 Login - Parma Consultoria")
 
     with st.form("login_form"):
@@ -598,7 +465,7 @@ def tela_login():
                 st.error("❌ Usuário ou senha inválidos.")
 
 def tela_menu_interno():
-    st.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=350)
+    st.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=350)
     st.title("📊 Sistema Parma Consultoria")
     st.subheader("Bem-vindo! Escolha uma opção para começar.")
     st.divider()
@@ -813,7 +680,7 @@ def tela_vagas():
                         st.rerun()
 
     st.subheader("📋 Vagas Cadastradas")
-    cols_show = [c for c in VAGAS_COLS if c not in ["ID", "Salário 1", "Salário 2", "Descrição / Observação"]]
+    cols_show = [c for c in VAGAS_COLS if c not in ["Salário 1", "Salário 2", "Descrição / Observação"]]
     if df.empty:
         st.info("Nenhuma vaga cadastrada.")
     else:
@@ -847,14 +714,9 @@ def tela_candidatos():
     if status_filter != "(todos)":
         df = df[df["Status"] == status_filter]
     if cliente_filter != "(todos)":
-    df = df[df["Cliente"] == cliente_filter]
-    cargos_disponiveis = sorted(df["Cargo"].dropna().unique())
-       else:
-           cargos_disponiveis = sorted(df_all["Cargo"].dropna().unique())
-
-cargo_filter = st.selectbox("Filtrar por Cargo", ["(todos)"] + cargos_disponiveis, index=0)
-if cargo_filter != "(todos)":
-    df = df[df["Cargo"] == cargo_filter]
+        df = df[df["Cliente"] == cliente_filter]
+    if cargo_filter != "(todos)":
+        df = df[df["Cargo"] == cargo_filter]
     if recrutador_filter != "(todos)":
         df = df[df["Recrutador"] == recrutador_filter]
 
@@ -1007,20 +869,22 @@ def refresh_data():
     st.session_state.clientes_df = load_csv(CLIENTES_CSV, CLIENTES_COLS)
     st.session_state.vagas_df = load_csv(VAGAS_CSV, VAGAS_COLS)
     st.session_state.candidatos_df = load_csv(CANDIDATOS_CSV, CANDIDATOS_COLS)
-    st.success("🔄 Dados recarregados!")
-    
+    registrar_log("Sistema", "Refresh", detalhe="Dados recarregados via botão Refresh na sidebar.")
+
 # ==============================
 # Lógica principal (menu lateral com refresh apenas na sidebar)
 # ==============================
 if st.session_state.logged_in:
-    # Barra superior
-    top_col1, top_col2, top_col3, top_col4 = st.columns([2, 3, 3, 1])
-    
-    # Logo
-    with top_col1:
-        st.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=150)
-    
-    # Menu de navegação (radio buttons)
+    st.sidebar.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=200)
+    st.sidebar.title("Navegação")
+    st.sidebar.caption(f"Usuário: {st.session_state.usuario}")
+
+    # Botão de refresh somente na sidebar
+    if st.sidebar.button("🔄 Refresh dados"):
+        refresh_data()
+        st.rerun()
+
+    # map page key -> label
     page_label_map = {
         "menu": "Menu Principal",
         "clientes": "Clientes",
@@ -1028,39 +892,6 @@ if st.session_state.logged_in:
         "candidatos": "Candidatos",
         "logs": "Logs do Sistema"
     }
-    perms = st.session_state.get("permissoes", [])
-    if "menu" not in perms:
-        perms = ["menu"] + perms
-    ordered_page_keys = ["menu", "clientes", "vagas", "candidatos", "logs"]
-    allowed_pages = [p for p in ordered_page_keys if p in perms]
-    labels = [page_label_map[p] for p in allowed_pages]
-    try:
-        index_initial = allowed_pages.index(st.session_state.page)
-    except Exception:
-        index_initial = 0
-    with top_col2:
-        selected_label = st.radio("Navegação", labels, index=index_initial, horizontal=True, key="topbar_radio_menu")
-
-    # Refresh
-    with top_col3:
-        if st.button("🔄 Refresh dados"):
-            refresh_data()
-            st.experimental_rerun()
-
-    # Logout
-    with top_col4:
-        if st.button("Sair"):
-            registrar_log("Login", "Logout", detalhe=f"Usuário {st.session_state.usuario} saiu do sistema.")
-            st.session_state.logged_in = False
-            st.session_state.page = "login"
-            st.experimental_rerun()
-    
-    # map label -> page key
-    try:
-        selected_idx = labels.index(selected_label)
-        current_page = allowed_pages[selected_idx]
-    except Exception:
-        current_page = "menu"
 
     perms = st.session_state.get("permissoes", [])
     if "menu" not in perms:
@@ -1074,6 +905,15 @@ if st.session_state.logged_in:
         index_initial = allowed_pages.index(st.session_state.page)
     except Exception:
         index_initial = 0
+
+    selected_label = st.sidebar.radio("Selecione uma página", labels, index=index_initial, key="sidebar_radio_menu")
+
+    # logout
+    if st.sidebar.button("Sair", use_container_width=True):
+        registrar_log("Login", "Logout", detalhe=f"Usuário {st.session_state.usuario} saiu do sistema.")
+        st.session_state.logged_in = False
+        st.session_state.page = "login"
+        st.rerun()
 
     # map label -> page key
     try:
