@@ -243,6 +243,10 @@ def show_table(df, cols, df_name, csv_path):
         st.info("Nenhum registro para exibir.")
         return
 
+    Define largura das colunas 
+        n_cols = len(cols)
+        widths = [1]*n_cols + [0.5, 0.5]
+
     # Cabeçalho (colunas + Editar + Excluir)
     header_cols = st.columns(len(cols) + 2)
     for i, c in enumerate(cols):
