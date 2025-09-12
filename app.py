@@ -115,7 +115,7 @@ def carregar_logs():
         return pd.DataFrame(columns=LOGS_COLS)
 
 # ==============================
-# Inicialização do estado
+# Inicializa sessão de usuário
 # ==============================
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
@@ -124,7 +124,7 @@ if 'page' not in st.session_state:
 if 'usuario' not in st.session_state:
     st.session_state.usuario = ""
 if 'permissoes' not in st.session_state:
-    st.session_state.permissoes = ["menu", "clientes", "vagas", "candidatos", "logs"] 
+    st.session_state.permissoes = ["menu", "clientes", "vagas", "candidatos", "logs"]
 
 # Carregar DataFrames na sessão (somente na primeira carga; use Refresh na sidebar para recarregar)
 if "clientes_df" not in st.session_state:
@@ -239,47 +239,71 @@ else:
     # ==============================
     # Barra superior elegante
     # ==============================
-    st.markdown("""
+st.markdown("""
         <style>
+            /* Barra superior */
             .top-bar {
                 background-color: #003366;
                 padding: 10px 20px;
                 border-radius: 0 0 10px 10px;
                 color: white;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
             }
-            .top-bar .logo {
+
+            /* Logo */
+            .logo img {
+                height: 50px;
+            }
+
+            /* Menu horizontal */
+            .menu-item {
                 display: inline-block;
-                vertical-align: middle;
+                margin: 0 15px;
+                padding: 8px 12px;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: all 0.2s ease-in-out;
+                font-weight: 500;
+                color: white;
+                text-decoration: none;
             }
-            .top-bar .menu {
-                display: inline-block;
-                margin-left: 50px;
-                vertical-align: middle;
+            .menu-item:hover {
+                background-color: #0055a5;
             }
-            .top-bar .buttons {
-                float: right;
-                vertical-align: middle;
+            .menu-item.active {
+                background-color: #0077cc;
+                font-weight: 700;
             }
-            .top-bar button {
+
+            /* Botões */
+            .top-buttons button {
                 margin-left: 10px;
                 background-color: #0055a5;
                 color: white;
                 border-radius: 5px;
-                padding: 5px 10px;
+                padding: 5px 12px;
                 border: none;
                 cursor: pointer;
+                transition: all 0.15s ease-in-out;
+            }
+            .top-buttons button:hover {
+                background-color: #0077cc;
+            }
+            .top-buttons button:active {
+                transform: scale(0.95);
             }
         </style>
     """, unsafe_allow_html=True)
 
-    # Layout da barra superior com colunas
-    top_col1, top_col2, top_col3 = st.columns([2, 6, 2])
+    # Layout da barra superior
+    st.markdown("<div class='top-bar'>", unsafe_allow_html=True)
 
     # Logo
-    with top_col1:
-        st.image("https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true", width=120)
+    st.markdown("<div class='logo'><img src='https://github.com/parmaconsultoriadb-ui/cadastro-de-vagas/blob/main/Parma%20Consultoria.png?raw=true'></div>", unsafe_allow_html=True)
 
-    # Menu de navegação horizontal
+    # Menu horizontal
     page_label_map = {
         "menu": "Menu Principal",
         "clientes": "Clientes",
@@ -289,56 +313,52 @@ else:
     }
     perms = st.session_state.get("permissoes", [])
     allowed_pages = [p for p in ["menu", "clientes", "vagas", "candidatos", "logs"] if p in perms]
-    labels = [page_label_map[p] for p in allowed_pages]
-    
-    try:
-        index_initial = allowed_pages.index(st.session_state.page)
-    except Exception:
-        index_initial = 0
 
-    with top_col2:
-        selected_label = st.radio("", labels, index=index_initial, horizontal=True, key="topbar_radio_menu")
+    # Função para mudar página via botão
+    def set_page(page_name):
+        st.session_state.page = page_name
 
+    # Exibe menu como botões Streamlit para atualização sem recarregar
+    cols = st.columns([1]*len(allowed_pages))
+    for idx, p in enumerate(allowed_pages):
+        label = page_label_map[p]
+        if cols[idx].button(label):
+            set_page(p)
+        
     # Botões Refresh e Logout
-    with top_col3:
-        refresh_clicked = st.button("🔄 Refresh")
-        logout_clicked = st.button("Sair", key="logout_btn")
-
-        if refresh_clicked:
+    col_refresh, col_logout = st.columns([1,1])
+    with col_refresh:
+        if st.button("🔄 Refresh"):
             refresh_data()
-        if logout_clicked:
+    with col_logout:
+        if st.button("🚪 Sair"):
             st.session_state.logged_in = False
             st.session_state.page = "login"
             st.session_state.usuario = ""
             st.experimental_rerun()
 
-    # Atualiza a página atual
-    try:
-        selected_idx = labels.index(selected_label)
-        st.session_state.page = allowed_pages[selected_idx]
-    except Exception:
-        st.session_state.page = "menu"
+    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("<hr style='margin-top:0px; margin-bottom:20px;'>", unsafe_allow_html=True)
 
-    # ==============================
+       # ==============================
     # Conteúdo da página
     # ==============================
-    st.markdown("<hr style='margin-top:0px; margin-bottom:20px;'>", unsafe_allow_html=True)  # separador elegante
     if st.session_state.page == "menu":
         st.subheader("Menu Principal")
-        st.write("Aqui vai o conteúdo do menu principal")
+        st.write("Conteúdo do menu principal")
     elif st.session_state.page == "clientes":
         st.subheader("Clientes")
-        st.write("Aqui vai a tela de clientes")
+        st.write("Tela de clientes")
     elif st.session_state.page == "vagas":
         st.subheader("Vagas")
-        st.write("Aqui vai a tela de vagas")
+        st.write("Tela de vagas")
     elif st.session_state.page == "candidatos":
         st.subheader("Candidatos")
-        st.write("Aqui vai a tela de candidatos")
+        st.write("Tela de candidatos")
     elif st.session_state.page == "logs":
         st.subheader("Logs do Sistema")
-        st.write("Aqui vão os logs do sistema")
-
+        st.write("Logs do sistema")
+        
 # ==============================
 # UI helpers
 # ==============================
