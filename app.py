@@ -356,7 +356,7 @@ def show_edit_form(df_name, cols, csv_path):
                         antigo = df.at[idx0, c]
                         novo = new_data.get(c, "")
                         if str(antigo) != str(novo):
-                            registrar_log(aba=df_name.replace('_df','').capitalize(), acao="Editar", item_id=record["ID"], campo=c, valor_anterior=antigo, valor_novo=novo, detalhe=f"Registro {record['ID']} alterado.")
+                            registrar_log(aba=df_name.replace('_df','').capitalize(), acao="Editar", item_id=record["ID"], campo=c, valor_anterior=antigo, valor_novo=novo, detalhe=f"Registro {record['ID']} editado.")
                             df.at[idx0, c] = novo
                 st.session_state[df_name] = df
                 save_csv(df, csv_path)
@@ -453,7 +453,7 @@ def tela_clientes():
                     st.error(f"Erro ao processar o arquivo: {e}")
     with st.expander("➕ Cadastrar Novo Cliente", expanded=False):
         data_hoje = date.today().strftime("%d/%m/%Y")
-        with st.form("form_clientes", enter_to_submit=False):
+        with st.form("form_clientes", clear_on_submit=True):
             col1, col2 = st.columns(2)
             with col1:
                 cliente = st.text_input("Cliente *")
@@ -555,7 +555,7 @@ def tela_vagas():
                     st.error(f"Erro ao processar o arquivo: {e}")
     with st.expander("➕ Cadastrar Nova Vaga", expanded=False):
         data_abertura = date.today().strftime("%d/%m/%Y")
-        with st.form("form_vaga", enter_to_submit=False):
+        with st.form("form_vaga", clear_on_submit=True):
             clientes = st.session_state.clientes_df
             if clientes.empty:
                 st.warning("⚠️ Cadastre um Cliente antes de cadastrar Vagas.")
@@ -676,7 +676,7 @@ def tela_candidatos():
                     vaga_id = vaga_sel.split(" - ")[0].strip()
                 except Exception:
                     vaga_id = None
-                with st.form("form_candidato", enter_to_submit=False):
+                with st.form("form_candidato", clear_on_submit=True):
                     nome = st.text_input("Nome *")
                     telefone = st.text_input("Telefone *")
                     recrutador = st.selectbox("Recrutador *", options=RECRUTADORES_PADRAO)
