@@ -283,21 +283,37 @@ def show_table(df, cols, df_name, csv_path):
     else:
         candidatos_rel = []
 
-    registrar_log("Vagas", "Excluir", item_id=row_id, detalhe=f"Vaga {row_id} excluída. Candidatos removidos: {candidatos_rel}")
-    registrar_log("Candidatos", "Excluir em Cascata", detalhe=f"Vaga {row_id} excluída. Candidatos removidos: {candidatos_rel}")
-                elif df_name == "candidatos_df":
-                    base = st.session_state.candidatos_df.copy()
-                    st.session_state.candidatos_df = base[base["ID"] != row_id]
-                    save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
-                    registrar_log("Candidatos", "Excluir", item_id=row_id, detalhe=f"Candidato {row_id} excluído.")
-                st.success(f"✅ Registro {row_id} excluído com sucesso!")
-                st.session_state.confirm_delete = {"df_name": None, "row_id": None}
-                st.rerun()
-        with col_no:
-            if st.button("❌ Cancelar", key=f"cancel_{df_name}_{row_id}", use_container_width=True):
-                st.session_state.confirm_delete = {"df_name": None, "row_id": None}
-                st.rerun()
-    st.divider()
+    registrar_log(
+        "Vagas", "Excluir",
+        item_id=row_id,
+        detalhe=f"Vaga {row_id} excluída. Candidatos removidos: {candidatos_rel}"
+    )
+    registrar_log(
+        "Candidatos", "Excluir em Cascata",
+        detalhe=f"Vaga {row_id} excluída. Candidatos removidos: {candidatos_rel}"
+    )
+
+elif df_name == "candidatos_df":
+    base = st.session_state.candidatos_df.copy()
+    st.session_state.candidatos_df = base[base["ID"] != row_id]
+    save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
+    registrar_log(
+        "Candidatos", "Excluir",
+        item_id=row_id,
+        detalhe=f"Candidato {row_id} excluído."
+    )
+
+# Mensagem de sucesso e reset do estado de confirmação
+st.success(f"✅ Registro {row_id} excluído com sucesso!")
+st.session_state.confirm_delete = {"df_name": None, "row_id": None}
+st.rerun()
+
+with col_no:
+    if st.button("❌ Cancelar", key=f"cancel_{df_name}_{row_id}", use_container_width=True):
+        st.session_state.confirm_delete = {"df_name": None, "row_id": None}
+        st.rerun()
+
+st.divider()
 
 def atualizar_vaga_data_atualizacao(cliente, cargo):
     vagas_df = st.session_state.vagas_df.copy()
