@@ -422,9 +422,8 @@ def tela_login():
 
 def tela_menu_interno():
     if st.session_state.usuario == "admin":
-    # Estado do ping automático
-    if "ping_auto" not in st.session_state:
-        st.session_state["ping_auto"] = False
+        if "ping_auto" not in st.session_state:
+            st.session_state["ping_auto"] = False
 
     col_ping, col_blank = st.columns([1,6])
     with col_ping:
@@ -438,8 +437,6 @@ def tela_menu_interno():
                 st.session_state["ping_auto"] = True
                 st.success("Ping automático iniciado!")
                 st.rerun()
-
-# Fora da função, no início do arquivo (mas após o carregamento do session_state):
 
 if (
     st.session_state.get("logged_in", False)
