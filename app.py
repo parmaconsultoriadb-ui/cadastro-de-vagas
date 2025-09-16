@@ -421,6 +421,32 @@ def tela_login():
                 st.error("❌ Usuário ou senha inválidos.")
 
 def tela_menu_interno():
+    if st.session_state.usuario == "admin":
+    # Estado do ping automático
+    if "ping_auto" not in st.session_state:
+        st.session_state["ping_auto"] = False
+
+    col_ping, col_blank = st.columns([1,6])
+    with col_ping:
+        if st.session_state["ping_auto"]:
+            if st.button("⏸️ Pausar Ping Automático", use_container_width=True):
+                st.session_state["ping_auto"] = False
+                st.success("Ping automático pausado!")
+                st.rerun()
+        else:
+            if st.button("▶️ Iniciar Ping Automático", use_container_width=True):
+                st.session_state["ping_auto"] = True
+                st.success("Ping automático iniciado!")
+                st.rerun()
+
+# Fora da função, no início do arquivo (mas após o carregamento do session_state):
+
+if (
+    st.session_state.get("logged_in", False)
+    and st.session_state.get("usuario", "") == "admin"
+    and st.session_state.get("ping_auto", False)
+):
+    st.experimental_autorefresh(interval=30_000, key="ping_admin")
     st.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=250)
     st.title("📊 Sistema Parma Consultoria")
     st.subheader("Bem-vindo! Escolha uma opção para começar.")
