@@ -530,19 +530,8 @@ def tela_vagas():
         df = df[df["Status"] == status_filter]
 
     if st.session_state.usuario == "admin":
-     VAGAS_IMPORT_COLS = [
-        "ID",
-        "Cliente",
-        "Status",
-        "Data de Abertura",
-        "Cargo",
-        "Recrutador",
-        "Atualização",
-        "Salário 1",
-        "Salário 2"
-    ]
         with st.expander("📤 Importar Vagas (CSV/XLSX)", expanded=False):
-            arquivo = st.file_uploader("Selecione um arquivo com as colunas: " + ", ".join(VAGAS_COLS), type=["csv", "xlsx"], key="upload_vagas")
+            arquivo = st.file_uploader("Selecione um arquivo com as colunas: ID, Cliente, Status, Data de Abertura, Cargo, Recrutador, Atualização, Salário 1, Salário 2", type=["csv", "xlsx"], key="upload_clientes")
             if arquivo is not None:
                 try:
                    df_upload = pd.read_csv(arquivo, dtype=str)
