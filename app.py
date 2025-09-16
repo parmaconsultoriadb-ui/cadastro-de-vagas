@@ -293,14 +293,14 @@ def show_table(df, cols, df_name, csv_path):
         detalhe=f"Vaga {row_id} excluída. Candidatos removidos: {candidatos_rel}"
     )
 
-elif df_name == "candidatos_df":
-    base = st.session_state.candidatos_df.copy()
-    st.session_state.candidatos_df = base[base["ID"] != row_id]
-    save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
-    registrar_log(
-        "Candidatos", "Excluir",
-        item_id=row_id,
-        detalhe=f"Candidato {row_id} excluído."
+    elif df_name == "candidatos_df":
+        base = st.session_state.candidatos_df.copy()
+        st.session_state.candidatos_df = base[base["ID"] != row_id]
+        save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
+        registrar_log(
+            "Candidatos", "Excluir",
+            item_id=row_id,
+            detalhe=f"Candidato {row_id} excluído."
     )
 
 # Mensagem de sucesso e reset do estado de confirmação
