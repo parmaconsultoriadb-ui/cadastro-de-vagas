@@ -426,18 +426,18 @@ def tela_menu_interno():
             if "ping_auto" not in st.session_state:
                 st.session_state["ping_auto"] = False
 
-    col_ping, col_blank = st.columns([1, 6])
-    with col_ping:
-        if st.session_state["ping_auto"]:
-            if st.button("⏸️ Pausar Ping Automático", use_container_width=True):
-                st.session_state["ping_auto"] = False
-                st.success("Ping automático pausado!")
-                st.rerun()
-        else:
-            if st.button("▶️ Iniciar Ping Automático", use_container_width=True):
-                st.session_state["ping_auto"] = True
-                st.success("Ping automático iniciado!")
-                st.rerun()
+            col_ping, col_blank = st.columns([1, 6])
+            with col_ping:
+                 if st.session_state["ping_auto"]:
+                    if st.button("⏸️ Pausar Ping Automático", use_container_width=True):
+                        st.session_state["ping_auto"] = False
+                        st.success("Ping automático pausado!")
+                        st.rerun()
+                 else:
+                    if st.button("▶️ Iniciar Ping Automático", use_container_width=True):
+                        st.session_state["ping_auto"] = True
+                        st.success("Ping automático iniciado!")
+                        st.rerun()
 
 if (
     st.session_state.get("logged_in", False)
