@@ -496,7 +496,7 @@ def tela_clientes():
 
 def tela_vagas():
         if st.session_state.edit_mode == "vagas_df":
-        show_edit_form("vagas_df", VAGAS_COLS, VAGAS_CSV)
+            show_edit_form("vagas_df", VAGAS_COLS, VAGAS_CSV)
         return
     st.header("📋 Vagas")
     st.markdown("Gerencie as vagas de emprego da consultoria.")
