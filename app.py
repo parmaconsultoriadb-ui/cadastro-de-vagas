@@ -29,8 +29,7 @@ VAGAS_COLS = [
     "Recrutador",
     "Atualização",
     "Salário 1",
-    "Salário 2",
-    "Descrição / Observação",
+    "Salário 2"
 ]
 CANDIDATOS_COLS = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "Status", "Data de Início"]
 LOGS_COLS = ["DataHora", "Usuario", "Aba", "Acao", "ItemID", "Campo", "ValorAnterior", "ValorNovo", "Detalhe"]
@@ -366,8 +365,6 @@ def show_edit_form(df_name, cols, csv_path):
                 new_data[c] = st.text_input(
                     c, value=val, disabled=(usuario != "admin")
                 )
-            elif c == "Descrição / Observação":
-                new_data[c] = st.text_area(c, value=val)
             else:
                 new_data[c] = st.text_input(c, value=val)
         submitted = st.form_submit_button("✅ Salvar Alterações", use_container_width=True)
@@ -599,7 +596,6 @@ def tela_vagas():
                     cargo = st.text_input("Cargo *")
                     salario1 = st.text_input("Salário 1 (R$)")
                     salario2 = st.text_input("Salário 2 (R$)")
-                    descricao = st.text_area("Descrição / Observação")
                 with col2f:
                     recrutador = st.selectbox("Recrutador *", options=RECRUTADORES_PADRAO)
                     status = st.selectbox("Status", options=["Aberta", "Ag. Inicio", "Cancelada", "Fechada", "Reaberta", "Pausada"], index=0)
@@ -620,7 +616,6 @@ def tela_vagas():
                             "Atualização": atualizacao,
                             "Salário 1": salario1,
                             "Salário 2": salario2,
-                            "Descrição / Observação": descricao
                         }])
                         st.session_state.vagas_df = pd.concat([st.session_state.vagas_df, nova], ignore_index=True)
                         save_csv(st.session_state.vagas_df, VAGAS_CSV)
@@ -632,7 +627,7 @@ def tela_vagas():
     if df.empty:
         st.info("Nenhuma vaga cadastrada.")
     else:
-        # CAMPOS PARA EXIBIÇÃO NA TABELA DE VAGAS (sem salário 1, salário 2, descrição/observação)
+        # CAMPOS PARA EXIBIÇÃO NA TABELA DE VAGAS (sem salário 1, salário 2)
         VAGAS_COLS_VISUAL = [
             "ID",
             "Cliente",
@@ -760,7 +755,6 @@ def tela_candidatos():
                         f"- **Atualização:** {vaga_row.get('Atualização', '')}\n"
                         f"- **Salário 1:** {vaga_row.get('Salário 1', '')}\n"
                         f"- **Salário 2:** {vaga_row.get('Salário 2', '')}\n"
-                        f"- **Descrição / Observação:** {vaga_row.get('Descrição / Observação', '')}"
                     )
                 except Exception:
                     st.info("Nenhuma vaga selecionada ou encontrada.")
