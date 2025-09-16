@@ -262,8 +262,8 @@ def show_table(df, cols, df_name, csv_path):
                     st.session_state.vagas_df = base[base["ID"] != row_id]
                     save_csv(st.session_state.vagas_df, VAGAS_CSV)
                     if vaga_cliente is not None and vaga_cargo is not None:
-                        candidatos_rel = st.session_state.candidatos_df[(st.session_state.candidatos_df["Cliente"] == vaga_cliente) & (st.session_state.candidatos_df["Cargo"] == vaga_cargo)]["ID"].tolist()
-                        st.session_state.candidatos_df = st.session_state.candidatos_df[~((st.session_state.candidatos_df["Cliente"] == vaga_cliente) & (st.session_state.candidatos_df["Cargo"] == vaga_cargo))]
+                        candidatos_rel = st.session_state.candidatos_df[(st.session_state.candidatos_df["Cliente"] == vaga_cliente) & (st.session_state.candidatos_df["Cargo"] == vaga_cargo)]["ID"].tol[...]
+                        st.session_state.candidatos_df = st.session_state.candidatos_df[~((st.session_state.candidatos_df["Cliente"] == vaga_cliente) & (st.session_state.candidatos_df["Cargo"] == vaga[...]
                         save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
                     else:
                         candidatos_rel = []
@@ -293,7 +293,7 @@ def atualizar_vaga_data_atualizacao(cliente, cargo):
         vagas_df.at[idx, "Atualização"] = hoje
         st.session_state.vagas_df = vagas_df
         save_csv(vagas_df, VAGAS_CSV)
-        registrar_log("Vagas", "Atualização", item_id=vagas_df.at[idx, "ID"], campo="Atualização", valor_anterior=antigo, valor_novo=hoje, detalhe=f"Atualização de status de candidato atrelado à vaga.")
+        registrar_log("Vagas", "Atualização", item_id=vagas_df.at[idx, "ID"], campo="Atualização", valor_anterior=antigo, valor_novo=hoje, detalhe=f"Atualização de status de candidato atrelado �[...]
 
 def show_edit_form(df_name, cols, csv_path):
     record = st.session_state.edit_record
@@ -356,7 +356,7 @@ def show_edit_form(df_name, cols, csv_path):
                         antigo = df.at[idx0, c]
                         novo = new_data.get(c, "")
                         if str(antigo) != str(novo):
-                            registrar_log(aba=df_name.replace('_df','').capitalize(), acao="Editar", item_id=record["ID"], campo=c, valor_anterior=antigo, valor_novo=novo, detalhe=f"Registro {record['ID']} alterado.")
+                            registrar_log(aba=df_name.replace('_df','').capitalize(), acao="Editar", item_id=record["ID"], campo=c, valor_anterior=antigo, valor_novo=novo, detalhe=f"Registro {record['[...]
                             df.at[idx0, c] = novo
                 st.session_state[df_name] = df
                 save_csv(df, csv_path)
@@ -601,8 +601,18 @@ def tela_vagas():
     if df.empty:
         st.info("Nenhuma vaga cadastrada.")
     else:
+        # CAMPOS PARA EXIBIÇÃO NA TABELA DE VAGAS (sem salário 1, salário 2, descrição/observação)
+        VAGAS_COLS_VISUAL = [
+            "ID",
+            "Cliente",
+            "Status",
+            "Data de Abertura",
+            "Cargo",
+            "Recrutador",
+            "Atualização"
+        ]
         download_button(df[VAGAS_COLS], "vagas.csv", "⬇️ Baixar Lista de Vagas")
-        show_table(df[VAGAS_COLS], VAGAS_COLS, "vagas_df", VAGAS_CSV)
+        show_table(df[VAGAS_COLS_VISUAL], VAGAS_COLS_VISUAL, "vagas_df", VAGAS_CSV)
 
 def tela_candidatos():
     if st.session_state.edit_mode == "candidatos_df":
