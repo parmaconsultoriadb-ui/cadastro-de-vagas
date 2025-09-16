@@ -606,8 +606,7 @@ def tela_vagas():
         "Recrutador", 
         "Atualização",
         "Salário 1",
-        "Salário 2",
-        "Descrição / Observação"
+        "Salário 2"
     ]
         
     cols_show = [c for c in VAGAS_COLS if c not in ["Salário 1", "Salário 2", "Descrição / Observação"]]
