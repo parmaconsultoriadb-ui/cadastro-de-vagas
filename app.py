@@ -40,8 +40,10 @@ LOGS_COLS = ["DataHora", "Usuario", "Aba", "Acao", "ItemID", "Campo", "ValorAnte
 # ==============================
 USUARIOS = {
     "admin": {"senha": "Parma!123@", "permissoes": ["menu", "clientes", "vagas", "candidatos", "logs"]},
-    "andre": {"senha": "And!123@", "permissoes": ["menu", "clientes", "vagas", "candidatos", "logs"]},
-    "lorrayne": {"senha": "Lrn!123@", "permissoes": ["menu", "vagas", "candidatos"]},
+    "andre": {"senha": "And!123@", "permissoes": ["clientes", "vagas", "candidatos", "logs"]},
+    "lorrayne": {"senha": "Lrn!123@", "permissoes": ["vagas", "candidatos"]},
+    "nikole": {"senha": "Nkl!123@", "permissoes": ["vagas", "candidatos"]},
+    "julia": {"senha": "Jla!123@", "permissoes": ["vagas", "candidatos"]},
 }
 
 # ==============================
