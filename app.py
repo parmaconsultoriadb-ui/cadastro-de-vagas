@@ -498,10 +498,10 @@ def tela_vagas():
         if st.session_state.edit_mode == "vagas_df":
             show_edit_form("vagas_df", VAGAS_COLS, VAGAS_CSV)
         return
-    st.header("📋 Vagas")
-    st.markdown("Gerencie as vagas de emprego da consultoria.")
-    df_all = st.session_state.vagas_df.copy()
-    col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+     st.header("📋 Vagas")
+     st.markdown("Gerencie as vagas de emprego da consultoria.")
+        df_all = st.session_state.vagas_df.copy()
+        col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
     with col1:
         cliente_opts = ["(todos)"] + sorted(df_all["Cliente"].dropna().unique().tolist())
         cliente_filter = st.selectbox("Filtrar por Cliente", cliente_opts, index=0)
