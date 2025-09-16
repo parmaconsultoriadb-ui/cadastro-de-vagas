@@ -502,7 +502,7 @@ def tela_vagas():
     st.markdown("Gerencie as vagas de emprego da consultoria.")
         df_all = st.session_state.vagas_df.copy()
         col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
-    with col1:
+        with col1:
         cliente_opts = ["(todos)"] + sorted(df_all["Cliente"].dropna().unique().tolist())
         cliente_filter = st.selectbox("Filtrar por Cliente", cliente_opts, index=0)
     if cliente_filter != "(todos)":
