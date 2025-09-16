@@ -502,20 +502,20 @@ def tela_vagas():
     st.markdown("Gerencie as vagas de emprego da consultoria.")
         df_all = st.session_state.vagas_df.copy()
         col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
-        with col1:
-        cliente_opts = ["(todos)"] + sorted(df_all["Cliente"].dropna().unique().tolist())
-        cliente_filter = st.selectbox("Filtrar por Cliente", cliente_opts, index=0)
+    with col1:
+            cliente_opts = ["(todos)"] + sorted(df_all["Cliente"].dropna().unique().tolist())
+            cliente_filter = st.selectbox("Filtrar por Cliente", cliente_opts, index=0)
     if cliente_filter != "(todos)":
-        cargos_do_cliente = df_all[df_all["Cliente"] == cliente_filter]["Cargo"].dropna().unique().tolist()
-        cargo_opts = ["(todos)"] + sorted(cargos_do_cliente)
-        else:
+            cargos_do_cliente = df_all[df_all["Cliente"] == cliente_filter]["Cargo"].dropna().unique().tolist()
+            cargo_opts = ["(todos)"] + sorted(cargos_do_cliente)
+    else:
         cargo_opts = ["(todos)"] + sorted(df_all["Cargo"].dropna().unique().tolist())
-        with col2:
+    with col2:
         cargo_filter = st.selectbox("Filtrar por Cargo", cargo_opts, index=0)
-        with col3:
+    with col3:
         recrutador_opts = ["(todos)"] + sorted(df_all["Recrutador"].dropna().unique().tolist())
         recrutador_filter = st.selectbox("Filtrar por Recrutador", recrutador_opts, index=0)
-        with col4:
+    with col4:
         status_opts = ["(todos)"] + sorted(df_all["Status"].dropna().unique().tolist())
         status_filter = st.selectbox("Filtrar por Status", status_opts, index=0)
 
