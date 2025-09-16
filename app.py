@@ -495,7 +495,7 @@ def tela_clientes():
         show_table(df_filtrado, CLIENTES_COLS, "clientes_df", CLIENTES_CSV)
 
 def tela_vagas():
-        if st.session_state.edit_mode == "vagas_df":
+    if st.session_state.edit_mode == "vagas_df":
             show_edit_form("vagas_df", VAGAS_COLS, VAGAS_CSV)
         return
     st.header("📋 Vagas")
@@ -508,14 +508,14 @@ def tela_vagas():
     if cliente_filter != "(todos)":
         cargos_do_cliente = df_all[df_all["Cliente"] == cliente_filter]["Cargo"].dropna().unique().tolist()
         cargo_opts = ["(todos)"] + sorted(cargos_do_cliente)
-    else:
+        else:
         cargo_opts = ["(todos)"] + sorted(df_all["Cargo"].dropna().unique().tolist())
-    with col2:
+        with col2:
         cargo_filter = st.selectbox("Filtrar por Cargo", cargo_opts, index=0)
-    with col3:
+        with col3:
         recrutador_opts = ["(todos)"] + sorted(df_all["Recrutador"].dropna().unique().tolist())
         recrutador_filter = st.selectbox("Filtrar por Recrutador", recrutador_opts, index=0)
-    with col4:
+        with col4:
         status_opts = ["(todos)"] + sorted(df_all["Status"].dropna().unique().tolist())
         status_filter = st.selectbox("Filtrar por Status", status_opts, index=0)
 
