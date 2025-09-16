@@ -495,7 +495,7 @@ def tela_clientes():
         show_table(df_filtrado, CLIENTES_COLS, "clientes_df", CLIENTES_CSV)
 
 def tela_vagas():
-        if st.session_state.edit_mode == "vagas_df":
+    if st.session_state.edit_mode == "vagas_df":
         show_edit_form("vagas_df", VAGAS_COLS, VAGAS_CSV)
         return
     st.header("📋 Vagas")
@@ -531,16 +531,16 @@ def tela_vagas():
 
     if st.session_state.usuario == "admin":
         with st.expander("📤 Importar Vagas (CSV/XLSX)", expanded=False):
-            arquivo = st.file_uploader("Selecione um arquivo com as colunas exatas: " + ", ".join(VAGAS_COLS), type=["csv", "xlsx"], key="upload_vagas")
+            arquivo = st.file_uploader("Selecione um arquivo com as colunas: " + ", ".join(VAGAS_COLS), type=["csv", "xlsx"], key="upload_vagas")
             if arquivo is not None:
                 try:
                     if arquivo.name.lower().endswith('.csv'):
                         df_upload = pd.read_csv(arquivo, dtype=str)
                     else:
                         df_upload = pd.read_excel(arquivo, dtype=str)
-                    # Verifica se as colunas são exatamente as esperadas
-                    if set(df_upload.columns) != set(VAGAS_COLS) or len(df_upload.columns) != len(VAGAS_COLS):
-                        st.error(f"Colunas do arquivo devem ser **exatamente**: {VAGAS_COLS}")
+                    missing = [c for c in VAGAS_COLS if c not in df_upload.columns]
+                    if missing:
+                        st.error(f"Colunas faltando: {missing}")
                     else:
                         df_upload = df_upload[VAGAS_COLS].fillna("")
                         base = st.session_state.vagas_df.copy()
@@ -597,12 +597,12 @@ def tela_vagas():
                         st.success(f"✅ Vaga cadastrada com sucesso! ID: {prox_id}")
                         st.rerun()
     st.subheader("📋 Vagas Cadastradas")
-    # Download/exporta o CSV exatamente com as mesmas colunas do import
+    cols_show = [c for c in VAGAS_COLS if c not in ["Salário 1", "Salário 2", "Descrição / Observação"]]
     if df.empty:
         st.info("Nenhuma vaga cadastrada.")
     else:
-        download_button(df[VAGAS_COLS], "vagas.csv", "⬇️ Baixar Lista de Vagas")
-        show_table(df[VAGAS_COLS], VAGAS_COLS, "vagas_df", VAGAS_CSV)
+        download_button(df[cols_show], "vagas.csv", "⬇️ Baixar Lista de Vagas")
+        show_table(df[cols_show], cols_show, "vagas_df", VAGAS_CSV)
 
 def tela_candidatos():
     if st.session_state.edit_mode == "candidatos_df":
