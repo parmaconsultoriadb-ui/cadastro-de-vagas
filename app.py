@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh
 import pandas as pd
 from datetime import date, datetime
 import os
@@ -421,11 +422,11 @@ def tela_login():
                 st.error("❌ Usuário ou senha inválidos.")
 
 def tela_menu_interno():
-    if st.session_state.usuario == "admin":
-        if "ping_auto" not in st.session_state:
-            st.session_state["ping_auto"] = False
+        if st.session_state.usuario == "admin":
+            if "ping_auto" not in st.session_state:
+                st.session_state["ping_auto"] = False
 
-    col_ping, col_blank = st.columns([1,6])
+    col_ping, col_blank = st.columns([1, 6])
     with col_ping:
         if st.session_state["ping_auto"]:
             if st.button("⏸️ Pausar Ping Automático", use_container_width=True):
@@ -443,8 +444,8 @@ if (
     and st.session_state.get("usuario", "") == "admin"
     and st.session_state.get("ping_auto", False)
 ):
-    st.experimental_autorefresh(interval=30_000, key="ping_admin")
-    
+    st_autorefresh(interval=30_000, key="ping_admin")  # <-- NOVO
+
     st.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=250)
     st.title("📊 Sistema Parma Consultoria")
     st.subheader("Bem-vindo! Escolha uma opção para começar.")
