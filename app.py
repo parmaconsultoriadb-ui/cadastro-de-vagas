@@ -254,7 +254,7 @@ def show_table(df, cols, df_name, csv_path):
                     registrar_log("Clientes", "Excluir", item_id=row_id, detalhe=f"Cliente {row_id} excluído. Vagas removidas: {vagas_rel}")
                     registrar_log("Vagas", "Excluir em Cascata", detalhe=f"Cliente {row_id} excluído. Vagas removidas: {vagas_rel}")
                     registrar_log("Candidatos", "Excluir em Cascata", detalhe=f"Cliente {row_id} excluído. Candidatos removidos.")
-    elif df_name == "vagas_df":
+    if df_name == "vagas_df":
         base = st.session_state.vagas_df.copy()
         vaga_row = base[base["ID"] == row_id]
         vaga_cliente = vaga_row.iloc[0]["Cliente"] if not vaga_row.empty else None
