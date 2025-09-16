@@ -494,6 +494,18 @@ def tela_clientes():
         download_button(df_filtrado, "clientes.csv", "⬇️ Baixar Lista de Clientes")
         show_table(df_filtrado, CLIENTES_COLS, "clientes_df", CLIENTES_CSV)
 
+VAGAS_IMPORT_COLS = [
+    "ID",
+    "Cliente",
+    "Status",
+    "Data de Abertura",
+    "Cargo",
+    "Recrutador",
+    "Atualização",
+    "Salário 1",
+    "Salário 2"
+]
+
 def tela_vagas():
     if st.session_state.edit_mode == "vagas_df":
         show_edit_form("vagas_df", VAGAS_COLS, VAGAS_CSV)
@@ -534,11 +546,22 @@ def tela_vagas():
             arquivo = st.file_uploader("Selecione um arquivo com as colunas: " + ", ".join(VAGAS_COLS), type=["csv", "xlsx"], key="upload_vagas")
             if arquivo is not None:
                 try:
-                    if arquivo.name.lower().endswith('.csv'):
-                        df_upload = pd.read_csv(arquivo, dtype=str)
+                   df_upload = pd.read_csv(arquivo, dtype=str)
+                    if set(df_upload.columns) != set(VAGAS_IMPORT_COLS) or len(df_upload.columns) != len(VAGAS_IMPORT_COLS):
+                        st.error(f"O arquivo deve conter **exatamente** estas colunas: {VAGAS_IMPORT_COLS}")
                     else:
-                        df_upload = pd.read_excel(arquivo, dtype=str)
-                    missing = [c for c in VAGAS_COLS if c not in df_upload.columns]
+                        df_upload = df_upload[VAGAS_IMPORT_COLS].fillna("")
+                        base = st.session_state.vagas_df.copy()
+                        combined = pd.concat([base, df_upload], ignore_index=True)
+                        combined = combined.drop_duplicates(subset=["ID"], keep="first")
+                        st.session_state.vagas_df = combined
+                        save_csv(combined, VAGAS_CSV)
+                        registrar_log("Vagas", "Importar", detalhe=f"Importação de vagas via upload ({arquivo.name}).")
+                        st.success("✅ Vagas importadas com sucesso!")
+                        st.rerun()
+                except 
+                        Exception as e:
+                    st.error(f"Erro ao processar o arquivo: {e}")
                     if missing:
                         st.error(f"Colunas faltando: {missing}")
                     else:
