@@ -254,25 +254,37 @@ def show_table(df, cols, df_name, csv_path):
                     registrar_log("Clientes", "Excluir", item_id=row_id, detalhe=f"Cliente {row_id} excluído. Vagas removidas: {vagas_rel}")
                     registrar_log("Vagas", "Excluir em Cascata", detalhe=f"Cliente {row_id} excluído. Vagas removidas: {vagas_rel}")
                     registrar_log("Candidatos", "Excluir em Cascata", detalhe=f"Cliente {row_id} excluído. Candidatos removidos.")
-                elif df_name == "vagas_df":
-                    base = st.session_state.vagas_df.copy()
-                    vaga_row = base[base["ID"] == row_id]
-                    vaga_cliente = vaga_row.iloc[0]["Cliente"] if not vaga_row.empty else None
-                    vaga_cargo = vaga_row.iloc[0]["Cargo"] if not vaga_row.empty else None
-                    st.session_state.vagas_df = base[base["ID"] != row_id]
-                    save_csv(st.session_state.vagas_df, VAGAS_CSV)
-                    if vaga_cliente is not None and vaga_cargo is not None:
-                        candidatos_rel = st.session_state.candidatos_df[(st.session_state.candidatos_df["Cliente"] == vaga_cliente) & (st.session_state.candidatos_df["Cargo"] == vaga_cargo)]["ID"].tol[...]
-                        st.session_state.candidatos_df = st.session_state.candidatos_df[
-                        ~(
-                            (st.session_state.candidatos_df["Cliente"] == vaga_cliente) & 
-                            (st.session_state.candidatos_df["Cargo"] == vaga_cargo
-                            )
-                        save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
-                    else:
-                        candidatos_rel = []
-                    registrar_log("Vagas", "Excluir", item_id=row_id, detalhe=f"Vaga {row_id} excluída. Candidatos removidos: {candidatos_rel}")
-                    registrar_log("Candidatos", "Excluir em Cascata", detalhe=f"Vaga {row_id} excluída. Candidatos removidos: {candidatos_rel}")
+    elif df_name == "vagas_df":
+        base = st.session_state.vagas_df.copy()
+        vaga_row = base[base["ID"] == row_id]
+        vaga_cliente = vaga_row.iloc[0]["Cliente"] if not vaga_row.empty else None
+        vaga_cargo = vaga_row.iloc[0]["Cargo"] if not vaga_row.empty else None
+
+    # Remove a vaga da base
+        st.session_state.vagas_df = base[base["ID"] != row_id]
+        save_csv(st.session_state.vagas_df, VAGAS_CSV)
+
+        if vaga_cliente is not None and vaga_cargo is not None:
+        # Identifica candidatos relacionados a essa vaga
+            candidatos_rel = st.session_state.candidatos_df[
+                (st.session_state.candidatos_df["Cliente"] == vaga_cliente) &
+                (st.session_state.candidatos_df["Cargo"] == vaga_cargo)
+            ]["ID"].tolist()
+
+        # Remove os candidatos relacionados
+            st.session_state.candidatos_df = st.session_state.candidatos_df[
+            ~(
+                (st.session_state.candidatos_df["Cliente"] == vaga_cliente) &
+                (st.session_state.candidatos_df["Cargo"] == vaga_cargo)
+            )
+        ]
+
+        save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
+    else:
+        candidatos_rel = []
+
+    registrar_log("Vagas", "Excluir", item_id=row_id, detalhe=f"Vaga {row_id} excluída. Candidatos removidos: {candidatos_rel}")
+    registrar_log("Candidatos", "Excluir em Cascata", detalhe=f"Vaga {row_id} excluída. Candidatos removidos: {candidatos_rel}")
                 elif df_name == "candidatos_df":
                     base = st.session_state.candidatos_df.copy()
                     st.session_state.candidatos_df = base[base["ID"] != row_id]
