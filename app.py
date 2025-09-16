@@ -263,7 +263,11 @@ def show_table(df, cols, df_name, csv_path):
                     save_csv(st.session_state.vagas_df, VAGAS_CSV)
                     if vaga_cliente is not None and vaga_cargo is not None:
                         candidatos_rel = st.session_state.candidatos_df[(st.session_state.candidatos_df["Cliente"] == vaga_cliente) & (st.session_state.candidatos_df["Cargo"] == vaga_cargo)]["ID"].tol[...]
-                        st.session_state.candidatos_df = st.session_state.candidatos_df[~((st.session_state.candidatos_df["Cliente"] == vaga_cliente) & (st.session_state.candidatos_df["Cargo"] == vaga[...]
+                        st.session_state.candidatos_df = st.session_state.candidatos_df[
+                        ~(
+                            (st.session_state.candidatos_df["Cliente"] == vaga_cliente) & 
+                            (st.session_state.candidatos_df["Cargo"] == vaga_cargo
+                            )
                         save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
                     else:
                         candidatos_rel = []
