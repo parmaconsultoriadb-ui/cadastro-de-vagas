@@ -444,6 +444,7 @@ if (
     and st.session_state.get("ping_auto", False)
 ):
     st.experimental_autorefresh(interval=30_000, key="ping_admin")
+    
     st.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=250)
     st.title("📊 Sistema Parma Consultoria")
     st.subheader("Bem-vindo! Escolha uma opção para começar.")
