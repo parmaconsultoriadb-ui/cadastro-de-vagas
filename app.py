@@ -356,7 +356,7 @@ def show_edit_form(df_name, cols, csv_path):
                         antigo = df.at[idx0, c]
                         novo = new_data.get(c, "")
                         if str(antigo) != str(novo):
-                            registrar_log(aba=df_name.replace('_df','').capitalize(), acao="Editar", item_id=record["ID"], campo=c, valor_anterior=antigo, valor_novo=novo, detalhe=f"Registro {record['ID']} alterado.")
+                            registrar_log(aba=df_name.replace('_df','').capitalize(), acao="Editar", item_id=record["ID"], campo=c, valor_anterior=antigo, valor_novo=novo, detalhe=f"Registro {record['ID']} editado.")
                             df.at[idx0, c] = novo
                 st.session_state[df_name] = df
                 save_csv(df, csv_path)
@@ -601,7 +601,8 @@ def tela_vagas():
     if df.empty:
         st.info("Nenhuma vaga cadastrada.")
     else:
-        download_button(df[cols_show], "vagas.csv", "⬇️ Baixar Lista de Vagas")
+        # Alteração: exporta todas as colunas, incluindo salários e observação
+        download_button(df[VAGAS_COLS], "vagas.csv", "⬇️ Baixar Lista de Vagas")
         show_table(df[cols_show], cols_show, "vagas_df", VAGAS_CSV)
 
 def tela_candidatos():
@@ -718,119 +719,4 @@ def tela_candidatos():
                         f"- **Data de Abertura:** {vaga_row['Data de Abertura']}\n"
                         f"- **Atualização:** {vaga_row.get('Atualização', '')}\n"
                         f"- **Salário 1:** {vaga_row.get('Salário 1', '')}\n"
-                        f"- **Salário 2:** {vaga_row.get('Salário 2', '')}\n"
-                        f"- **Descrição / Observação:** {vaga_row.get('Descrição / Observação', '')}"
-                    )
-                except Exception:
-                    st.info("Nenhuma vaga selecionada ou encontrada.")
-            else:
-                st.info("Selecione uma vaga para ver as informações.")
-    st.subheader("📋 Candidatos Cadastrados")
-    if df.empty:
-        st.info("Nenhum candidato cadastrado.")
-    else:
-        download_button(df, "candidatos.csv", "⬇️ Baixar Lista de Candidatos")
-        show_table(df, CANDIDATOS_COLS, "candidatos_df", CANDIDATOS_CSV)
-
-def tela_logs():
-    st.header("📜 Logs do Sistema")
-    st.markdown("Visualize todas as ações realizadas no sistema.")
-    df_logs = carregar_logs()
-    if df_logs.empty:
-        st.info("Nenhum log registrado ainda.")
-    else:
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            aba_f = st.selectbox("Filtrar por Aba", options=["(todas)"] + sorted(df_logs["Aba"].dropna().unique().tolist()))
-        with col2:
-            acao_f = st.selectbox("Filtrar por Ação", options=["(todas)"] + sorted(df_logs["Acao"].dropna().unique().tolist()))
-        with col3:
-            usuario_f = st.selectbox("Filtrar por Usuário", options=["(todos)"] + sorted(df_logs["Usuario"].dropna().unique().tolist()))
-        busca = st.text_input("🔎 Buscar (Campo/Detalhe/ItemID)")
-        dfv = df_logs.copy()
-        if aba_f != "(todas)":
-            dfv = dfv[dfv["Aba"] == aba_f]
-        if acao_f != "(todas)":
-            dfv = dfv[dfv["Acao"] == acao_f]
-        if usuario_f != "(todos)":
-            dfv = dfv[dfv["Usuario"] == usuario_f]
-        if busca:
-            mask = (
-                dfv["Campo"].fillna("").str.contains(busca, case=False) |
-                dfv["Detalhe"].fillna("").str.contains(busca, case=False) |
-                dfv["ItemID"].fillna("").str.contains(busca, case=False)
-            )
-            dfv = dfv[mask]
-        st.dataframe(dfv.sort_values("DataHora", ascending=False), use_container_width=True, height=480)
-        csv = dfv.to_csv(index=False).encode("utf-8")
-        st.download_button("⬇️ Baixar Logs Filtrados", csv, "logs.csv", "text/csv", use_container_width=True)
-    st.divider()
-
-def refresh_data():
-    st.session_state.clientes_df = load_csv(CLIENTES_CSV, CLIENTES_COLS)
-    st.session_state.vagas_df = load_csv(VAGAS_CSV, VAGAS_COLS)
-    st.session_state.candidatos_df = load_csv(CANDIDATOS_CSV, CANDIDATOS_COLS)
-    registrar_log("Sistema", "Refresh", detalhe="Dados recarregados via botão Refresh.")
-
-if st.session_state.logged_in:
-    st.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=180)
-    st.caption(f"Usuário: {st.session_state.usuario}")
-    page_label_map = {
-        "menu": "Menu Principal",
-        "clientes": "Clientes",
-        "vagas": "Vagas",
-        "candidatos": "Candidatos",
-        "logs": "Logs do Sistema"
-    }
-    perms = st.session_state.get("permissoes", [])
-    if "menu" not in perms:
-        perms = ["menu"] + perms
-    ordered_page_keys = ["menu", "clientes", "vagas", "candidatos", "logs"]
-    allowed_pages = [p for p in ordered_page_keys if p in perms]
-    labels = [page_label_map[p] for p in allowed_pages]
-    try:
-        index_initial = allowed_pages.index(st.session_state.page)
-    except Exception:
-        index_initial = 0
-
-    # Ajuste: todos os botões da barra superior têm o mesmo tamanho
-    total_buttons = len(labels) + 2
-    menu_cols = st.columns([1] * total_buttons)  # cada coluna tem o mesmo peso/tamanho
-
-    for i, label in enumerate(labels):
-        if menu_cols[i].button(label, use_container_width=True):
-            st.session_state.page = allowed_pages[i]
-            st.rerun()
-    if menu_cols[-2].button("🔄 Refresh", use_container_width=True):
-        refresh_data()
-        st.rerun()
-    if menu_cols[-1].button("Sair", use_container_width=True):
-        registrar_log("Login", "Logout", detalhe=f"Usuário {st.session_state.usuario} saiu do sistema.")
-        st.session_state.logged_in = False
-        st.session_state.page = "login"
-        st.rerun()
-    current_page = st.session_state.page
-    if current_page == "menu":
-        tela_menu_interno()
-    elif current_page == "clientes":
-        if "clientes" in perms:
-            tela_clientes()
-        else:
-            st.warning("⚠️ Você não tem permissão para acessar esta página.")
-    elif current_page == "vagas":
-        if "vagas" in perms:
-            tela_vagas()
-        else:
-            st.warning("⚠️ Você não tem permissão para acessar esta página.")
-    elif current_page == "candidatos":
-        if "candidatos" in perms:
-            tela_candidatos()
-        else:
-            st.warning("⚠️ Você não tem permissão para acessar esta página.")
-    elif current_page == "logs":
-        if "logs" in perms:
-            tela_logs()
-        else:
-            st.warning("⚠️ Você não tem permissão para acessar esta página.")
-else:
-    tela_login()
+                        f"- **Salário 2:** {vaga
