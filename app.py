@@ -489,10 +489,9 @@ def tela_clientes():
     if df.empty:
         st.info("Nenhum cliente cadastrado.")
     else:
-        filtro = st.text_input("🔎 Buscar por Cliente")
-        df_filtrado = df[df["Cliente"].str.contains(filtro, case=False, na=False)] if filtro else df
-        download_button(df_filtrado, "clientes.csv", "⬇️ Baixar Lista de Clientes")
-        show_table(df_filtrado, CLIENTES_COLS, "clientes_df", CLIENTES_CSV)
+        # Exporta todas as colunas, inclusive Salário 1, Salário 2 e Descrição / Observação
+        download_button(df[VAGAS_COLS], "vagas.csv", "⬇️ Baixar Lista de Vagas")
+        show_table(df[cols_show], cols_show, "vagas_df", VAGAS_CSV)
 
 def tela_vagas():
     if st.session_state.edit_mode == "vagas_df":
