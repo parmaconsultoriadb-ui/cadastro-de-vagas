@@ -597,15 +597,13 @@ def tela_vagas():
                         st.success(f"✅ Vaga cadastrada com sucesso! ID: {prox_id}")
                         st.rerun()
     st.subheader("📋 Vagas Cadastradas")
-    cols_export = [
-    "ID", "Cliente", "Status", "Data de Abertura", "Cargo", "Recrutador",
-    "Atualização", "Salário 1", "Salário 2", "Descrição / Observação"
-]
+    cols_show = [c for c in VAGAS_COLS if c not in ["Salário 1", "Salário 2", "Descrição / Observação"]]
     if df.empty:
-    st.info("Nenhuma vaga cadastrada.")
-else:
-    download_button(df[cols_export], "vagas.csv", "⬇️ Baixar Lista de Vagas")
-    show_table(df[cols_show], cols_show, "vagas_df", VAGAS_CSV)
+        st.info("Nenhuma vaga cadastrada.")
+    else:
+        download_button(df[cols_show], "vagas.csv", "⬇️ Baixar Lista de Vagas")
+        show_table(df[cols_show], cols_show, "vagas_df", VAGAS_CSV)
+
 def tela_candidatos():
     if st.session_state.edit_mode == "candidatos_df":
         show_edit_form("candidatos_df", CANDIDATOS_COLS, CANDIDATOS_CSV)
