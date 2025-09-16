@@ -531,25 +531,14 @@ def tela_vagas():
 
     if st.session_state.usuario == "admin":
         with st.expander("📤 Importar Vagas (CSV/XLSX)", expanded=False):
-            arquivo = st.file_uploader("Selecione um arquivo com as colunas: ID, Cliente, Status, Data de Abertura, Cargo, Recrutador, Atualização, Salário 1, Salário 2", type=["csv", "xlsx"], key="upload_clientes")
+            arquivo = st.file_uploader("Selecione um arquivo com as colunas: " + ", ".join(VAGAS_COLS), type=["csv", "xlsx"], key="upload_vagas")
             if arquivo is not None:
                 try:
-                   df_upload = pd.read_csv(arquivo, dtype=str)
-                    if set(df_upload.columns) != set(VAGAS_IMPORT_COLS) or len(df_upload.columns) != len(VAGAS_IMPORT_COLS):
-                        st.error(f"O arquivo deve conter **exatamente** estas colunas: {VAGAS_IMPORT_COLS}")
+                    if arquivo.name.lower().endswith('.csv'):
+                        df_upload = pd.read_csv(arquivo, dtype=str)
                     else:
-                        df_upload = df_upload[VAGAS_IMPORT_COLS].fillna("")
-                        base = st.session_state.vagas_df.copy()
-                        combined = pd.concat([base, df_upload], ignore_index=True)
-                        combined = combined.drop_duplicates(subset=["ID"], keep="first")
-                        st.session_state.vagas_df = combined
-                        save_csv(combined, VAGAS_CSV)
-                        registrar_log("Vagas", "Importar", detalhe=f"Importação de vagas via upload ({arquivo.name}).")
-                        st.success("✅ Vagas importadas com sucesso!")
-                        st.rerun()
-                except 
-                        Exception as e:
-                    st.error(f"Erro ao processar o arquivo: {e}")
+                        df_upload = pd.read_excel(arquivo, dtype=str)
+                    missing = [c for c in VAGAS_COLS if c not in df_upload.columns]
                     if missing:
                         st.error(f"Colunas faltando: {missing}")
                     else:
@@ -608,23 +597,11 @@ def tela_vagas():
                         st.success(f"✅ Vaga cadastrada com sucesso! ID: {prox_id}")
                         st.rerun()
     st.subheader("📋 Vagas Cadastradas")
-    cols_csv = [
-        "ID",
-        "Cliente", 
-        "Status",
-        "Data de Abertura", 
-        "Cargo", 
-        "Recrutador", 
-        "Atualização",
-        "Salário 1",
-        "Salário 2"
-    ]
-        
     cols_show = [c for c in VAGAS_COLS if c not in ["Salário 1", "Salário 2", "Descrição / Observação"]]
     if df.empty:
         st.info("Nenhuma vaga cadastrada.")
     else:
-        download_button(df[cols_csv], "vagas.csv", "⬇️ Baixar Lista de Vagas")
+        download_button(df[cols_show], "vagas.csv", "⬇️ Baixar Lista de Vagas")
         show_table(df[cols_show], cols_show, "vagas_df", VAGAS_CSV)
 
 def tela_candidatos():
