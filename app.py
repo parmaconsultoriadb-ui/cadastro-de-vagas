@@ -494,18 +494,6 @@ def tela_clientes():
         download_button(df_filtrado, "clientes.csv", "⬇️ Baixar Lista de Clientes")
         show_table(df_filtrado, CLIENTES_COLS, "clientes_df", CLIENTES_CSV)
 
-VAGAS_IMPORT_COLS = [
-    "ID",
-    "Cliente",
-    "Status",
-    "Data de Abertura",
-    "Cargo",
-    "Recrutador",
-    "Atualização",
-    "Salário 1",
-    "Salário 2"
-]
-
 def tela_vagas():
     if st.session_state.edit_mode == "vagas_df":
         show_edit_form("vagas_df", VAGAS_COLS, VAGAS_CSV)
@@ -542,6 +530,17 @@ def tela_vagas():
         df = df[df["Status"] == status_filter]
 
     if st.session_state.usuario == "admin":
+     VAGAS_IMPORT_COLS = [
+        "ID",
+        "Cliente",
+        "Status",
+        "Data de Abertura",
+        "Cargo",
+        "Recrutador",
+        "Atualização",
+        "Salário 1",
+        "Salário 2"
+    ]
         with st.expander("📤 Importar Vagas (CSV/XLSX)", expanded=False):
             arquivo = st.file_uploader("Selecione um arquivo com as colunas: " + ", ".join(VAGAS_COLS), type=["csv", "xlsx"], key="upload_vagas")
             if arquivo is not None:
