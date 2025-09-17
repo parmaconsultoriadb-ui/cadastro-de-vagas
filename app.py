@@ -43,7 +43,7 @@ COMERCIAL_COLS = [
     "Cidade",
     "UF",
     "Nome",
-    "Contato",
+    "Telefone",
     "E-mail",
     "Produto",
     "Canal",
@@ -1011,14 +1011,14 @@ def tela_comercial():
                 canal = st.text_input("Canal (ex.: Indicação, Inbound, Outbound, Evento)")
             with colB:
                 nome = st.text_input("Nome (Contato) *")
-                contato = st.text_input("Contato (Telefone) *")
+                telefone = st.text_input(Telefone *")
                 email = st.text_input("E-mail *")
                 produto = st.text_input("Produto")  # novo campo no cadastro (opcional)
                 status_inicial = "Prospect"  # travado no cadastro
 
             submitted = st.form_submit_button("✅ Salvar Registro", use_container_width=True)
             if submitted:
-                if not all([empresa, cidade, uf, nome, contato, email]):
+                if not all([empresa, cidade, uf, nome, Telefone, email]):
                     st.warning("⚠️ Preencha todos os campos obrigatórios.")
                 else:
                     prox_id = str(next_id(st.session_state.comercial_df, "ID"))
@@ -1029,7 +1029,7 @@ def tela_comercial():
                         "Cidade": cidade,
                         "UF": uf.upper(),
                         "Nome": nome,
-                        "Contato": contato,
+                        "Telefone": telefone,
                         "E-mail": email,
                         "Produto": produto,
                         "Canal": canal,
