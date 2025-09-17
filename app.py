@@ -16,7 +16,7 @@ CLIENTES_CSV = "clientes.csv"
 VAGAS_CSV = "vagas.csv"
 CANDIDATOS_CSV = "candidatos.csv"
 LOGS_CSV = "logs.csv"
-COMERCIAL_CSV = "comercial.csv"  # <-- Comercial
+COMERCIAL_CSV = "comercial.csv"  # Comercial
 
 # ==============================
 # Colunas esperadas
@@ -35,7 +35,7 @@ VAGAS_COLS = [
 ]
 CANDIDATOS_COLS = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "Status", "Data de Início"]
 
-# Comercial (com 'Produto' e 'Telefone' no lugar de 'Contato', na ordem definida)
+# Comercial (com 'Produto' e 'Telefone' na ordem definida)
 COMERCIAL_COLS = [
     "ID",
     "Data",
@@ -52,7 +52,7 @@ COMERCIAL_COLS = [
 
 LOGS_COLS = ["DataHora", "Usuario", "Aba", "Acao", "ItemID", "Campo", "ValorAnterior", "ValorNovo", "Detalhe"]
 
-# Opções de status da aba Comercial
+# Opções de status da aba Comercial (ordem do funil)
 COMERCIAL_STATUS_OPCOES = [
     "Prospect",
     "Lead Qualificado",
@@ -84,11 +84,9 @@ def load_csv(path, expected_cols):
         try:
             df = pd.read_csv(path, dtype=str)
             df = df.fillna("")
-            # Garante todas as colunas esperadas
             for col in expected_cols:
                 if col not in df.columns:
                     df[col] = ""
-            # Reordena para as colunas esperadas
             df = df[expected_cols]
             if "ID" in df.columns:
                 df["ID"] = df["ID"].astype(str)
@@ -160,7 +158,7 @@ for df_key, csv_path, cols in [
     ("clientes_df", CLIENTES_CSV, CLIENTES_COLS),
     ("vagas_df", VAGAS_CSV, VAGAS_COLS),
     ("candidatos_df", CANDIDATOS_CSV, CANDIDATOS_COLS),
-    ("comercial_df", COMERCIAL_CSV, COMERCIAL_COLS),  # Comercial
+    ("comercial_df", COMERCIAL_CSV, COMERCIAL_COLS),
 ]:
     if df_key not in st.session_state:
         st.session_state[df_key] = load_csv(csv_path, cols)
@@ -174,6 +172,9 @@ st.markdown(
         --parma-blue-medium: #0066AA;
         --parma-blue-light: #E0F2F7;
         --parma-text-dark: #333333;
+        --kanban-bg: #f8fafc;
+        --kanban-col-bg: #f1f5f9;
+        --kanban-card-bg: #ffffff;
     }
     div.stButton > button {
         background-color: var(--parma-blue-dark) !important;
@@ -228,6 +229,44 @@ st.markdown(
     }
     .streamlit-expanderHeader, .stMarkdown, .stText {
         font-size:13px !important;
+    }
+
+    /* Kanban */
+    .kanban-col {
+        background: var(--kanban-col-bg);
+        border-radius: 10px;
+        padding: 10px;
+        border: 1px solid #e5e7eb;
+        min-height: 120px;
+    }
+    .kanban-col-title {
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 8px;
+        font-size: 13px;
+        color: #0f172a;
+    }
+    .kanban-card {
+        background: var(--kanban-card-bg);
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 8px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        font-size: 12px;
+        color: #334155;
+    }
+    .kanban-card strong {
+        color: #0f172a;
+    }
+    .kanban-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+        justify-content: space-between;
+    }
+    .kanban-actions .left, .kanban-actions .right, .kanban-actions .edit, .kanban-actions .del {
+        width: 100%;
     }
     </style>
     """,
@@ -370,8 +409,7 @@ def show_edit_form(df_name, cols, csv_path):
     campos_candidatos_admin = [
         "Cliente", "Cargo", "Nome", "Telefone", "Recrutador"
     ]
-
-    # Campos somente admin na página Comercial (agora inclui Produto)
+    # Campos somente admin na página Comercial (inclui Produto)
     campos_comercial_somente_admin = ["Empresa", "Cidade", "UF", "Canal", "Produto"]
 
     with st.form("edit_form", clear_on_submit=False):
@@ -401,7 +439,6 @@ def show_edit_form(df_name, cols, csv_path):
                 new_data[c] = st.text_input(c, value=val, help="Formato: DD/MM/YYYY", disabled=True)
 
             elif c == "Data" and df_name == "comercial_df":
-                # Data travada
                 new_data[c] = st.text_input(c, value=val, disabled=True)
 
             elif df_name == "vagas_df" and c == "Recrutador":
@@ -419,7 +456,6 @@ def show_edit_form(df_name, cols, csv_path):
                 new_data[c] = st.text_input(c, value=val, disabled=(usuario != "admin"))
 
             elif df_name == "comercial_df" and c in campos_comercial_somente_admin:
-                # Somente admin edita Empresa, Cidade, UF, Canal e Produto
                 new_data[c] = st.text_input(c, value=val, disabled=(usuario != "admin"))
 
             else:
@@ -434,12 +470,10 @@ def show_edit_form(df_name, cols, csv_path):
                 idx0 = idx[0]
                 for c in cols:
                     if c in df.columns and c != "Atualização":
-                        # Restrições de admin em Vagas/Candidatos
                         if df_name == "vagas_df" and c in campos_vagas_admin and usuario != "admin":
                             continue
                         if df_name == "candidatos_df" and c in campos_candidatos_admin and usuario != "admin":
                             continue
-                        # Em Comercial, Data travada sempre; e Empresa/Cidade/UF/Canal/Produto travados para não-admin
                         if df_name == "comercial_df":
                             if c == "Data":
                                 continue
@@ -905,51 +939,80 @@ def tela_candidatos():
         download_button(df, "candidatos.csv", "⬇️ Baixar Lista de Candidatos")
         show_table(df, CANDIDATOS_COLS, "candidatos_df", CANDIDATOS_CSV)
 
-def tela_logs():
-    st.header("📜 Logs do Sistema")
-    st.markdown("Visualize todas as ações realizadas no sistema.")
-    df_logs = carregar_logs()
-    if df_logs.empty:
-        st.info("Nenhum log registrado ainda.")
-    else:
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            aba_f = st.selectbox("Filtrar por Aba", options=["(todas)"] + sorted(df_logs["Aba"].dropna().unique().tolist()))
-        with col2:
-            acao_f = st.selectbox("Filtrar por Ação", options=["(todas)"] + sorted(df_logs["Acao"].dropna().unique().tolist()))
-        with col3:
-            usuario_f = st.selectbox("Filtrar por Usuário", options=["(todos)"] + sorted(df_logs["Usuario"].dropna().unique().tolist()))
-        busca = st.text_input("🔎 Buscar (Campo/Detalhe/ItemID)")
+def _mover_status_comercial(item_id, direcao="+"):
+    """
+    Atualiza o Status do registro comercial conforme a direção:
+    direcao="+" -> próximo status no funil
+    direcao="-" -> status anterior
+    """
+    df = st.session_state.comercial_df.copy()
+    idx = df[df["ID"] == str(item_id)].index
+    if idx.empty:
+        return False
+    i = idx[0]
+    atual = df.at[i, "Status"]
+    if atual not in COMERCIAL_STATUS_OPCOES:
+        return False
 
-        dfv = df_logs.copy()
-        if aba_f != "(todas)":
-            dfv = dfv[dfv["Aba"] == aba_f]
-        if acao_f != "(todas)":
-            dfv = dfv[dfv["Acao"] == acao_f]
-        if usuario_f != "(todos)":
-            dfv = dfv[dfv["Usuario"] == usuario_f]
-        if busca:
-            mask = (
-                dfv["Campo"].fillna("").str.contains(busca, case=False)
-                | dfv["Detalhe"].fillna("").str.contains(busca, case=False)
-                | dfv["ItemID"].fillna("").str.contains(busca, case=False)
-            )
-            dfv = dfv[mask]
+    pos = COMERCIAL_STATUS_OPCOES.index(atual)
+    novo_pos = pos + (1 if direcao == "+" else -1)
+    if 0 <= novo_pos < len(COMERCIAL_STATUS_OPCOES):
+        novo = COMERCIAL_STATUS_OPCOES[novo_pos]
+        df.at[i, "Status"] = novo
+        st.session_state.comercial_df = df
+        save_csv(df, COMERCIAL_CSV)
+        registrar_log("Comercial", "Editar", item_id=df.at[i, "ID"], campo="Status", valor_anterior=atual, valor_novo=novo, detalhe=f"Movido no funil ({'→' if direcao=='+' else '←'})")
+        return True
+    return False
 
-        st.dataframe(dfv.sort_values("DataHora", ascending=False), use_container_width=True, height=480)
-        csv = dfv.to_csv(index=False).encode("utf-8")
-        st.download_button("⬇️ Baixar Logs Filtrados", csv, "logs.csv", "text/csv", use_container_width=True)
-    st.divider()
+def _card_comercial(reg):
+    """ Desenha um card do comercial com ações (mover, editar, excluir). """
+    with st.container():
+        st.markdown(
+            f"""
+            <div class="kanban-card">
+                <div><strong>{reg.get('Empresa','')}</strong></div>
+                <div>{reg.get('Cidade','')} - {reg.get('UF','')}</div>
+                <div><strong>Contato:</strong> {reg.get('Nome','')} | <strong>Tel:</strong> {reg.get('Telefone','')}</div>
+                <div><strong>E-mail:</strong> {reg.get('E-mail','')}</div>
+                <div><strong>Produto:</strong> {reg.get('Produto','')}</div>
+                <div><strong>Canal:</strong> {reg.get('Canal','')}</div>
+                <div style="margin-top:6px;"><small><strong>ID:</strong> {reg.get('ID','')} • <strong>Data:</strong> {reg.get('Data','')}</small></div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # Ações
+        c1, c2, c3, c4 = st.columns([0.8, 0.8, 0.8, 0.8])
+        with c1:
+            if st.button("←", key=f"left_{reg['ID']}", use_container_width=True):
+                _mover_status_comercial(reg["ID"], "-")
+                st.rerun()
+        with c2:
+            if st.button("→", key=f"right_{reg['ID']}", use_container_width=True):
+                _mover_status_comercial(reg["ID"], "+")
+                st.rerun()
+        with c3:
+            if st.button("✏️ Editar", key=f"edit_card_{reg['ID']}", use_container_width=True):
+                st.session_state.edit_mode = "comercial_df"
+                st.session_state.edit_record = dict(reg)
+                st.rerun()
+        with c4:
+            if st.button("🗑️ Excluir", key=f"del_card_{reg['ID']}", use_container_width=True):
+                st.session_state.confirm_delete = {"df_name": "comercial_df", "row_id": reg["ID"]}
+                st.rerun()
 
 def tela_comercial():
+    # Se estiver em modo edição (form padrão)
     if st.session_state.edit_mode == "comercial_df":
         show_edit_form("comercial_df", COMERCIAL_COLS, COMERCIAL_CSV)
         return
 
-    st.header("💼 Comercial")
-    st.markdown("Registre e acompanhe oportunidades comerciais.")
+    st.header("💼 Comercial (CRM)")
+    st.markdown("Acompanhe o fluxo através do funil no formato **Kanban** ou visualize em **Lista**.")
 
-    # Filtros
+    # Filtros globais
     df_all = st.session_state.comercial_df.copy()
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
@@ -960,13 +1023,13 @@ def tela_comercial():
     with col3:
         filtro_cidade = st.text_input("Filtrar por Cidade")
 
-    df = df_all.copy()
+    df_filtros = df_all.copy()
     if filtro_empresa:
-        df = df[df["Empresa"].str.contains(filtro_empresa, case=False, na=False)]
+        df_filtros = df_filtros[df_filtros["Empresa"].str.contains(filtro_empresa, case=False, na=False)]
     if filtro_status != "(todos)":
-        df = df[df["Status"] == filtro_status]
+        df_filtros = df_filtros[df_filtros["Status"] == filtro_status]
     if filtro_cidade:
-        df = df[df["Cidade"].str.contains(filtro_cidade, case=False, na=False)]
+        df_filtros = df_filtros[df_filtros["Cidade"].str.contains(filtro_cidade, case=False, na=False)]
 
     # Importação (somente admin)
     if st.session_state.usuario in ["admin"]:
@@ -1013,7 +1076,7 @@ def tela_comercial():
                 nome = st.text_input("Nome (Contato) *")
                 telefone = st.text_input("Telefone *")
                 email = st.text_input("E-mail *")
-                produto = st.text_input("Produto")  # novo campo
+                produto = st.text_input("Produto")  # opcional
                 status_inicial = "Prospect"  # travado no cadastro
 
             submitted = st.form_submit_button("✅ Salvar Registro", use_container_width=True)
@@ -1041,12 +1104,38 @@ def tela_comercial():
                     st.success(f"✅ Registro comercial cadastrado com sucesso! ID: {prox_id}")
                     st.rerun()
 
-    st.subheader("📋 Oportunidades Comerciais")
-    if df.empty:
-        st.info("Nenhum registro comercial cadastrado.")
-    else:
-        download_button(df, "comercial.csv", "⬇️ Baixar Lista Comercial")
-        show_table(df[COMERCIAL_COLS], COMERCIAL_COLS, "comercial_df", COMERCIAL_CSV)
+    # Abas: Kanban e Lista
+    tab_kanban, tab_lista = st.tabs(["🗂️ Kanban (Funil)", "📋 Lista"])
+
+    with tab_kanban:
+        st.markdown("<br>", unsafe_allow_html=True)
+        cols = st.columns(len(COMERCIAL_STATUS_OPCOES))
+        for i, status in enumerate(COMERCIAL_STATUS_OPCOES):
+            with cols[i]:
+                st.markdown(f"<div class='kanban-col'><div class='kanban-col-title'>{status}</div>", unsafe_allow_html=True)
+                # Registros desta coluna (após filtros globais)
+                col_df = df_filtros[df_filtros["Status"] == status].copy()
+                if col_df.empty:
+                    st.caption("—")
+                else:
+                    # Ordenar por Data (opcional, do mais recente para o mais antigo)
+                    try:
+                        col_df["_ord"] = pd.to_datetime(col_df["Data"], format="%d/%m/%Y", errors="coerce")
+                        col_df = col_df.sort_values("_ord", ascending=False)
+                    except Exception:
+                        pass
+                    for _, reg in col_df.iterrows():
+                        _card_comercial(reg)
+                st.markdown("</div>", unsafe_allow_html=True)
+
+    with tab_lista:
+        st.subheader("📋 Oportunidades Comerciais (Lista)")
+        df_list = df_filtros.copy()
+        if df_list.empty:
+            st.info("Nenhum registro comercial cadastrado.")
+        else:
+            download_button(df_list, "comercial.csv", "⬇️ Baixar Lista Comercial")
+            show_table(df_list[COMERCIAL_COLS], COMERCIAL_COLS, "comercial_df", COMERCIAL_CSV)
 
 def refresh_data():
     st.session_state.clientes_df = load_csv(CLIENTES_CSV, CLIENTES_COLS)
