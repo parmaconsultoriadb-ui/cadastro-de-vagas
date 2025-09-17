@@ -16,7 +16,7 @@ CLIENTES_CSV = "clientes.csv"
 VAGAS_CSV = "vagas.csv"
 CANDIDATOS_CSV = "candidatos.csv"
 LOGS_CSV = "logs.csv"
-COMERCIAL_CSV = "comercial.csv"  # <-- NOVO
+COMERCIAL_CSV = "comercial.csv"  # <-- Comercial
 
 # ==============================
 # Colunas esperadas
@@ -35,18 +35,19 @@ VAGAS_COLS = [
 ]
 CANDIDATOS_COLS = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "Status", "Data de Início"]
 
-# NOVO: Comercial
+# NOVO: Comercial (com 'Produto' e ordem definida)
 COMERCIAL_COLS = [
-    "ID",            # gerado automaticamente
-    "Data",          # data atual do cadastro
+    "ID",
+    "Data",
     "Empresa",
     "Cidade",
     "UF",
     "Nome",
     "Contato",
     "E-mail",
+    "Produto",
     "Canal",
-    "Status"         # opções fixas
+    "Status"
 ]
 
 LOGS_COLS = ["DataHora", "Usuario", "Aba", "Acao", "ItemID", "Campo", "ValorAnterior", "ValorNovo", "Detalhe"]
@@ -65,12 +66,12 @@ COMERCIAL_STATUS_OPCOES = [
 # Usuários e permissões
 # ==============================
 USUARIOS = {
-    "admin":   {"senha": "Parma!123@", "permissoes": ["menu", "clientes", "vagas", "candidatos", "logs", "comercial"]},  # <-- inclui comercial
-    "andre":   {"senha": "And!123@",   "permissoes": ["clientes", "vagas", "candidatos", "comercial"]},                 # <-- inclui comercial
+    "admin":   {"senha": "Parma!123@", "permissoes": ["menu", "clientes", "vagas", "candidatos", "logs", "comercial"]},
+    "andre":   {"senha": "And!123@",   "permissoes": ["clientes", "vagas", "candidatos", "comercial"]},
     "lorrayne":{"senha": "Lrn!123@",   "permissoes": ["vagas", "candidatos"]},
     "nikole":  {"senha": "Nkl!123@",   "permissoes": ["vagas", "candidatos"]},
     "julia":   {"senha": "Jla!123@",   "permissoes": ["vagas", "candidatos"]},
-    "ricardo": {"senha": "Rcd!123@",   "permissoes": ["clientes", "vagas", "candidatos", "comercial"]},                # <-- inclui comercial
+    "ricardo": {"senha": "Rcd!123@",   "permissoes": ["clientes", "vagas", "candidatos", "comercial"]},
 }
 
 # ==============================
@@ -83,9 +84,11 @@ def load_csv(path, expected_cols):
         try:
             df = pd.read_csv(path, dtype=str)
             df = df.fillna("")
+            # Garante todas as colunas esperadas
             for col in expected_cols:
                 if col not in df.columns:
                     df[col] = ""
+            # Reordena para as colunas esperadas
             df = df[expected_cols]
             if "ID" in df.columns:
                 df["ID"] = df["ID"].astype(str)
@@ -157,7 +160,7 @@ for df_key, csv_path, cols in [
     ("clientes_df", CLIENTES_CSV, CLIENTES_COLS),
     ("vagas_df", VAGAS_CSV, VAGAS_COLS),
     ("candidatos_df", CANDIDATOS_CSV, CANDIDATOS_COLS),
-    ("comercial_df", COMERCIAL_CSV, COMERCIAL_COLS),  # <-- NOVO
+    ("comercial_df", COMERCIAL_CSV, COMERCIAL_COLS),  # Comercial com Produto
 ]:
     if df_key not in st.session_state:
         st.session_state[df_key] = load_csv(csv_path, cols)
@@ -326,13 +329,12 @@ def show_table(df, cols, df_name, csv_path):
                     save_csv(st.session_state.candidatos_df, CANDIDATOS_CSV)
                     registrar_log("Candidatos", "Excluir", item_id=row_id, detalhe=f"Candidato {row_id} excluído.")
 
-                elif df_name == "comercial_df":  # <-- NOVO
+                elif df_name == "comercial_df":
                     base = st.session_state.comercial_df.copy()
                     st.session_state.comercial_df = base[base["ID"] != row_id]
                     save_csv(st.session_state.comercial_df, COMERCIAL_CSV)
                     registrar_log("Comercial", "Excluir", item_id=row_id, detalhe=f"Registro comercial {row_id} excluído.")
 
-                # Mensagem de sucesso e reset do estado de confirmação
                 st.success(f"✅ Registro {row_id} excluído com sucesso!")
                 st.session_state.confirm_delete = {"df_name": None, "row_id": None}
                 st.rerun()
@@ -369,6 +371,9 @@ def show_edit_form(df_name, cols, csv_path):
         "Cliente", "Cargo", "Nome", "Telefone", "Recrutador"
     ]
 
+    # NOVO: Campos travados para não-admin na página Comercial
+    campos_comercial_somente_admin = ["Empresa", "Cidade", "UF", "Canal"]
+
     with st.form("edit_form", clear_on_submit=False):
         new_data = {}
         for c in cols:
@@ -387,7 +392,7 @@ def show_edit_form(df_name, cols, csv_path):
                 idx = opcoes.index(val) if val in opcoes else 0
                 new_data[c] = st.selectbox(c, options=opcoes, index=idx)
 
-            elif c == "Status" and df_name == "comercial_df":  # <-- NOVO
+            elif c == "Status" and df_name == "comercial_df":
                 opcoes = COMERCIAL_STATUS_OPCOES
                 idx = opcoes.index(val) if val in opcoes else 0
                 new_data[c] = st.selectbox(c, options=opcoes, index=idx)
@@ -395,7 +400,8 @@ def show_edit_form(df_name, cols, csv_path):
             elif c == "Atualização":
                 new_data[c] = st.text_input(c, value=val, help="Formato: DD/MM/YYYY", disabled=True)
 
-            elif c == "Data" and df_name == "comercial_df":  # Data travada
+            elif c == "Data" and df_name == "comercial_df":
+                # Data travada
                 new_data[c] = st.text_input(c, value=val, disabled=True)
 
             elif df_name == "vagas_df" and c == "Recrutador":
@@ -410,6 +416,10 @@ def show_edit_form(df_name, cols, csv_path):
                 new_data[c] = st.text_input(c, value=val, disabled=(usuario != "admin"))
 
             elif df_name == "candidatos_df" and c in campos_candidatos_admin:
+                new_data[c] = st.text_input(c, value=val, disabled=(usuario != "admin"))
+
+            elif df_name == "comercial_df" and c in campos_comercial_somente_admin:
+                # Somente admin edita Empresa, Cidade, UF e Canal
                 new_data[c] = st.text_input(c, value=val, disabled=(usuario != "admin"))
 
             else:
@@ -429,9 +439,12 @@ def show_edit_form(df_name, cols, csv_path):
                             continue
                         if df_name == "candidatos_df" and c in campos_candidatos_admin and usuario != "admin":
                             continue
-                        # Em Comercial, Data é travada
-                        if df_name == "comercial_df" and c == "Data":
-                            continue
+                        # Em Comercial, Data travada sempre; e os campos Empresa/Cidade/UF/Canal travados para não-admin
+                        if df_name == "comercial_df":
+                            if c == "Data":
+                                continue
+                            if (c in campos_comercial_somente_admin) and (usuario != "admin"):
+                                continue
 
                         antigo = df.at[idx0, c]
                         novo = new_data.get(c, "")
@@ -509,7 +522,7 @@ def tela_menu_interno():
             and st.session_state.get("usuario", "") == "admin"
             and st.session_state.get("ping_auto", False)
         ):
-            st_autorefresh(interval=30_000, key="ping_admin")  # <-- NOVO
+            st_autorefresh(interval=30_000, key="ping_admin")
 
     st.image("https://parmaconsultoria.com.br/wp-content/uploads/2023/10/logo-parma-1.png", width=250)
     st.title("📊 Sistema Parma Consultoria")
@@ -534,7 +547,6 @@ def tela_menu_interno():
                 st.rerun()
 
     st.divider()
-    # Botão para Logs
     cols_bottom = st.columns(3)
     with cols_bottom[0]:
         if "logs" in st.session_state.permissoes:
@@ -543,7 +555,7 @@ def tela_menu_interno():
                 st.rerun()
     with cols_bottom[1]:
         if "comercial" in st.session_state.permissoes:
-            if st.button("💼 Comercial", use_container_width=True):  # <-- NOVO
+            if st.button("💼 Comercial", use_container_width=True):
                 st.session_state.page = "comercial"
                 st.rerun()
 
@@ -886,6 +898,7 @@ def tela_candidatos():
                 st.info("Selecione uma vaga para ver as informações.")
 
     st.subheader("📋 Candidatos Cadastrados")
+    df = st.session_state.candidatos_df.copy()
     if df.empty:
         st.info("Nenhum candidato cadastrado.")
     else:
@@ -928,7 +941,7 @@ def tela_logs():
         st.download_button("⬇️ Baixar Logs Filtrados", csv, "logs.csv", "text/csv", use_container_width=True)
     st.divider()
 
-def tela_comercial():  # <-- NOVO
+def tela_comercial():
     if st.session_state.edit_mode == "comercial_df":
         show_edit_form("comercial_df", COMERCIAL_COLS, COMERCIAL_CSV)
         return
@@ -955,7 +968,7 @@ def tela_comercial():  # <-- NOVO
     if filtro_cidade:
         df = df[df["Cidade"].str.contains(filtro_cidade, case=False, na=False)]
 
-    # Importação opcional (mantendo padrão do Clientes: checar colunas presentes)
+    # Importação (somente admin)
     if st.session_state.usuario in ["admin"]:
         with st.expander("📤 Importar Comercial (CSV/XLSX)", expanded=False):
             arquivo = st.file_uploader(
@@ -1000,6 +1013,7 @@ def tela_comercial():  # <-- NOVO
                 nome = st.text_input("Nome (Contato) *")
                 contato = st.text_input("Contato (Telefone) *")
                 email = st.text_input("E-mail *")
+                produto = st.text_input("Produto")  # novo campo no cadastro (opcional)
                 status_inicial = "Prospect"  # travado no cadastro
 
             submitted = st.form_submit_button("✅ Salvar Registro", use_container_width=True)
@@ -1017,6 +1031,7 @@ def tela_comercial():  # <-- NOVO
                         "Nome": nome,
                         "Contato": contato,
                         "E-mail": email,
+                        "Produto": produto,
                         "Canal": canal,
                         "Status": status_inicial
                     }])
@@ -1030,7 +1045,6 @@ def tela_comercial():  # <-- NOVO
     if df.empty:
         st.info("Nenhum registro comercial cadastrado.")
     else:
-        # Ordem de exibição seguindo COMERCIAL_COLS
         download_button(df, "comercial.csv", "⬇️ Baixar Lista Comercial")
         show_table(df[COMERCIAL_COLS], COMERCIAL_COLS, "comercial_df", COMERCIAL_CSV)
 
@@ -1038,7 +1052,7 @@ def refresh_data():
     st.session_state.clientes_df = load_csv(CLIENTES_CSV, CLIENTES_COLS)
     st.session_state.vagas_df = load_csv(VAGAS_CSV, VAGAS_COLS)
     st.session_state.candidatos_df = load_csv(CANDIDATOS_CSV, CANDIDATOS_COLS)
-    st.session_state.comercial_df = load_csv(COMERCIAL_CSV, COMERCIAL_COLS)  # <-- NOVO
+    st.session_state.comercial_df = load_csv(COMERCIAL_CSV, COMERCIAL_COLS)
     registrar_log("Sistema", "Refresh", detalhe="Dados recarregados via botão Refresh.")
 
 # Topbar/Router
@@ -1052,14 +1066,14 @@ if st.session_state.logged_in:
         "vagas": "Vagas",
         "candidatos": "Candidatos",
         "logs": "Logs do Sistema",
-        "comercial": "Comercial"  # <-- NOVO
+        "comercial": "Comercial"
     }
 
     perms = st.session_state.get("permissoes", [])
     if "menu" not in perms:
         perms = ["menu"] + perms
 
-    ordered_page_keys = ["menu", "clientes", "vagas", "candidatos", "comercial", "logs"]  # <-- inclui comercial
+    ordered_page_keys = ["menu", "clientes", "vagas", "candidatos", "comercial", "logs"]
     allowed_pages = [p for p in ordered_page_keys if p in perms]
     labels = [page_label_map[p] for p in allowed_pages]
 
@@ -1108,7 +1122,7 @@ if st.session_state.logged_in:
         else:
             st.warning("⚠️ Você não tem permissão para acessar esta página.")
 
-    elif current_page == "comercial":  # <-- NOVO
+    elif current_page == "comercial":
         if "comercial" in perms and st.session_state.usuario in ["admin", "andre", "ricardo"]:
             tela_comercial()
         else:
