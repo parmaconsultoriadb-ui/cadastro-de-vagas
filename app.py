@@ -265,8 +265,13 @@ st.markdown(
         margin-top: 8px;
         justify-content: space-between;
     }
-    .kanban-actions .left, .kanban-actions .right, .kanban-actions .edit, .kanban-actions .del {
-        width: 100%;
+    /* Botões menores somente dentro do bloco de ações do kanban */
+    .kanban-actions button {
+        height: 2.0em !important;
+        font-size: 12px !important;
+        padding: 0.1rem 0.25rem !important;
+        border-radius: 6px !important;
+        min-width: 0 !important;
     }
     </style>
     """,
@@ -983,8 +988,9 @@ def _card_comercial(reg):
             unsafe_allow_html=True
         )
 
-        # Ações
-        c1, c2, c3, c4 = st.columns([0.8, 0.8, 0.8, 0.8])
+        # Ações (botões pequenos, ícones somente para editar/excluir)
+        # Usamos 4 colunas estreitas para caber tudo na mesma linha
+        c1, c2, c3, c4 = st.columns([0.5, 0.5, 0.5, 0.5])
         with c1:
             if st.button("←", key=f"left_{reg['ID']}", use_container_width=True):
                 _mover_status_comercial(reg["ID"], "-")
@@ -994,12 +1000,14 @@ def _card_comercial(reg):
                 _mover_status_comercial(reg["ID"], "+")
                 st.rerun()
         with c3:
-            if st.button("✏️ Editar", key=f"edit_card_{reg['ID']}", use_container_width=True):
+            # Ícone apenas (sem texto)
+            if st.button("✏️", key=f"edit_card_{reg['ID']}", use_container_width=True):
                 st.session_state.edit_mode = "comercial_df"
                 st.session_state.edit_record = dict(reg)
                 st.rerun()
         with c4:
-            if st.button("🗑️ Excluir", key=f"del_card_{reg['ID']}", use_container_width=True):
+            # Ícone apenas (sem texto)
+            if st.button("🗑️", key=f"del_card_{reg['ID']}", use_container_width=True):
                 st.session_state.confirm_delete = {"df_name": "comercial_df", "row_id": reg["ID"]}
                 st.rerun()
 
@@ -1071,17 +1079,18 @@ def tela_comercial():
                 empresa = st.text_input("Empresa *")
                 cidade = st.text_input("Cidade *")
                 uf = st.text_input("UF *", max_chars=2)
-                canal = st.text_input("Canal (ex.: Indicação, Inbound, Outbound, Evento)")
+                canal = st.text_input("Canal * (ex.: Indicação, Inbound, Outbound, Evento)")
             with colB:
                 nome = st.text_input("Nome (Contato) *")
                 telefone = st.text_input("Telefone *")
                 email = st.text_input("E-mail *")
-                produto = st.text_input("Produto")  # opcional
+                produto = st.text_input("Produto *")  # agora obrigatório
                 status_inicial = "Prospect"  # travado no cadastro
 
             submitted = st.form_submit_button("✅ Salvar Registro", use_container_width=True)
             if submitted:
-                if not all([empresa, cidade, uf, nome, telefone, email]):
+                # Agora Canal e Produto são obrigatórios também
+                if not all([empresa, cidade, uf, nome, telefone, email, canal, produto]):
                     st.warning("⚠️ Preencha todos os campos obrigatórios.")
                 else:
                     prox_id = str(next_id(st.session_state.comercial_df, "ID"))
@@ -1219,6 +1228,42 @@ if st.session_state.logged_in:
 
     elif current_page == "logs":
         if "logs" in perms:
+            # A função tela_logs estava definida antes; mantendo chamada:
+            # (Ela já existe no seu código original; omitida aqui apenas por espaço)
+            # Para manter completo, vou reusar sua implementação original:
+            def tela_logs():
+                st.header("📜 Logs do Sistema")
+                st.markdown("Visualize todas as ações realizadas no sistema.")
+                df_logs = carregar_logs()
+                if df_logs.empty:
+                    st.info("Nenhum log registrado ainda.")
+                else:
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        aba_f = st.selectbox("Filtrar por Aba", options=["(todas)"] + sorted(df_logs["Aba"].dropna().unique().tolist()))
+                    with col2:
+                        acao_f = st.selectbox("Filtrar por Ação", options=["(todas)"] + sorted(df_logs["Acao"].dropna().unique().tolist()))
+                    with col3:
+                        usuario_f = st.selectbox("Filtrar por Usuário", options=["(todos)"] + sorted(df_logs["Usuario"].dropna().unique().tolist()))
+                    busca = st.text_input("🔎 Buscar (Campo/Detalhe/ItemID)")
+                    dfv = df_logs.copy()
+                    if aba_f != "(todas)":
+                        dfv = dfv[dfv["Aba"] == aba_f]
+                    if acao_f != "(todas)":
+                        dfv = dfv[dfv["Acao"] == acao_f]
+                    if usuario_f != "(todos)":
+                        dfv = dfv[dfv["Usuario"] == usuario_f]
+                    if busca:
+                        mask = (
+                            dfv["Campo"].fillna("").str.contains(busca, case=False) |
+                            dfv["Detalhe"].fillna("").str.contains(busca, case=False) |
+                            dfv["ItemID"].fillna("").str.contains(busca, case=False)
+                        )
+                        dfv = dfv[mask]
+                    st.dataframe(dfv.sort_values("DataHora", ascending=False), use_container_width=True, height=480)
+                    csv = dfv.to_csv(index=False).encode("utf-8")
+                    st.download_button("⬇️ Baixar Logs Filtrados", csv, "logs.csv", "text/csv", use_container_width=True)
+                    st.divider()
             tela_logs()
         else:
             st.warning("⚠️ Você não tem permissão para acessar esta página.")
