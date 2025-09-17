@@ -35,7 +35,7 @@ VAGAS_COLS = [
 ]
 CANDIDATOS_COLS = ["ID", "Cliente", "Cargo", "Nome", "Telefone", "Recrutador", "Status", "Data de Início"]
 
-# NOVO: Comercial (com 'Produto' e ordem definida)
+# Comercial (com 'Produto' e 'Telefone' no lugar de 'Contato', na ordem definida)
 COMERCIAL_COLS = [
     "ID",
     "Data",
@@ -160,7 +160,7 @@ for df_key, csv_path, cols in [
     ("clientes_df", CLIENTES_CSV, CLIENTES_COLS),
     ("vagas_df", VAGAS_CSV, VAGAS_COLS),
     ("candidatos_df", CANDIDATOS_CSV, CANDIDATOS_COLS),
-    ("comercial_df", COMERCIAL_CSV, COMERCIAL_COLS),  # Comercial com Produto
+    ("comercial_df", COMERCIAL_CSV, COMERCIAL_COLS),  # Comercial
 ]:
     if df_key not in st.session_state:
         st.session_state[df_key] = load_csv(csv_path, cols)
@@ -371,8 +371,8 @@ def show_edit_form(df_name, cols, csv_path):
         "Cliente", "Cargo", "Nome", "Telefone", "Recrutador"
     ]
 
-    # NOVO: Campos travados para não-admin na página Comercial
-    campos_comercial_somente_admin = ["Empresa", "Cidade", "UF", "Canal"]
+    # Campos somente admin na página Comercial (agora inclui Produto)
+    campos_comercial_somente_admin = ["Empresa", "Cidade", "UF", "Canal", "Produto"]
 
     with st.form("edit_form", clear_on_submit=False):
         new_data = {}
@@ -419,7 +419,7 @@ def show_edit_form(df_name, cols, csv_path):
                 new_data[c] = st.text_input(c, value=val, disabled=(usuario != "admin"))
 
             elif df_name == "comercial_df" and c in campos_comercial_somente_admin:
-                # Somente admin edita Empresa, Cidade, UF e Canal
+                # Somente admin edita Empresa, Cidade, UF, Canal e Produto
                 new_data[c] = st.text_input(c, value=val, disabled=(usuario != "admin"))
 
             else:
@@ -439,7 +439,7 @@ def show_edit_form(df_name, cols, csv_path):
                             continue
                         if df_name == "candidatos_df" and c in campos_candidatos_admin and usuario != "admin":
                             continue
-                        # Em Comercial, Data travada sempre; e os campos Empresa/Cidade/UF/Canal travados para não-admin
+                        # Em Comercial, Data travada sempre; e Empresa/Cidade/UF/Canal/Produto travados para não-admin
                         if df_name == "comercial_df":
                             if c == "Data":
                                 continue
@@ -1011,14 +1011,14 @@ def tela_comercial():
                 canal = st.text_input("Canal (ex.: Indicação, Inbound, Outbound, Evento)")
             with colB:
                 nome = st.text_input("Nome (Contato) *")
-                telefone = st.text_input(Telefone *")
+                telefone = st.text_input("Telefone *")
                 email = st.text_input("E-mail *")
-                produto = st.text_input("Produto")  # novo campo no cadastro (opcional)
+                produto = st.text_input("Produto")  # novo campo
                 status_inicial = "Prospect"  # travado no cadastro
 
             submitted = st.form_submit_button("✅ Salvar Registro", use_container_width=True)
             if submitted:
-                if not all([empresa, cidade, uf, nome, Telefone, email]):
+                if not all([empresa, cidade, uf, nome, telefone, email]):
                     st.warning("⚠️ Preencha todos os campos obrigatórios.")
                 else:
                     prox_id = str(next_id(st.session_state.comercial_df, "ID"))
