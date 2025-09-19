@@ -1043,13 +1043,16 @@ def tela_candidatos():
             else:
                 st.info("Selecione uma vaga para ver as informações.")
 
+    # =======================
+    # >>> CORREÇÃO AQUI <<<
+    # =======================
     st.subheader("📋 Candidatos Cadastrados")
-    df = st.session_state.candidatos_df.copy()
-    if df.empty:
+    df_list = df.copy()  # usar o DF FILTRADO
+    if df_list.empty:
         st.info("Nenhum candidato cadastrado.")
     else:
-        download_button(df, "candidatos.csv", "⬇️ Baixar Lista de Candidatos")
-        show_table(df, CANDIDATOS_COLS, "candidatos_df", CANDIDATOS_CSV)
+        download_button(df_list, "candidatos.csv", "⬇️ Baixar Lista de Candidatos")
+        show_table(df_list, CANDIDATOS_COLS, "candidatos_df", CANDIDATOS_CSV)
 
 # ============================================================
 # Comercial (Kanban ajustado — SOMENTE esta tela foi alterada)
