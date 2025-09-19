@@ -393,9 +393,12 @@ def show_table(df, cols, df_name, csv_path):
                 st.session_state.edit_record = row.to_dict()
                 st.rerun()
         with row_cols[-1]:
-            if st.button("🗑️", key=f"del_{df_name}_{str(row.get('ID',''))}", use_container_width=True):
-                st.session_state.confirm_delete = {"df_name": df_name, "row_id": row["ID"]}
-                st.rerun()
+            if df_name in ["clientes_df", "vagas_df", "candidatos_df"] and st.session_state.usuario != "admin":
+                st.markdown("<div class='parma-cell'>—</div>", unsafe_allow_html=True)  # mostra traço
+            else:
+                if st.button("🗑️", key=f"del_{df_name}_{str(row.get('ID',''))}", use_container_width=True):
+                    st.session_state.confirm_delete = {"df_name": df_name, "row_id": row["ID"]}
+                    st.rerun()
 
         st.markdown("<hr class='parma-hr' />", unsafe_allow_html=True)
 
